@@ -1,0 +1,40 @@
+[0.027s] Invoking command in '/home/santiregui/ros2_ws/src/etasl_ros2/build/etasl_ros2': CMAKE_PREFIX_PATH=/opt/ros/humble /usr/bin/cmake --build /home/santiregui/ros2_ws/src/etasl_ros2/build/etasl_ros2 -- -j16 -l16
+[0.047s] -- Found ament_cmake: 1.3.8 (/opt/ros/humble/share/ament_cmake/cmake)
+[0.122s] -- Found rclcpp: 16.0.8 (/opt/ros/humble/share/rclcpp/cmake)
+[0.139s] -- Found rosidl_generator_c: 3.1.5 (/opt/ros/humble/share/rosidl_generator_c/cmake)
+[0.141s] -- Found rosidl_adapter: 3.1.5 (/opt/ros/humble/share/rosidl_adapter/cmake)
+[0.144s] -- Found rosidl_generator_cpp: 3.1.5 (/opt/ros/humble/share/rosidl_generator_cpp/cmake)
+[0.150s] -- Using all available rosidl_typesupport_c: rosidl_typesupport_fastrtps_c;rosidl_typesupport_introspection_c
+[0.158s] -- Using all available rosidl_typesupport_cpp: rosidl_typesupport_fastrtps_cpp;rosidl_typesupport_introspection_cpp
+[0.190s] -- Found rmw_implementation_cmake: 6.1.1 (/opt/ros/humble/share/rmw_implementation_cmake/cmake)
+[0.190s] -- Found rmw_fastrtps_cpp: 6.2.6 (/opt/ros/humble/share/rmw_fastrtps_cpp/cmake)
+[0.269s] -- Using RMW implementation 'rmw_fastrtps_cpp' as default
+[0.355s] -- Found sensor_msgs: 4.2.3 (/opt/ros/humble/share/sensor_msgs/cmake)
+[0.425s] -- Found Boost: /usr/lib/x86_64-linux-gnu/cmake/Boost-1.74.0/BoostConfig.cmake (found version "1.74.0") found components: random 
+[0.430s] -- Found Boost: /usr/lib/x86_64-linux-gnu/cmake/Boost-1.74.0/BoostConfig.cmake (found version "1.74.0") found components: chrono 
+[0.431s] -- Found ament_lint_auto: 0.12.10 (/opt/ros/humble/share/ament_lint_auto/cmake)
+[0.484s] -- Added test 'cppcheck' to perform static code analysis on C / C++ code
+[0.484s] -- Configured cppcheck include dirs: $<BUILD_INTERFACE:/home/santiregui/ros2_ws/src/etasl_ros2/include>
+[0.484s] -- Configured cppcheck exclude dirs and/or files: 
+[0.485s] -- Added test 'flake8' to check Python code syntax and style conventions
+[0.487s] -- Added test 'lint_cmake' to check CMake code style
+[0.488s] -- Added test 'pep257' to check Python code against some of the docstring style conventions in PEP 257
+[0.498s] -- Added test 'uncrustify' to check C / C++ code style
+[0.498s] -- Configured uncrustify additional arguments: 
+[0.499s] -- Added test 'xmllint' to check XML markup files
+[0.499s] -- Configuring done
+[0.507s] -- Generating done
+[0.508s] -- Build files have been written to: /home/santiregui/ros2_ws/src/etasl_ros2/build/etasl_ros2
+[0.536s] [35m[1mConsolidate compiler generated dependencies of target etasl_node[0m
+[0.558s] [ 33%] [32mBuilding CXX object CMakeFiles/etasl_node.dir/src/etasl_node.cpp.o[0m
+[0.560s] [ 66%] [32mBuilding CXX object CMakeFiles/etasl_node.dir/src/featurevariableinitializer.cpp.o[0m
+[0.567s] In file included from [01m[K/home/santiregui/ros2_ws/src/etasl_ros2/src/featurevariableinitializer.cpp:1[m[K:
+[0.567s] [01m[K/home/santiregui/ros2_ws/src/etasl_ros2/src/featurevariableinitializer.hpp:4:10:[m[K [01;31m[Kfatal error: [m[KEigen/Dense: No such file or directory
+[0.567s]     4 | #include [01;31m[K<Eigen/Dense>[m[K
+[0.567s]       |          [01;31m[K^~~~~~~~~~~~~[m[K
+[0.567s] compilation terminated.
+[0.567s] gmake[2]: *** [CMakeFiles/etasl_node.dir/build.make:90: CMakeFiles/etasl_node.dir/src/featurevariableinitializer.cpp.o] Error 1
+[0.568s] gmake[2]: *** Waiting for unfinished jobs....
+[3.000s] gmake[1]: *** [CMakeFiles/Makefile2:137: CMakeFiles/etasl_node.dir/all] Error 2
+[3.000s] gmake: *** [Makefile:146: all] Error 2
+[3.002s] Invoked command in '/home/santiregui/ros2_ws/src/etasl_ros2/build/etasl_ros2' returned '2': CMAKE_PREFIX_PATH=/opt/ros/humble /usr/bin/cmake --build /home/santiregui/ros2_ws/src/etasl_ros2/build/etasl_ros2 -- -j16 -l16

@@ -1,0 +1,23 @@
+[0.031s] Invoking command in '/home/santiregui/ros2_ws/src/etasl_ros2/build/etasl_ros2': CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}:/opt/ros/humble /usr/bin/cmake --build /home/santiregui/ros2_ws/src/etasl_ros2/build/etasl_ros2 -- -j16 -l16
+[0.069s] [35m[1mConsolidate compiler generated dependencies of target etasl_node[0m
+[0.092s] [100%] Built target etasl_node
+[0.102s] Invoked command in '/home/santiregui/ros2_ws/src/etasl_ros2/build/etasl_ros2' returned '0': CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}:/opt/ros/humble /usr/bin/cmake --build /home/santiregui/ros2_ws/src/etasl_ros2/build/etasl_ros2 -- -j16 -l16
+[0.141s] Invoking command in '/home/santiregui/ros2_ws/src/etasl_ros2/build/etasl_ros2': CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}:/opt/ros/humble /usr/bin/cmake --install /home/santiregui/ros2_ws/src/etasl_ros2/build/etasl_ros2
+[0.147s] -- Install configuration: ""
+[0.147s] -- Up-to-date: /home/santiregui/ros2_ws/src/etasl_ros2/install/etasl_ros2/lib/etasl_ros2/etasl_node
+[0.147s] -- Up-to-date: /home/santiregui/ros2_ws/src/etasl_ros2/install/etasl_ros2/share/ament_index/resource_index/package_run_dependencies/etasl_ros2
+[0.147s] -- Up-to-date: /home/santiregui/ros2_ws/src/etasl_ros2/install/etasl_ros2/share/ament_index/resource_index/parent_prefix_path/etasl_ros2
+[0.147s] -- Up-to-date: /home/santiregui/ros2_ws/src/etasl_ros2/install/etasl_ros2/share/etasl_ros2/environment/ament_prefix_path.sh
+[0.147s] -- Up-to-date: /home/santiregui/ros2_ws/src/etasl_ros2/install/etasl_ros2/share/etasl_ros2/environment/ament_prefix_path.dsv
+[0.147s] -- Up-to-date: /home/santiregui/ros2_ws/src/etasl_ros2/install/etasl_ros2/share/etasl_ros2/environment/path.sh
+[0.147s] -- Up-to-date: /home/santiregui/ros2_ws/src/etasl_ros2/install/etasl_ros2/share/etasl_ros2/environment/path.dsv
+[0.147s] -- Up-to-date: /home/santiregui/ros2_ws/src/etasl_ros2/install/etasl_ros2/share/etasl_ros2/local_setup.bash
+[0.147s] -- Up-to-date: /home/santiregui/ros2_ws/src/etasl_ros2/install/etasl_ros2/share/etasl_ros2/local_setup.sh
+[0.147s] -- Up-to-date: /home/santiregui/ros2_ws/src/etasl_ros2/install/etasl_ros2/share/etasl_ros2/local_setup.zsh
+[0.148s] -- Up-to-date: /home/santiregui/ros2_ws/src/etasl_ros2/install/etasl_ros2/share/etasl_ros2/local_setup.dsv
+[0.148s] -- Installing: /home/santiregui/ros2_ws/src/etasl_ros2/install/etasl_ros2/share/etasl_ros2/package.dsv
+[0.148s] -- Up-to-date: /home/santiregui/ros2_ws/src/etasl_ros2/install/etasl_ros2/share/ament_index/resource_index/packages/etasl_ros2
+[0.148s] -- Up-to-date: /home/santiregui/ros2_ws/src/etasl_ros2/install/etasl_ros2/share/etasl_ros2/cmake/etasl_ros2Config.cmake
+[0.148s] -- Up-to-date: /home/santiregui/ros2_ws/src/etasl_ros2/install/etasl_ros2/share/etasl_ros2/cmake/etasl_ros2Config-version.cmake
+[0.148s] -- Up-to-date: /home/santiregui/ros2_ws/src/etasl_ros2/install/etasl_ros2/share/etasl_ros2/package.xml
+[0.149s] Invoked command in '/home/santiregui/ros2_ws/src/etasl_ros2/build/etasl_ros2' returned '0': CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}:/opt/ros/humble /usr/bin/cmake --install /home/santiregui/ros2_ws/src/etasl_ros2/build/etasl_ros2

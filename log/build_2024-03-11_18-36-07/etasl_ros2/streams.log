@@ -1,0 +1,11 @@
+[0.031s] Invoking command in '/home/santiregui/ros2_ws/src/etasl_ros2/build/etasl_ros2': CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}:/opt/ros/humble /usr/bin/cmake --build /home/santiregui/ros2_ws/src/etasl_ros2/build/etasl_ros2 -- -j16 -l16
+[0.066s] [35m[1mConsolidate compiler generated dependencies of target etasl_node[0m
+[0.088s] [ 33%] [32mBuilding CXX object CMakeFiles/etasl_node.dir/src/etasl_node.cpp.o[0m
+[1.448s] [01m[K/home/santiregui/ros2_ws/src/etasl_ros2/src/etasl_node.cpp:[m[K In member function ‘[01m[Kvoid etaslNode::publishJointState()[m[K’:
+[1.448s] [01m[K/home/santiregui/ros2_ws/src/etasl_ros2/src/etasl_node.cpp:40:24:[m[K [01;31m[Kerror: [m[Kbase operand of ‘[01m[K->[m[K’ has non-pointer type ‘[01m[Ksensor_msgs::msg::JointState[m[K’ {aka ‘[01m[Ksensor_msgs::msg::JointState_<std::allocator<void> >[m[K’}
+[1.448s]    40 |         joint_state_msg[01;31m[K->[m[Kheader.stamp = this->now(); // Set the timestamp to the current time
+[1.448s]       |                        [01;31m[K^~[m[K
+[1.917s] gmake[2]: *** [CMakeFiles/etasl_node.dir/build.make:76: CMakeFiles/etasl_node.dir/src/etasl_node.cpp.o] Error 1
+[1.917s] gmake[1]: *** [CMakeFiles/Makefile2:137: CMakeFiles/etasl_node.dir/all] Error 2
+[1.918s] gmake: *** [Makefile:146: all] Error 2
+[1.920s] Invoked command in '/home/santiregui/ros2_ws/src/etasl_ros2/build/etasl_ros2' returned '2': CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}:/opt/ros/humble /usr/bin/cmake --build /home/santiregui/ros2_ws/src/etasl_ros2/build/etasl_ros2 -- -j16 -l16
