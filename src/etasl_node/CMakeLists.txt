@@ -6,7 +6,7 @@ find_package(sensor_msgs REQUIRED)
 find_package(etasl REQUIRED)
 
 
-add_executable(etasl_node etasl_node.cpp featurevariableinitializer.cpp)
+add_executable(etasl_node etasl_node.cpp etasl_node.hpp featurevariableinitializer.cpp)
 # add_executable(etasl_node src/etasl_node.cpp)
 
 target_link_libraries(etasl_node etasl::expressiongraph_context etasl::expressiongraph_solver_qpoases etasl::expressiongraph_context_lua )
