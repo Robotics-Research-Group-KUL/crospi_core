@@ -1,6 +1,9 @@
 cmake_minimum_required(VERSION 3.8)
 project(etasl_ros2)
 
+message("Compiling package ${PROJECT_SOURCE_DIR}")
+
+
 if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
   add_compile_options(-Wall -Wextra -Wpedantic)
 endif()
@@ -11,29 +14,17 @@ find_package(ament_cmake REQUIRED)
 # further dependencies manually.
 # find_package(<dependency> REQUIRED)
 
-find_package(rclcpp REQUIRED)
-find_package(std_msgs REQUIRED)
-find_package(sensor_msgs REQUIRED)
-find_package(etasl REQUIRED)
-
-add_executable(etasl_node src/etasl_node.cpp src/featurevariableinitializer.cpp)
-# add_executable(etasl_node src/etasl_node.cpp)
-
-target_link_libraries(etasl_node etasl::expressiongraph_context etasl::expressiongraph_solver_qpoases etasl::expressiongraph_context_lua )
-
-ament_target_dependencies(etasl_node rclcpp std_msgs sensor_msgs)
-
-
-target_include_directories(etasl_node PUBLIC
-  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
-  $<INSTALL_INTERFACE:include>)
-target_compile_features(etasl_node PUBLIC c_std_99 cxx_std_17)  # Require C99 and C++17
-
-install(TARGETS etasl_node
-  DESTINATION lib/${PROJECT_NAME})
 
 install(DIRECTORY launch robot_description/urdf
   DESTINATION share/${PROJECT_NAME})
+
+include_directories(
+   include
+)
+
+add_subdirectory(src/etasl_node)
+add_subdirectory(src/test_publisher_node)
+
 
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)
