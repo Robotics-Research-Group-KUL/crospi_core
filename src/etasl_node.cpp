@@ -37,10 +37,15 @@ class etaslNode : public rclcpp::Node
         // Populate the joint state message according to your robot configuration
         // For example:
         joint_state_msg.header.stamp = this->now(); // Set the timestamp to the current time
-        joint_state_msg.name = {"joint1", "joint2", "joint3"};
-        joint_state_msg.position = {1.0, 2.0, 3.0};
-        joint_state_msg.velocity = {0.1, 0.2, 0.3};
-        joint_state_msg.effort = {10.0, 20.0, 30.0};
+        joint_state_msg.name = {"joint1"};
+        joint_state_msg.position = {angle};
+        joint_state_msg.velocity = {0.0};
+        joint_state_msg.effort = {0.0};
+        angle = angle + 0.01;
+        // joint_state_msg.name = {"joint1", "joint2", "joint3"};
+        // joint_state_msg.position = {1.0, 2.0, 3.0};
+        // joint_state_msg.velocity = {0.1, 0.2, 0.3};
+        // joint_state_msg.effort = {10.0, 20.0, 30.0};
 
         publisher_->publish(joint_state_msg);
     }
@@ -58,6 +63,7 @@ class etaslNode : public rclcpp::Node
 
     size_t count_;
     sensor_msgs::msg::JointState joint_state_msg = sensor_msgs::msg::JointState();
+    double angle = 0.0;
     
 };
 
