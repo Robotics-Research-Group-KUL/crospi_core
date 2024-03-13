@@ -9,6 +9,8 @@ using namespace std::chrono_literals;
 using namespace KDL;
 using namespace Eigen;
 
+
+
 /* This example creates a subclass of Node and uses std::bind() to register a
 * member function as a callback from the timer. */
 
@@ -16,14 +18,18 @@ using namespace Eigen;
 etaslNode::etaslNode(): Node("etasl_node")
 , count_(0)
 , angle(0.0)
-
+, periodicity_param(10) //Expressed in milliseconds
+, time(0.0)
 {
-  // publisher_ = this->create_publisher<std_msgs::msg::String>("topic", 10);
-  // timer_ = this->create_wall_timer(500ms, std::bind(&etaslNode::timer_callback, this));
+  outpfilename = "/home/santiregui/ros2_ws/src/etasl_ros2/etasl/log_test.csv";
+  fname = "/home/santiregui/ros2_ws/src/etasl_ros2/etasl/taskspec2.lua";
 
+  ctx = create_context(); //Create context used for etasl
+
+  
   joint_state_msg = sensor_msgs::msg::JointState();
-  publisher_ = this->create_publisher<sensor_msgs::msg::JointState>("joint_states", 10);
-  timer_ = this->create_wall_timer(100ms, std::bind(&etaslNode::publishJointState, this));
+  publisher_ = this->create_publisher<sensor_msgs::msg::JointState>("joint_states", 1); //queue_size 1 so that it sends the latest always
+  // timer_ = this->create_wall_timer(100ms, std::bind(&etaslNode::publishJointState, this));
 }
 
 
@@ -47,11 +53,6 @@ void etaslNode::publishJointState() {
     publisher_->publish(joint_state_msg);
 }
 
-
-void etaslNode::setAngle(double p_angle){
-  angle = p_angle;
-}
-
 typename Observer::Ptr 
 create_PrintObserver(
         typename boost::shared_ptr<solver> _slv, 
@@ -63,25 +64,7 @@ create_PrintObserver(
     return r; 
 }
 
-
-
-
-int main(int argc, char * argv[])
-{
-
-      /**
-     * Program arguments
-     */   
-    std::string outpfilename = "/home/santiregui/ros2_ws/src/etasl_ros2/etasl/log_test.csv";
-    std::string fname = "/home/santiregui/ros2_ws/src/etasl_ros2/etasl/taskspec2.lua";
-    // if (argc!=3) {
-    //     std::cerr << "C++ driver to run eTaSL"<< std::endl;
-    //     std::cerr << "Usage:\n " << argv[0] << " etasl_script.lua  outputfile.csv" << std::endl;
-    //     return -1;
-    // } else {
-    //     fname = argv[1];
-    //     outpfilename = argv[2];
-    // }
+void etaslNode::configure_etasl(){
 
     /**
      * read task specification and creation of solver and handlers for monitor, inputs, outputs
@@ -91,11 +74,11 @@ int main(int argc, char * argv[])
     registerSolverFactory_qpOases(R, "qpoases");
     //registerSolverFactory_hqp(R, "hqp");
 
-    // Create context and set-up for robot control problem:
-    Context::Ptr ctx = create_context();
+    // Setup context for robot control problem:
     ctx->addType("robot");
     ctx->addType("feature");
 
+    std::cout << "FIle name is: " << fname << std::endl;
     try{
         // Read eTaSL specification:
         LuaContext LUA;
@@ -103,7 +86,8 @@ int main(int argc, char * argv[])
         int retval = LUA.executeFile(fname);
         if (retval !=0) {
             std::cerr << "Error executing task specification file" << std::endl;
-            return -2;
+            rclcpp::shutdown();
+            return;
         }
     } catch (const char* msg) {
         // can be thrown by file/string errors during reading
@@ -112,10 +96,12 @@ int main(int argc, char * argv[])
         std::cout << "error thrown: " << msg << std::endl;
     }
 
-    // create the OutputHandler and solver:
-    eTaSL_OutputHandler oh( ctx);     // or   std::vector<std::string> varnames =  {"q","f","dx","dy"};
-                                     //      eTaSL_OutputHandler oh( ctx, varnames); for only specific outputs
-    boost::shared_ptr<solver> slv;
+    // oh( ctx);     // or   std::vector<std::string> varnames =  {"q","f","dx","dy"};
+                                      //      eTaSL_OutputHandler oh( ctx, varnames); for only specific outputs
+    // create the OutputHandler:
+    oh = boost::make_shared<eTaSL_OutputHandler>(ctx);
+        // create the Inputhandler:
+    ih = boost::make_shared<eTaSL_InputHandler>(ctx,"sine_input", 0.5,0.1,0.0);
 
     // we can get the properties from the solver from the context and specify these properties in eTaSL or
     // create a parameter plist (instead of ctx->solver_property) :
@@ -132,7 +118,6 @@ int main(int argc, char * argv[])
         plist["initialization_convergence_criterion"] = 1E-4;
         plist["initialization_weightfactor"]          = 100;
         
-    int periodicity_param = 10; //Expressed in milliseconds
 
     // std::string solver_name = ctx->getSolverStringProperty("solver", "qpoasis");  // 2nd arg is the default value if nothing is specified.
     // int result = R->createSolver(solver_name, ctx->solver_property, true, false, slv); 
@@ -140,7 +125,8 @@ int main(int argc, char * argv[])
     int result = R->createSolver(solver_name, plist, true, false, slv); 
     if (result!=0) {
         std::cerr << "Failed to create the solver " << solver_name << std::endl;
-        return -1;
+        rclcpp::shutdown();
+        return;
     }
     ctx->setSolverProperty("sample_time", periodicity_param/1000.0);
     double dt = ctx->getSolverProperty("sample_time", periodicity_param/1000.0);
@@ -154,8 +140,7 @@ int main(int argc, char * argv[])
         }
     }
 
-    // create the Inputhandler:
-    eTaSL_InputHandler ih(ctx,"sine_input", 0.5,0.1,0.0);
+
  
 
     /****************************************************
@@ -163,39 +148,37 @@ int main(int argc, char * argv[])
      ***************************************************/
     int retval;
 
-    // initialize time:
-    double time = 0.0;
-
 
     // reset all monitors:
     ctx->resetMonitors();
     
-    // initialize our outputhandler:
-    std::ofstream outpfile(outpfilename);
-    oh.printHeader(outpfile);
+
     
     // initial input is used for initialization.
-    ih.update(time);                                              
+  
+    ih->update(time);                                              
     
     // initialization of robt and feature variables: 
-    auto initializer = createFeatureVariableInitializer(slv, ctx, ctx->solver_property);
+    FeatureVariableInitializer::Ptr initializer = createFeatureVariableInitializer(slv, ctx, ctx->solver_property);
     retval = initializer->prepareSolver();
     if (retval!=0) {
         std::cerr << initializer->errorMessage(retval) << std::endl;
-        return -1; 
+        rclcpp::shutdown();
+        return;
     }
-    VectorXd jpos  = VectorXd::Zero(slv->getNrOfJointStates());   // choose the joint robot state to start with
+    jpos  = VectorXd::Zero(slv->getNrOfJointStates());   // choose the joint robot state to start with
     std::cout << "Number of joints:" << slv->getNrOfJointStates() << std::endl;
     jpos[0] = 0.2;
     // jpos[1] = -M_PI/2;
-    VectorXd fpos = VectorXd::Zero(slv->getNrOfFeatureStates()); // choose the initial feature variables for the initializer, i.e.
+    fpos = VectorXd::Zero(slv->getNrOfFeatureStates()); // choose the initial feature variables for the initializer, i.e.
     std::cout <<  "Before initialization\njpos = " << jpos.transpose() << "\nfpos = " << fpos.transpose() << std::endl;
     initializer->setRobotState(jpos);
     initializer->setFeatureState(fpos); // leave this out if you want to use the initial values in the task specification.
     retval = initializer->initialize_feature_variables();
     if (retval!=0) {
         std::cerr << initializer->errorMessage(retval) << std::endl;
-        return -1; 
+        rclcpp::shutdown();
+        return; 
     }
 
     fpos = initializer->getFeatureState();
@@ -212,15 +195,6 @@ int main(int argc, char * argv[])
     slv->prepareExecution(ctx);
     slv->setJointStates(jpos);
     slv->setFeatureStates(fpos);
-    VectorXd jvel = VectorXd::Zero(slv->getNrOfJointStates());
-    VectorXd fvel  = VectorXd::Zero(slv->getNrOfFeatureStates());
-       {
-        // not really necessary, getting the full state such that we can print out the total number of opt. vars:
-        Eigen::VectorXd state;
-        slv->getState(state);
-        std::cerr << "size of the initial state " << state.size() << std::endl;
-        std::cerr << "the initial state " << state.transpose() << std::endl;
-    }
 
     // create observers for monitoring events:       
     // only now because our PrintObserver monitor uses slv 
@@ -231,21 +205,117 @@ int main(int argc, char * argv[])
     ctx->addDefaultObserver(obs2);
 
 
+
+}
+
+
+// Set methods
+
+void etaslNode::setAngle(double p_angle){
+  angle = p_angle;
+}
+
+
+// Get methods
+
+Context::Ptr etaslNode::get_ctx()
+{
+  return ctx;
+}
+boost::shared_ptr<solver> etaslNode::get_slv()
+{
+  return slv;
+}
+boost::shared_ptr<eTaSL_OutputHandler> etaslNode::get_output_handler()
+{
+  return oh;
+}
+boost::shared_ptr<eTaSL_InputHandler> etaslNode::get_input_handler()
+{
+  return ih;
+}
+
+VectorXd etaslNode::get_fpos()
+{
+  return fpos;
+}
+
+VectorXd etaslNode::get_jpos()
+{
+  return jpos;
+}
+
+double etaslNode::get_time()
+{
+  return time;
+}
+
+int etaslNode::get_periodicity_param()
+{
+  return periodicity_param;
+}
+
+std::string etaslNode::get_outpfilename()
+{
+  return outpfilename;
+}
+
+std::string etaslNode::get_etasl_fname()
+{
+  return fname;
+}
+
+
+
+
+int main(int argc, char * argv[])
+{
+    
+
+    rclcpp::init(argc, argv);
+    std::shared_ptr<etaslNode> my_etasl_node = std::make_shared<etaslNode>();
+
+    my_etasl_node->configure_etasl();
+
+    Context::Ptr ctx = my_etasl_node->get_ctx();
+    boost::shared_ptr<solver> slv = my_etasl_node->get_slv();
+    boost::shared_ptr<eTaSL_OutputHandler>  oh = my_etasl_node->get_output_handler();
+    boost::shared_ptr<eTaSL_InputHandler>  ih = my_etasl_node->get_input_handler();
+
+    int periodicity_param = my_etasl_node->get_periodicity_param();
+
+    VectorXd fpos = my_etasl_node->get_fpos();
+    VectorXd jpos = my_etasl_node->get_jpos();
+    double time = my_etasl_node->get_time();
+
+    VectorXd jvel = VectorXd::Zero(slv->getNrOfJointStates());
+    VectorXd fvel  = VectorXd::Zero(slv->getNrOfFeatureStates());
+       {
+        // not really necessary, getting the full state such that we can print out the total number of opt. vars:
+        Eigen::VectorXd state;
+        slv->getState(state);
+        std::cerr << "size of the initial state " << state.size() << std::endl;
+        std::cerr << "the initial state " << state.transpose() << std::endl;
+    }
+
+        // initialize our outputhandler:
+    std::string outpfilename =  my_etasl_node->get_outpfilename();
+    std::ofstream outpfile(outpfilename);
+    oh->printHeader(outpfile);
+
+
     // For real-time loop
     const std::chrono::nanoseconds periodicity = std::chrono::milliseconds(periodicity_param);
     std::chrono::steady_clock::time_point  end_time_sleep = std::chrono::steady_clock::now() + periodicity;
 
-    rclcpp::init(argc, argv);
-    auto my_etasl_node = std::make_shared<etaslNode>();
-
-
+    std::cout << "Is the rclcpp ok?  " << rclcpp::ok() << std::endl;
       // control loop :
     while (rclcpp::ok()) {
         // integrate previous outputs:
         jpos += jvel*(periodicity_param/1000.0);  // or replace with reading joint positions from real robot
         fpos += fvel*(periodicity_param/1000.0);  // you always integrate feature variables yourself
         time += (periodicity_param/1000.0);       // idem.
-        // std::cout << time << std::endl;
+        // std::cout << jpos[0] << std::endl;
        
         // check monitors:
         ctx->checkMonitors();
@@ -255,9 +325,9 @@ int main(int argc, char * argv[])
             break;
         }
         // get inputs and store them into the context ctx:
-        ih.update(time);
+        ih->update(time);
         // handle outputs and display them:
-        oh.printOutput(outpfile);            
+        oh->printOutput(outpfile);            
         // set states:
         slv->setTime(time);
         slv->setJointStates(jpos);
@@ -274,17 +344,24 @@ int main(int argc, char * argv[])
         slv->getFeatureVelocities(fvel);
 
         my_etasl_node->setAngle(jpos[0]);
-        // etaslNode::publishJointState();
+        my_etasl_node->publishJointState();
+        // rclcpp::spin(my_etasl_node);
         rclcpp::spin_some(my_etasl_node);
         // if you need to send output to a robot, do it here, using jvel or jpos
 
+        std::this_thread::sleep_until(end_time_sleep);
+        // TODO: The following while might not be needed. Now it never gets executed.
         while ( std::chrono::steady_clock::now() < end_time_sleep || errno == EINTR ) { // In case the sleep was interrupted, continues to execute it
             errno = 0;
             std::this_thread::sleep_until(end_time_sleep);
+            std::cout << "Needed some extra time"<< std::endl;
         }
-        end_time_sleep = std::chrono::steady_clock::now() + periodicity; //adds_one_milisecond
+        end_time_sleep = std::chrono::steady_clock::now() + periodicity; //adds periodicity
     }
 
+    std::cout << "Program terminated  " << rclcpp::ok() << std::endl;
+
+  
 
   // rclcpp::init(argc, argv);
   // rclcpp::spin(std::make_shared<etaslNode>());

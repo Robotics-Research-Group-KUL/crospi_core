@@ -34,13 +34,13 @@ ctx:setOutputExpression("inp",inp)
 -- ctx:setOutputExpression("dx",ee_x-des_x)
 -- ctx:setOutputExpression("dy",ee_y-des_y)
 
-Monitor {
-    context = ctx,
-    name    = "time_elapsed",
-    expr    = time,
-    upper   = 10.0,
-    actionname = "exit"
-}
+-- Monitor {
+--     context = ctx,
+--     name    = "time_elapsed",
+--     expr    = time,
+--     upper   = 10.0,
+--     actionname = "exit"
+-- }
 
 Monitor {
     context = ctx,
