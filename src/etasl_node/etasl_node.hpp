@@ -36,21 +36,27 @@ class etaslNode : public rclcpp::Node
 
     public:
         etaslNode();
-        void setAngle(double p_angle);
         void publishJointState();
         void configure_etasl();
+        void update();
+
+        // void setJointValues(const std::vector<double>& jval, const std::vector<std::string>& jvalnames);
 
         Context::Ptr get_ctx();
         boost::shared_ptr<solver> get_slv();
         boost::shared_ptr<eTaSL_OutputHandler>  get_output_handler();
         boost::shared_ptr<eTaSL_InputHandler> get_input_handler();
         int get_periodicity_param();
-        VectorXd get_fpos();
-        VectorXd get_jpos();
+        VectorXd get_fpos_etasl();
+        VectorXd get_jpos_etasl();
         double get_time();
         std::string get_outpfilename();
         std::string get_etasl_fname();
 
+        void update_controller_output(Eigen::VectorXd const& jvalues);
+        void update_controller_input(Eigen::VectorXd const& jvalues);
+
+    
 
 
     
@@ -58,26 +64,42 @@ class etaslNode : public rclcpp::Node
         rclcpp::TimerBase::SharedPtr timer_;
         rclcpp::Publisher<sensor_msgs::msg::JointState>::SharedPtr publisher_;
         size_t count_;
-        double angle;
         int periodicity_param; //Expressed in milliseconds
         double time;
         sensor_msgs::msg::JointState joint_state_msg;
         Context::Ptr ctx;
         boost::shared_ptr<solver> slv;
+        SolverRegistry::Ptr solver_registry;
 
         boost::shared_ptr<eTaSL_OutputHandler> oh;
         boost::shared_ptr<eTaSL_InputHandler> ih;
+        boost::shared_ptr<std::ofstream > outpfile_ptr;
+
+        std::vector< std::string > jointnames;
+        std::vector<std::string> jnames_in_expr;
+
+        
 
 
         // eTaSL_OutputHandler oh;
         // eTaSL_InputHandler ih;
 
-        VectorXd fpos;
-        VectorXd jpos;
+        VectorXd fpos_etasl;
+        VectorXd jpos_etasl;
+        VectorXd jpos_ros;
+        // VectorXd jpos;
+        VectorXd jvel_etasl;
+        VectorXd fvel_etasl;
+
+
+
 
           
         std::string outpfilename;
         std::string fname;
+
+        std::map< std::string, int> jindex;
+        std::map<std::string,int>  name_ndx;
 
 
         

@@ -62,3 +62,13 @@ ros2 launch etasl_ros2 load_etasl_node.py
 ```
 
 with this example you should see the robot executing a single task specification, which is specified in the `load_etasl_node.py` launch file. This example can only execute a single task specification, since it is currently lacking integration with a finite state machine or other coordinator (future work).
+
+## Authors
+
+- Santiago Iregui <santiago.iregui@kuleuven.be>
+- Erwin Aertbeliën <erwin.aertbelien@kuleuven.be>
+
+
+## TODOs (some...):
+- Use QoS profile suitable to the communication for control and sensors. Some examples (including one for sensor streaming) are found [here](https://github.com/ros2/rmw/blob/rolling/rmw/include/rmw/qos_profiles.h) and explanation about it [here](https://docs.ros.org/en/rolling/Concepts/Intermediate/About-Quality-of-Service-Settings.html). This is (sort of) equivalent to the connection policy of orocos.
+- Implement the node using a life cycle state machine

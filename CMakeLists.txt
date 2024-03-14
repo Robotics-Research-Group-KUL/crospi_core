@@ -15,7 +15,7 @@ find_package(ament_cmake REQUIRED)
 # find_package(<dependency> REQUIRED)
 
 
-install(DIRECTORY launch robot_description/urdf
+install(DIRECTORY launch robot_description etasl
   DESTINATION share/${PROJECT_NAME})
 
 include_directories(
