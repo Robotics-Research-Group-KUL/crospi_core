@@ -21,8 +21,8 @@ robot_joints={"shoulder_pan_joint","shoulder_lift_joint","elbow_joint","wrist_1_
 --
 
 -- ========================================= PARAMETERS ===================================
-maxvel = constant(0.001)
-maxacc = constant(0.02)
+maxvel = constant(0.4)
+maxacc = constant(0.4)
 
 print("========================------------==============")
 -- ========================================= VELOCITY PROFILE ===================================
@@ -67,24 +67,31 @@ duration = get_duration(mp)
 
 tgt         = {} -- target value
 for i=1,#robot_joints do
-    -- tgt[i]        = get_output_profile(mp,i-1)
-    -- Constraint{
-    --     context=ctx,
-    --     name="joint_trajectory"..i,
-    --     expr= current_jnt[i] - tgt[i] ,
-    --     priority = 2,
-    --     K=4
-    -- };
-
-
-
+    tgt[i]        = get_output_profile(mp,i-1)
     Constraint{
         context=ctx,
         name="joint_trajectory"..i,
-        expr= current_jnt[i] - end_j[i] ,
+        expr= current_jnt[i] - tgt[i] ,
         priority = 2,
-        K=1
+        K=4
     };
+
+    -- Constraint{
+    --     context=ctx,
+    --     name="joint_trajectory"..i,
+    --     expr= current_jnt[i] - initial_value(time, current_jnt[i]),
+    --     priority = 2,
+    --     K=1
+    -- };
+
+
+    -- Constraint{
+    --     context=ctx,
+    --     name="joint_trajectory"..i,
+    --     expr= current_jnt[i] - end_j[i] ,
+    --     priority = 2,
+    --     K=1
+    -- };
 
     -- Constraint{
     --     context=ctx,
@@ -107,13 +114,24 @@ end
 
 -- =================================== MONITOR TO FINISH THE MOTION ========================
 
-Monitor{
-        context=ctx,
-        name='finish_after_motion_ended',
-        upper=0.0,
-        actionname='exit',
-        expr=time-duration
+-- Monitor{
+--         context=ctx,
+--         name='finish_after_motion_ended',
+--         upper=0.0,
+--         actionname='exit',
+--         expr=time-duration
+-- }
+
+Monitor {
+    context = ctx,
+    name    = "time_elapsed",
+    expr    = time,
+    upper   = 1.0,
+    actionname = "print",
+    argument = "addtional argument"
 }
+
+
 
 
 ctx:setOutputExpression("time",time)

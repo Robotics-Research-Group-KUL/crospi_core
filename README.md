@@ -71,4 +71,5 @@ with this example you should see the robot executing a single task specification
 
 ## TODOs (some...):
 - Use QoS profile suitable to the communication for control and sensors. Some examples (including one for sensor streaming) are found [here](https://github.com/ros2/rmw/blob/rolling/rmw/include/rmw/qos_profiles.h) and explanation about it [here](https://docs.ros.org/en/rolling/Concepts/Intermediate/About-Quality-of-Service-Settings.html). This is (sort of) equivalent to the connection policy of orocos.
-- Implement the node using a life cycle state machine
+- Implement the node using a life cycle state machine. Right now the node just shutsdown when encountering e.g. an exiting monitor, but it should change state of its life cycle FSM.
+- Add Input and Output handlers somehow. 

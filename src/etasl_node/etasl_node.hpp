@@ -56,6 +56,11 @@ class etaslNode : public rclcpp::Node
         void update_controller_output(Eigen::VectorXd const& jvalues);
         void update_controller_input(Eigen::VectorXd const& jvalues);
 
+        void solver_configuration();
+        void initialize_joints();
+        void initialize_feature_variables();
+        void configure_jointstate_msg();
+        
     
 
 

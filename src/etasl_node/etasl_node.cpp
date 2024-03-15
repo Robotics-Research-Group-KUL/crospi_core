@@ -88,6 +88,124 @@ void etaslNode::update_controller_input(Eigen::VectorXd const& jvalues_meas){
   } 
 }
 
+void etaslNode::solver_configuration(){
+      // Create registry and register known solvers: 
+    solver_registry = boost::make_shared<SolverRegistry>();
+    registerSolverFactory_qpOases(solver_registry, "qpoases");
+    //registerSolverFactory_hqp(R, "hqp");
+
+    // we can get the properties from the solver from the context and specify these properties in eTaSL or
+    // create a parameter plist (instead of ctx->solver_property) :
+        // parameters of the solver:
+        std::string solver_name             = "qpoases" ;
+        ParameterList plist;
+        plist["nWSR"]                  = 100;
+        plist["regularization_factor"] = 1E-5;
+        plist["cputime"] = 1.0;
+        // parameters of the initialization procedure:
+        plist["initialization_full"]                  = 1.0; // == true
+        plist["initialization_duration"]              = 3.0;
+        plist["initialization_sample_time"]           = 0.01;
+        plist["initialization_convergence_criterion"] = 1E-4;
+        plist["initialization_weightfactor"]          = 100;
+        
+
+    // std::string solver_name = ctx->getSolverStringProperty("solver", "qpoasis");  // 2nd arg is the default value if nothing is specified.
+    // int result = solver_registry->createSolver(solver_name, ctx->solver_property, true, false, slv); 
+
+    int result = solver_registry->createSolver(solver_name, plist, true, false, slv); 
+    if (result!=0) {
+        std::cerr << "Failed to create the solver " << solver_name << std::endl;
+        rclcpp::shutdown();
+        return;
+    }
+    ctx->setSolverProperty("sample_time", periodicity_param/1000.0);
+    // double dt = ctx->getSolverProperty("sample_time", periodicity_param/1000.0);
+    // std::cout<<"sample_time:" << dt << std::endl;
+
+
+    if (ctx->getSolverProperty("verbose",0.0)>0) {
+        std::cerr << "Solver and initialization properties : " << std::endl;
+        for (auto const& it : ctx->solver_property) {
+            std::cerr << "\t" << it.first << ": " << it.second << std::endl;
+        }
+    }
+  
+}
+
+
+void etaslNode::initialize_joints(){
+    jpos_etasl  = VectorXd::Zero(slv->getNrOfJointStates());   
+
+    for (unsigned int i=0;i<jointnames.size();++i) {
+        std::map<std::string,int>::iterator p = jindex.find(jointnames[i]);
+        if (p!=jindex.end()) {
+            jnames_in_expr.push_back(jointnames[i]);
+            std::cout << "============The jointnames are:   " << jointnames[i] << std::endl;
+        }
+    } 
+    jpos_ros  = VectorXd::Zero(jnames_in_expr.size()); 
+    // jpos_etasl = VectorXd::Zero(jnames_in_expr.size()); 
+    std::cout << "Number of matching jointnames with robot variables in exp. graph: " << jnames_in_expr.size() << std::endl;
+    std::cout << "Number of joints:" << slv->getNrOfJointStates() << std::endl;
+
+    name_ndx.clear();
+    for (unsigned int i=0;i<jnames_in_expr.size();++i) {
+        name_ndx[ jnames_in_expr[i]]  =i;
+    }
+
+    VectorXd jpos_init = VectorXd::Zero(slv->getNrOfJointStates());
+    jpos_init << 180.0/180.0*3.1416, -90.0/180.0*3.1416, 90.0/180.0*3.1416, -90.0/180.0*3.1416, -90.0/180.0*3.1416, 0.0/180.0*3.1416;
+    update_controller_input(jpos_init);
+
+    if(jnames_in_expr.size() != jointnames.size()){
+      std::cerr << "The number of jointnames specified in ROS param do not correspond to all the joints defined in the eTaSL robot expression graph."<< std::endl;
+      std::cerr << "The jointnames that do not correspond are ignored and not published"<< std::endl;
+    }
+
+}
+
+
+void etaslNode::initialize_feature_variables(){
+    // initialization of robot and feature variables: 
+    FeatureVariableInitializer::Ptr initializer = createFeatureVariableInitializer(slv, ctx, ctx->solver_property);
+    int retval = initializer->prepareSolver();
+    if (retval!=0) {
+        std::cerr << initializer->errorMessage(retval) << std::endl;
+        rclcpp::shutdown();
+        return;
+    }
+
+
+    slv->prepareExecution(ctx);
+    slv->getJointNameToIndex(jindex);
+    this->initialize_joints();
+    
+    fpos_etasl = VectorXd::Zero(slv->getNrOfFeatureStates()); // choose the initial feature variables for the initializer, i.e.
+
+    std::cout <<  "Before initialization\njpos = " << jpos_etasl.transpose() << "\nfpos_etasl = " << fpos_etasl.transpose() << std::endl;
+    initializer->setRobotState(jpos_etasl);
+    // initializer->setFeatureState(fpos_etasl); //TODO: should I leave it out? leave this out if you want to use the initial values in the task specification.
+    retval = initializer->initialize_feature_variables();
+    if (retval!=0) {
+        std::cerr << initializer->errorMessage(retval) << std::endl;
+        rclcpp::shutdown();
+        return; 
+    }
+
+    fpos_etasl = initializer->getFeatureState();
+    std::cout <<  "After initialization\njpos = " << jpos_etasl.transpose() << "\nfpos_etasl = " << fpos_etasl.transpose() << std::endl;
+    // now both jpos_etasl and fpos_etasl are properly initiallized
+  
+}
+
+void etaslNode::configure_jointstate_msg(){
+    joint_state_msg.name = jnames_in_expr;
+    joint_state_msg.position.resize(jnames_in_expr.size(),0.0); 
+    joint_state_msg.velocity.resize(jnames_in_expr.size(),0.0);
+    joint_state_msg.effort.resize(jnames_in_expr.size(),0.0);
+}
+
 void etaslNode::configure_etasl(){
 
     // Read configuration ROS parameters
@@ -98,10 +216,6 @@ void etaslNode::configure_etasl(){
     /**
      * read task specification and creation of solver and handlers for monitor, inputs, outputs
      */
-    // Create registry and register known solvers: 
-    solver_registry = boost::make_shared<SolverRegistry>();
-    registerSolverFactory_qpOases(solver_registry, "qpoases");
-    //registerSolverFactory_hqp(R, "hqp");
 
     // Setup context for robot control problem:
     ctx->addType("robot");
@@ -131,122 +245,28 @@ void etaslNode::configure_etasl(){
     oh = boost::make_shared<eTaSL_OutputHandler>(ctx);
         // create the Inputhandler:
     ih = boost::make_shared<eTaSL_InputHandler>(ctx,"sine_input", 0.2,0.1,0.0);
-
-    // we can get the properties from the solver from the context and specify these properties in eTaSL or
-    // create a parameter plist (instead of ctx->solver_property) :
-        // parameters of the solver:
-        std::string solver_name             = "qpoases" ;
-        ParameterList plist;
-        plist["nWSR"]                  = 100;
-        plist["regularization_factor"] = 1E-5;
-        plist["cputime"] = 1.0;
-        // parameters of the initialization procedure:
-        plist["initialization_full"]                  = 1.0; // == true
-        plist["initialization_duration"]              = 3.0;
-        plist["initialization_sample_time"]           = 0.01;
-        plist["initialization_convergence_criterion"] = 1E-4;
-        plist["initialization_weightfactor"]          = 100;
-        
-
-    // std::string solver_name = ctx->getSolverStringProperty("solver", "qpoasis");  // 2nd arg is the default value if nothing is specified.
-    // int result = solver_registry->createSolver(solver_name, ctx->solver_property, true, false, slv); 
-
-    int result = solver_registry->createSolver(solver_name, plist, true, false, slv); 
-    if (result!=0) {
-        std::cerr << "Failed to create the solver " << solver_name << std::endl;
-        rclcpp::shutdown();
-        return;
-    }
-    ctx->setSolverProperty("sample_time", periodicity_param/1000.0);
-    double dt = ctx->getSolverProperty("sample_time", periodicity_param/1000.0);
-    std::cout<<"sample_time:" << dt << std::endl;
-
-
-    if (ctx->getSolverProperty("verbose",0.0)>0) {
-        std::cerr << "Solver and initialization properties : " << std::endl;
-        for (auto const& it : ctx->solver_property) {
-            std::cerr << "\t" << it.first << ": " << it.second << std::endl;
-        }
-    }
-
-    /****************************************************
-     * Initialization
-     ***************************************************/
-    int retval;
+    // ih->update(time);                                              
+    ih->update(0.0);    
 
     // reset all monitors:
     ctx->resetMonitors();
-    
-    // initial input is used for initialization.
-    ih->update(time);                                              
-    
-    // initialization of robot and feature variables: 
-    FeatureVariableInitializer::Ptr initializer = createFeatureVariableInitializer(slv, ctx, ctx->solver_property);
-    retval = initializer->prepareSolver();
-    if (retval!=0) {
-        std::cerr << initializer->errorMessage(retval) << std::endl;
-        rclcpp::shutdown();
-        return;
-    }
-    jpos_etasl  = VectorXd::Zero(slv->getNrOfJointStates());   
-    fpos_etasl = VectorXd::Zero(slv->getNrOfFeatureStates()); // choose the initial feature variables for the initializer, i.e.
-    
-    
-    slv->prepareExecution(ctx);
-    slv->getJointNameToIndex(jindex);
-    for (unsigned int i=0;i<jointnames.size();++i) {
-        std::map<std::string,int>::iterator p = jindex.find(jointnames[i]);
-        if (p!=jindex.end()) {
-            jnames_in_expr.push_back(jointnames[i]);
-            std::cout << "============The jointnames are:   " << jointnames[i] << std::endl;
-        }
-    } 
-    jpos_ros  = VectorXd::Zero(jnames_in_expr.size()); 
-    // jpos_etasl = VectorXd::Zero(jnames_in_expr.size()); 
-    std::cout << "Number of matching jointnames with robot variables in exp. graph: " << jnames_in_expr.size() << std::endl;
-    std::cout << "Number of joints:" << slv->getNrOfJointStates() << std::endl;
 
-    name_ndx.clear();
-    for (unsigned int i=0;i<jnames_in_expr.size();++i) {
-        name_ndx[ jnames_in_expr[i]]  =i;
-    }
+    /****************************************************
+     * Solver configuration based with parameters
+     ***************************************************/
+    this->solver_configuration();
 
-    VectorXd jpos_init = VectorXd::Zero(slv->getNrOfJointStates());
-    jpos_init << 180.0/180.0*3.1416, -90.0/180.0*3.1416, 90.0/180.0*3.1416, -90.0/180.0*3.1416, -90.0/180.0*3.1416, 0.0/180.0*3.1416;
-    update_controller_input(jpos_init);
+    /****************************************************
+     * Initialization
+     ***************************************************/    
+    // initial input (e.g. robot joints) is used for initialization.                
     
-    
-    std::cout <<  "Before initialization\njpos = " << jpos_etasl.transpose() << "\nfpos_etasl = " << fpos_etasl.transpose() << std::endl;
-    initializer->setRobotState(jpos_etasl);
-    initializer->setFeatureState(fpos_etasl); // leave this out if you want to use the initial values in the task specification.
-    retval = initializer->initialize_feature_variables();
-    if (retval!=0) {
-        std::cerr << initializer->errorMessage(retval) << std::endl;
-        rclcpp::shutdown();
-        return; 
-    }
-
-    fpos_etasl = initializer->getFeatureState();
-    std::cout <<  "After initialization\njpos = " << jpos_etasl.transpose() << "\nfpos_etasl = " << fpos_etasl.transpose() << std::endl;
-    // now both jpos_etasl and fpos_etasl are properly initiallized
-  
+    this->initialize_feature_variables();
 
     // Prepare the solver for execution, define output variables for both robot joints and feature states: 
+    slv->setTime(0.0);
     slv->setFeatureStates(fpos_etasl);
     slv->setJointStates(jpos_etasl);
-
-
-
-    joint_state_msg.name = jnames_in_expr;
-    joint_state_msg.position.resize(jnames_in_expr.size(),0.0); //TODO: Change by configuring initial values different to zero
-    joint_state_msg.velocity.resize(jnames_in_expr.size(),0.0);
-    joint_state_msg.effort.resize(jnames_in_expr.size(),0.0);
-
-    if(jnames_in_expr.size() != jointnames.size()){
-      std::cerr << "The number of jointnames specified in ROS param do not correspond to all the joints defined in the eTaSL robot expression graph."<< std::endl;
-      std::cerr << "The jointnames that do not correspond are ignored and not published"<< std::endl;
-    }
-  
 
     // create observers for monitoring events:       
     // only now because our PrintObserver monitor uses slv 
@@ -274,7 +294,7 @@ void etaslNode::configure_etasl(){
 
     outpfilename = this->get_parameter("outpfilename").as_string();
     outpfile_ptr = boost::make_shared<std::ofstream>(outpfilename);
-
+    
     
     oh->printHeader(*outpfile_ptr);
 
@@ -365,9 +385,6 @@ void etaslNode::update()
         //  For real robot, instead of integrating use the following function:
         // etaslNode::update_controller_input(Eigen::VectorXd const& jvalues_meas);
 
-        jpos_etasl += jvel_etasl*(periodicity_param/1000.0);  // or replace with reading joint positions from real robot
-        fpos_etasl += fvel_etasl*(periodicity_param/1000.0);  // you always integrate feature variables yourself
-        time += (periodicity_param/1000.0);       // idem.
 
       // for (unsigned int i=0;i<jnames_in_expr.size();++i) {
       //     std::map<std::string,int>::iterator p = jindex.find(jnames_in_expr[i]);
@@ -401,6 +418,11 @@ void etaslNode::update()
         slv->getJointVelocities(jvel_etasl);
         slv->getFeatureVelocities(fvel_etasl);
 
+        jpos_etasl += jvel_etasl*(periodicity_param/1000.0);  // or replace with reading joint positions from real robot
+        fpos_etasl += fvel_etasl*(periodicity_param/1000.0);  // you always integrate feature variables yourself
+        time += (periodicity_param/1000.0);       // idem.
+
+
 }
 
 
@@ -411,6 +433,7 @@ int main(int argc, char * argv[])
     rclcpp::init(argc, argv);
     std::shared_ptr<etaslNode> my_etasl_node = std::make_shared<etaslNode>();
     my_etasl_node->configure_etasl();
+    my_etasl_node->configure_jointstate_msg();
 
 
     // Preparation for control loop
