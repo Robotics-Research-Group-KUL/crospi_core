@@ -43,7 +43,31 @@ The flag `--symlink-install` is optional, but highly recommended. Without it you
 
 Note that in ROS2 the devel folder is gone, and you need to source in the install directory.
 
-## Executing 
+## Executing a simple eTaSL node
+
+This node allows to quickly test an eTaSL task specification file, without the hassle of changing your application before testing. The node will execute a task specification and start publishing the solution right away, as soon as it is launched. 
+
+In every terminal that you open first run the `ros2_source` command (alias created above) and then source the workspace (`source install/setup.bash`)
+
+1. In one terminal run 
+
+```bash
+ros2 launch etasl_ros2 load_ur10_setup.py
+```
+
+to deploy RVIZ with a UR10 robot configuration.
+
+2. In a second terminal run 
+
+```bash
+ros2 launch etasl_ros2 load_simple_etasl_node.py
+```
+
+with this example you should see the robot executing a single task specification, which is specified in the `load_simple_etasl_node.py` launch file. This example can only execute a single task specification, since it is currently lacking integration with a finite state machine or other coordinator (future work).
+
+## Executing a simple eTaSL lifecycle node
+
+This node allows to quickly test an eTaSL task specification file, without the hassle of changing your application before testing. In contrast to the simple etasl node, this is implemented as a lifecycle node and allows you to easily make changes to the task specification file and executing it without re-launching the node. This node will only run periodically the solver during the active state.
 
 In every terminal that you open first run the `ros2_source` command (alias created above) and then source the workspace (`source install/setup.bash`)
 
@@ -71,5 +95,7 @@ with this example you should see the robot executing a single task specification
 
 ## TODOs (some...):
 - Use QoS profile suitable to the communication for control and sensors. Some examples (including one for sensor streaming) are found [here](https://github.com/ros2/rmw/blob/rolling/rmw/include/rmw/qos_profiles.h) and explanation about it [here](https://docs.ros.org/en/rolling/Concepts/Intermediate/About-Quality-of-Service-Settings.html). This is (sort of) equivalent to the connection policy of orocos.
-- Implement the node using a life cycle state machine. Right now the node just shutsdown when encountering e.g. an exiting monitor, but it should change state of its life cycle FSM.
-- Add Input and Output handlers somehow. 
+- Add Input and Output handlers. 
+- Create simrobot node to easily transition between simulation and real robot in the future.
+- Implement services for configuration
+- Automatically deactivate node when exit monitor is triggered

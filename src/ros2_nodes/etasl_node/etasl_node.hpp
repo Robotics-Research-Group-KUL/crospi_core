@@ -118,6 +118,8 @@ class etaslNode : public rclcpp_lifecycle::LifecycleNode
         VectorXd jvel_etasl;
         VectorXd fvel_etasl;
 
+        VectorXd jpos_init;
+
 
 
 

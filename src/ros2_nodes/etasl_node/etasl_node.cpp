@@ -32,8 +32,6 @@ etaslNode::etaslNode(const std::string & node_name, bool intra_process_comms = f
   // fname = "/home/santiregui/ros2_ws/src/etasl_ros2/etasl/taskspec2.lua";
   // this->declare_parameter("outpfilename",  outpfilename); //outpfilename as default val
   // this->declare_parameter("task_specification_file",  fname); //fname as default val
-
-
   
 }
 
@@ -95,7 +93,6 @@ void etaslNode::update_controller_output(Eigen::VectorXd const& jvalues_solver){
 void etaslNode::update_controller_input(Eigen::VectorXd const& jvalues_meas){
       for (unsigned int i=0;i<jnames_in_expr.size();++i) {
       std::map<std::string,int>::iterator p = jindex.find(jnames_in_expr[i]);
-      std::cout << "p->second:  " << p->second << std::endl;
       if (p!=jindex.end()) {
           jpos_etasl[p->second] = jvalues_meas[i]; //joints that will be used for etasl
       }
@@ -129,7 +126,8 @@ void etaslNode::solver_configuration(){
 
     int result = solver_registry->createSolver(solver_name, plist, true, false, slv); 
     if (result!=0) {
-        std::cerr << "Failed to create the solver " << solver_name << std::endl;
+        std::string message = "Failed to create the solver " + solver_name;
+        RCUTILS_LOG_ERROR_NAMED(get_name(), message.c_str());
         rclcpp::shutdown();
         return;
     }
@@ -138,12 +136,17 @@ void etaslNode::solver_configuration(){
     // std::cout<<"sample_time:" << dt << std::endl;
 
 
-    if (ctx->getSolverProperty("verbose",0.0)>0) {
-        std::cerr << "Solver and initialization properties : " << std::endl;
+    // if (ctx->getSolverProperty("verbose",0.0)>0) {
+        std::stringstream message;
+        message << "Solver and initialization properties : \n";
+        // int counter = 0;
         for (auto const& it : ctx->solver_property) {
-            std::cerr << "\t" << it.first << ": " << it.second << std::endl;
+            message << "\t" << it.first << ": " << it.second << " \n";
+            // std::cout << counter << std::endl;
+            // counter++;
         }
-    }
+        RCUTILS_LOG_INFO_NAMED(get_name(), (message.str()).c_str());
+    // }
   
 }
 
@@ -151,31 +154,33 @@ void etaslNode::solver_configuration(){
 void etaslNode::initialize_joints(){
     jpos_etasl  = VectorXd::Zero(slv->getNrOfJointStates());   
     
+    RCUTILS_LOG_INFO_NAMED(get_name(), "============The jointnames are:   ");
+
 
     for (unsigned int i=0;i<jointnames.size();++i) {
         std::map<std::string,int>::iterator p = jindex.find(jointnames[i]);
         if (p!=jindex.end()) {
             jnames_in_expr.push_back(jointnames[i]);
-            std::cout << "============The jointnames are:   " << jointnames[i] << std::endl;
+            std::string message = "Joint " + std::to_string(i+1) + ": " + jointnames[i];
+            // RCUTILS_LOG_INFO_NAMED(get_name(), message);
+            RCUTILS_LOG_INFO_NAMED(get_name(), message.c_str());
         }
     } 
     jpos_ros  = VectorXd::Zero(jnames_in_expr.size()); 
     // jpos_etasl = VectorXd::Zero(jnames_in_expr.size()); 
-    std::cout << "Number of matching jointnames with robot variables in exp. graph: " << jnames_in_expr.size() << std::endl;
-    std::cout << "Number of joints:" << slv->getNrOfJointStates() << std::endl;
+    std::string message = "Number of matching jointnames with robot variables in exp. graph: "+ std::to_string(jnames_in_expr.size());
+    RCUTILS_LOG_INFO_NAMED(get_name(), message.c_str());
 
     name_ndx.clear();
     for (unsigned int i=0;i<jnames_in_expr.size();++i) {
         name_ndx[ jnames_in_expr[i]]  =i;
     }
 
-    VectorXd jpos_init = VectorXd::Zero(slv->getNrOfJointStates());
-    jpos_init << 180.0/180.0*3.1416, -90.0/180.0*3.1416, 90.0/180.0*3.1416, -90.0/180.0*3.1416, -90.0/180.0*3.1416, 0.0/180.0*3.1416;
     update_controller_input(jpos_init);
 
     if(jnames_in_expr.size() != jointnames.size()){
-      std::cerr << "The number of jointnames specified in ROS param do not correspond to all the joints defined in the eTaSL robot expression graph."<< std::endl;
-      std::cerr << "The jointnames that do not correspond are ignored and not published"<< std::endl;
+      RCUTILS_LOG_WARN_NAMED(get_name(), "The number of jointnames specified in ROS param do not correspond to all the joints defined in the eTaSL robot expression graph.");
+      RCUTILS_LOG_WARN_NAMED(get_name(), "The jointnames that do not correspond are ignored and not published");
     }
 
 }
@@ -186,7 +191,7 @@ void etaslNode::initialize_feature_variables(){
     FeatureVariableInitializer::Ptr initializer = createFeatureVariableInitializer(slv, ctx, ctx->solver_property);
     int retval = initializer->prepareSolver();
     if (retval!=0) {
-        std::cerr << initializer->errorMessage(retval) << std::endl;
+        RCUTILS_LOG_ERROR_NAMED(get_name(), (initializer->errorMessage(retval)).c_str());
         rclcpp::shutdown();
         return;
     }
@@ -198,18 +203,18 @@ void etaslNode::initialize_feature_variables(){
     
     fpos_etasl = VectorXd::Zero(slv->getNrOfFeatureStates()); // choose the initial feature variables for the initializer, i.e.
 
-    std::cout <<  "Before initialization\njpos = " << jpos_etasl.transpose() << "\nfpos_etasl = " << fpos_etasl.transpose() << std::endl;
+    // std::cout <<  "Before initialization\njpos = " << jpos_etasl.transpose() << "\nfpos_etasl = " << fpos_etasl.transpose() << std::endl;
     initializer->setRobotState(jpos_etasl);
     // initializer->setFeatureState(fpos_etasl); //TODO: should I leave it out? leave this out if you want to use the initial values in the task specification.
     retval = initializer->initialize_feature_variables();
     if (retval!=0) {
-        std::cerr << initializer->errorMessage(retval) << std::endl;
+        RCUTILS_LOG_ERROR_NAMED(get_name(), (initializer->errorMessage(retval)).c_str());
         rclcpp::shutdown();
         return; 
     }
 
     fpos_etasl = initializer->getFeatureState();
-    std::cout <<  "After initialization\njpos = " << jpos_etasl.transpose() << "\nfpos_etasl = " << fpos_etasl.transpose() << std::endl;
+    // std::cout <<  "After initialization\njpos = " << jpos_etasl.transpose() << "\nfpos_etasl = " << fpos_etasl.transpose() << std::endl;
     // now both jpos_etasl and fpos_etasl are properly initiallized
   
 }
@@ -239,14 +244,16 @@ void etaslNode::configure_etasl(){
     ctx->addType("robot");
     ctx->addType("feature");
 
-    std::cout << "FIle name is: " << fname << std::endl;
+    std::string message = "The task specification file used is: "+ fname;
+    RCUTILS_LOG_INFO_NAMED(get_name(), message.c_str());
+
     try{
         // Read eTaSL specification:
         LUA = boost::make_shared<LuaContext>();
         LUA->initContext(ctx);
         int retval = LUA->executeFile(fname);
         if (retval !=0) {
-            std::cerr << "Error executing task specification file" << std::endl;
+            RCUTILS_LOG_ERROR_NAMED(get_name(), "Error executing task specification file");
             rclcpp::shutdown();
             return;
         }
@@ -254,7 +261,10 @@ void etaslNode::configure_etasl(){
         // can be thrown by file/string errors during reading
         // by lua_bind during reading
         // by expressiongraph during reading ( expressiongraph will not throw when evaluating)
-        std::cout << "error thrown: " << msg << std::endl;
+        std::string message = "The following error was throuwn while reading the task specification: " + std::string(msg);
+        RCUTILS_LOG_ERROR_NAMED(get_name(), message.c_str());
+        rclcpp::shutdown();
+        return;
     }
 
     // oh( ctx);     // or   std::vector<std::string> varnames =  {"q","f","dx","dy"};
@@ -303,8 +313,15 @@ void etaslNode::configure_etasl(){
         // not really necessary, getting the full state such that we can print out the total number of opt. vars:
         Eigen::VectorXd state;
         slv->getState(state);
-        std::cerr << "size of the initial state " << state.size() << std::endl;
-        std::cerr << "the initial state " << state.transpose() << std::endl;
+
+        std::stringstream message;
+        message << "The size of the initial state of the solver is: " <<  std::to_string(state.size());
+        RCUTILS_LOG_INFO_NAMED(get_name(), (message.str()).c_str());
+
+        std::stringstream message2;
+        message2 << "The initial state of the solver is: " << state.transpose();
+        RCUTILS_LOG_INFO_NAMED(get_name(), (message2.str()).c_str());
+
     }
 
     // initialize our outputhandler:
@@ -394,7 +411,7 @@ void etaslNode::update()
         // check monitors:
         ctx->checkMonitors();
         if (ctx->getFinishStatus()) {
-            std::cerr << "finishing because exit monitor was triggered" << std::endl;
+            RCUTILS_LOG_INFO_NAMED(get_name(), "Finishing execution because exit monitor was triggered.");
             rclcpp::shutdown();
             return;
             // break;
@@ -426,8 +443,9 @@ void etaslNode::update()
         // solve
         int c = slv->solve();
         if (c!=0) {
-            std::cerr << "solved encountered error : \n";
-            std::cerr << slv->errorMessage(c)  << std::endl;
+
+            std::string message = "The solver encountered the following error : \n" + slv->errorMessage(c);
+            RCUTILS_LOG_ERROR_NAMED(get_name(), message.c_str());
             rclcpp::shutdown();
             return;
             // break;
@@ -461,8 +479,6 @@ void etaslNode::reinitialize_data_structures() {
 
     time = 0.0;
     fpos_etasl = VectorXd::Zero(0);
-    jpos_etasl = VectorXd::Zero(0);
-    jpos_ros = VectorXd::Zero(0);
     jvel_etasl = VectorXd::Zero(0);
     fvel_etasl = VectorXd::Zero(0);
 
@@ -514,10 +530,18 @@ void etaslNode::reinitialize_data_structures() {
     // As of the beta version, there is only a lifecycle publisher
     // available.
 
+
+
+
     joint_state_msg = sensor_msgs::msg::JointState();
     if(!first_time_configured){
       publisher_ = this->create_publisher<sensor_msgs::msg::JointState>("joint_states", 1); //queue_size 1 so that it sends the latest always
       timer_ = this->create_wall_timer(std::chrono::milliseconds(periodicity_param), std::bind(&etaslNode::publishJointState, this));
+      jpos_init = VectorXd::Zero(6);
+      jpos_init << 180.0/180.0*3.1416, -90.0/180.0*3.1416, 90.0/180.0*3.1416, -90.0/180.0*3.1416, -90.0/180.0*3.1416, 0.0/180.0*3.1416;
+    }
+    else{
+      jpos_init = jpos_etasl;
     }
 
   
@@ -527,7 +551,7 @@ void etaslNode::reinitialize_data_structures() {
     this->configure_jointstate_msg();
 
 
-    RCLCPP_INFO(get_logger(), "on_configure() is called.");
+    RCUTILS_LOG_INFO_NAMED(get_name(), "on_configure() is called.");
 
     // We return a success and hence invoke the transition to the next
     // step: "inactive".
@@ -563,8 +587,8 @@ void etaslNode::reinitialize_data_structures() {
     timer_->reset();
     publisher_->on_activate();
     //     std::cout << "hello2" << std::endl;
-    std::cout <<"The current state label is:" << state.label() << std::endl;
-    std::cout <<"The current state id is:" << state.id() << std::endl;
+    // std::cout <<"The current state label is:" << state.label() << std::endl;
+    // std::cout <<"The current state id is:" << state.id() << std::endl;
 
     // etaslNode::on_activate(state);
 
@@ -730,7 +754,7 @@ int main(int argc, char * argv[])
     //     end_time_sleep = std::chrono::steady_clock::now() + periodicity; //adds periodicity
     // }
 
-    std::cout << "Program terminated correctly." << std::endl;
+    RCUTILS_LOG_INFO_NAMED(my_etasl_node->get_name(), "Program terminated correctly.");
     rclcpp::shutdown();
 
   return 0;
