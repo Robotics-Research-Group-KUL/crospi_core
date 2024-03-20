@@ -35,9 +35,8 @@ startpos  = origin(startpose)
 startrot  = rotation(startpose)
 
 -- =============================== END POSE ==============================
-endpose   = startpose
-endpos    = origin(endpose)
-endrot    = rotation(endpose)
+endpos    = origin(startpose) + vector(0.0,0.0,-0.05)
+endrot    = rotation(startpose)
 
 -- =========================== VELOCITY PROFILE ============================================
 eps=constant(1E-14)

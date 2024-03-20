@@ -16,16 +16,16 @@ def generate_launch_description():
     urdf_file = os.path.join( get_package_share_directory('etasl_ros2'), urdf_file_name)
 
     # task_specification_file = os.path.join(package_dir, "etasl/example_ur10.lua")
-    # task_specification_file = os.path.join(package_dir, "etasl/moving_jointspace_trap.lua")
-    task_specification_file = os.path.join(package_dir, "etasl/move_cartesianspace.lua")
+    task_specification_file = os.path.join(package_dir, "etasl/moving_jointspace_trap.lua")
+    # task_specification_file = os.path.join(package_dir, "etasl/move_cartesianspace.lua")
     print("THE NAME IS: " + task_specification_file)
 
 
     return LaunchDescription([
         Node(
             package='etasl_ros2',
-            executable='etasl_node',
-            name='etasl_node',
+            executable='simple_etasl_node',
+            name='simple_etasl_node',
             output='screen',
             parameters=[
                 {'task_specification_file': task_specification_file},

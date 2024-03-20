@@ -22,8 +22,10 @@ include_directories(
    include
 )
 
-add_subdirectory(src/etasl_node)
-add_subdirectory(src/test_publisher_node)
+add_subdirectory(src/misc)
+add_subdirectory(src/ros2_nodes/simple_etasl_node)
+add_subdirectory(src/ros2_nodes/etasl_node)
+add_subdirectory(src/ros2_nodes/test_publisher_node)
 
 
 if(BUILD_TESTING)

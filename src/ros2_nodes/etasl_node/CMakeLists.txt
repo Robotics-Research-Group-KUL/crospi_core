@@ -3,15 +3,25 @@ message("Compiling node located in ${CMAKE_CURRENT_SOURCE_DIR}")
 find_package(rclcpp REQUIRED)
 find_package(std_msgs REQUIRED)
 find_package(sensor_msgs REQUIRED)
+find_package(rclcpp_lifecycle REQUIRED)
+find_package(lifecycle_msgs REQUIRED)
 find_package(etasl REQUIRED)
 
 
-add_executable(etasl_node etasl_node.cpp etasl_node.hpp featurevariableinitializer.cpp IO_handlers.cpp )
+add_executable(etasl_node etasl_node.cpp etasl_node.hpp)
 # add_executable(etasl_node src/etasl_node.cpp)
 
-target_link_libraries(etasl_node etasl::expressiongraph_context etasl::expressiongraph_solver_qpoases etasl::expressiongraph_context_lua )
+target_link_libraries(etasl_node etasl::expressiongraph_context etasl::expressiongraph_solver_qpoases etasl::expressiongraph_context_lua etasl_misc_lib )
 
-ament_target_dependencies(etasl_node rclcpp std_msgs sensor_msgs)
+# ament_target_dependencies(etasl_node rclcpp std_msgs sensor_msgs)
+
+ament_target_dependencies(etasl_node
+  "rclcpp"
+  "lifecycle_msgs"
+  "rclcpp_lifecycle"
+  "std_msgs"
+  "sensor_msgs"
+)
 
 
 target_include_directories(etasl_node PUBLIC

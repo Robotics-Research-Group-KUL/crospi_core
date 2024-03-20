@@ -16,10 +16,11 @@ using namespace Eigen;
 * member function as a callback from the timer. */
 
 
-etaslNode::etaslNode(): Node("etasl_node")
-, count_(0)
+etaslNode::etaslNode(const std::string & node_name, bool intra_process_comms = false): rclcpp_lifecycle::LifecycleNode(node_name,
+      rclcpp::NodeOptions().use_intra_process_comms(intra_process_comms))
 , periodicity_param(10) //Expressed in milliseconds
 , time(0.0)
+, first_time_configured(false)
 {
   //Used unless the ROS parameters are modified externally (e.g. through terminal or launchfile)
 
@@ -32,17 +33,19 @@ etaslNode::etaslNode(): Node("etasl_node")
   // this->declare_parameter("outpfilename",  outpfilename); //outpfilename as default val
   // this->declare_parameter("task_specification_file",  fname); //fname as default val
 
-  ctx = create_context(); //Create context used for etasl
 
   
-  joint_state_msg = sensor_msgs::msg::JointState();
-  publisher_ = this->create_publisher<sensor_msgs::msg::JointState>("joint_states", 1); //queue_size 1 so that it sends the latest always
-  // timer_ = this->create_wall_timer(100ms, std::bind(&etaslNode::publishJointState, this));
 }
 
 
 void etaslNode::publishJointState() {
     // auto joint_state_msg = std::make_shared<sensor_msgs::msg::JointState>();
+
+    // if(this->get_current_state()){
+
+    // }
+
+      this->update();
 
       joint_state_msg.header.stamp = this->now(); // Set the timestamp to the current time
       // joint_state_msg.name = jointnames; //No need to update if defined in configuration
@@ -54,6 +57,17 @@ void etaslNode::publishJointState() {
       joint_state_msg.effort[i]  = 0.0;
       } 
 
+      // std::cout << "publishing joints" << std::endl;
+    // Print the current state for demo purposes
+    // if (!publisher_->is_activated()) {
+    //   RCLCPP_INFO(
+    //     get_logger(), "Lifecycle publisher is currently inactive. Messages are not published.");
+    // } 
+
+    // We independently from the current state call publish on the lifecycle
+    // publisher.
+    // Only if the publisher is in an active state, the message transfer is
+    // enabled and the message actually published.
     publisher_->publish(joint_state_msg);
 }
 
@@ -136,6 +150,7 @@ void etaslNode::solver_configuration(){
 
 void etaslNode::initialize_joints(){
     jpos_etasl  = VectorXd::Zero(slv->getNrOfJointStates());   
+    
 
     for (unsigned int i=0;i<jointnames.size();++i) {
         std::map<std::string,int>::iterator p = jindex.find(jointnames[i]);
@@ -208,6 +223,9 @@ void etaslNode::configure_jointstate_msg(){
 
 void etaslNode::configure_etasl(){
 
+
+    ctx = create_context(); //Create context used for etasl
+
     // Read configuration ROS parameters
     fname = this->get_parameter("task_specification_file").as_string();
     jointnames = this->get_parameter("jointnames").as_string_array();
@@ -224,9 +242,9 @@ void etaslNode::configure_etasl(){
     std::cout << "FIle name is: " << fname << std::endl;
     try{
         // Read eTaSL specification:
-        LuaContext LUA;
-        LUA.initContext(ctx);
-        int retval = LUA.executeFile(fname);
+        LUA = boost::make_shared<LuaContext>();
+        LUA->initContext(ctx);
+        int retval = LUA->executeFile(fname);
         if (retval !=0) {
             std::cerr << "Error executing task specification file" << std::endl;
             rclcpp::shutdown();
@@ -422,47 +440,298 @@ void etaslNode::update()
         fpos_etasl += fvel_etasl*(periodicity_param/1000.0);  // you always integrate feature variables yourself
         time += (periodicity_param/1000.0);       // idem.
 
+        // std::cout << "jointpos:" << jpos_etasl.transpose() << std::endl;
 
 }
+
+void etaslNode::reinitialize_data_structures() {
+    ctx = create_context();
+    slv.reset();
+    // ctx->addType("robot");
+    // ctx->addType("feature");
+    LUA = boost::make_shared<LuaContext>();
+    // define a variable that only depends on time
+    LUA->initContext(ctx);
+
+    solver_registry.reset();
+    // registerSolverFactory_qpOases(solver_registry, "qpoases");
+    outpfile_ptr.reset();
+    ih.reset();
+    oh.reset();
+
+    time = 0.0;
+    fpos_etasl = VectorXd::Zero(0);
+    jpos_etasl = VectorXd::Zero(0);
+    jpos_ros = VectorXd::Zero(0);
+    jvel_etasl = VectorXd::Zero(0);
+    fvel_etasl = VectorXd::Zero(0);
+
+    jointnames.clear();
+    jnames_in_expr.clear();
+    outpfile_ptr.reset();
+
+    jindex.clear();
+    name_ndx.clear();
+    
+    
+
+
+    // install observers:
+    // Observer::Ptr obs = create_port_observer( ctx, &eventPort, "portevent","",false);
+    // obs = create_port_observer( ctx, &eventPort, "event",event_postfix,false);
+    // obs = create_port_observer( ctx, &eventPort, "exit", event_postfix,true, obs);
+    //obs = create_default_observer(ctx,"exit",obs);
+    // ctx->addDefaultObserver(obs);
+    // initialized=false;
+    // etaslread=false;
+    // controller_input_defined=false;
+    // controller_output_defined=false;
+}
+
+
+
+
+
+ /// Transition callback for state configuring
+  /**
+   * on_configure callback is being called when the lifecycle node
+   * enters the "configuring" state.
+   * Depending on the return value of this function, the state machine
+   * either invokes a transition to the "inactive" state or stays
+   * in "unconfigured".
+   * TRANSITION_CALLBACK_SUCCESS transitions to "inactive"
+   * TRANSITION_CALLBACK_FAILURE transitions to "unconfigured"
+   * TRANSITION_CALLBACK_ERROR or any uncaught exceptions to "errorprocessing"
+   */
+  lifecycle_return etaslNode::on_configure(const rclcpp_lifecycle::State &)
+  {
+    // This callback is supposed to be used for initialization and
+    // configuring purposes.
+    // We thus initialize and configure our publishers and timers.
+    // The lifecycle node API does return lifecycle components such as
+    // lifecycle publishers. These entities obey the lifecycle and
+    // can comply to the current state of the node.
+    // As of the beta version, there is only a lifecycle publisher
+    // available.
+
+    joint_state_msg = sensor_msgs::msg::JointState();
+    if(!first_time_configured){
+      publisher_ = this->create_publisher<sensor_msgs::msg::JointState>("joint_states", 1); //queue_size 1 so that it sends the latest always
+      timer_ = this->create_wall_timer(std::chrono::milliseconds(periodicity_param), std::bind(&etaslNode::publishJointState, this));
+    }
+
+  
+    
+    timer_->cancel();
+    this->configure_etasl();
+    this->configure_jointstate_msg();
+
+
+    RCLCPP_INFO(get_logger(), "on_configure() is called.");
+
+    // We return a success and hence invoke the transition to the next
+    // step: "inactive".
+    // If we returned TRANSITION_CALLBACK_FAILURE instead, the state machine
+    // would stay in the "unconfigured" state.
+    // In case of TRANSITION_CALLBACK_ERROR or any thrown exception within
+    // this callback, the state machine transitions to state "errorprocessing".
+    
+    first_time_configured = true;
+    return lifecycle_return::SUCCESS;
+  }
+
+  /// Transition callback for state activating
+  /**
+   * on_activate callback is being called when the lifecycle node
+   * enters the "activating" state.
+   * Depending on the return value of this function, the state machine
+   * either invokes a transition to the "active" state or stays
+   * in "inactive".
+   * TRANSITION_CALLBACK_SUCCESS transitions to "active"
+   * TRANSITION_CALLBACK_FAILURE transitions to "inactive"
+   * TRANSITION_CALLBACK_ERROR or any uncaught exceptions to "errorprocessing"
+   */
+  lifecycle_return etaslNode::on_activate(const rclcpp_lifecycle::State & state)
+  {
+    // We explicitly activate the lifecycle publisher.
+    // Starting from this point, all messages are no longer
+    // ignored but sent into the network.
+
+    // TODO: Only allow transitions from configure, and not from deactivate
+
+    // std::cout << "hello1" << std::endl;
+    timer_->reset();
+    publisher_->on_activate();
+    //     std::cout << "hello2" << std::endl;
+    std::cout <<"The current state label is:" << state.label() << std::endl;
+    std::cout <<"The current state id is:" << state.id() << std::endl;
+
+    // etaslNode::on_activate(state);
+
+    // std::cout << "hello3" << std::endl;
+
+    RCUTILS_LOG_INFO_NAMED(get_name(), "on_activate() is called.");
+
+    // Let's sleep for 2 seconds.
+    // We emulate we are doing important
+    // work in the activating phase.
+    // std::this_thread::sleep_for(2s);
+
+
+    // We return a success and hence invoke the transition to the next
+    // step: "active".
+    // If we returned TRANSITION_CALLBACK_FAILURE instead, the state machine
+    // would stay in the "inactive" state.
+    // In case of TRANSITION_CALLBACK_ERROR or any thrown exception within
+    // this callback, the state machine transitions to state "errorprocessing".
+    return lifecycle_return::SUCCESS;
+  }
+
+  /// Transition callback for state deactivating
+  /**
+   * on_deactivate callback is being called when the lifecycle node
+   * enters the "deactivating" state.
+   * Depending on the return value of this function, the state machine
+   * either invokes a transition to the "inactive" state or stays
+   * in "active".
+   * TRANSITION_CALLBACK_SUCCESS transitions to "inactive"
+   * TRANSITION_CALLBACK_FAILURE transitions to "active"
+   * TRANSITION_CALLBACK_ERROR or any uncaught exceptions to "errorprocessing"
+   */
+  lifecycle_return etaslNode::on_deactivate(const rclcpp_lifecycle::State & state)
+  {
+    // We explicitly deactivate the lifecycle publisher.
+    // Starting from this point, all messages are no longer
+    // sent into the network.
+    publisher_->on_deactivate();
+    timer_->cancel();
+
+
+    RCUTILS_LOG_INFO_NAMED(get_name(), "on_deactivate() is called.");
+
+    // We return a success and hence invoke the transition to the next
+    // step: "inactive".
+    // If we returned TRANSITION_CALLBACK_FAILURE instead, the state machine
+    // would stay in the "active" state.
+    // In case of TRANSITION_CALLBACK_ERROR or any thrown exception within
+    // this callback, the state machine transitions to state "errorprocessing".
+    return lifecycle_return::SUCCESS;
+  }
+
+  /// Transition callback for state cleaningup
+  /**
+   * on_cleanup callback is being called when the lifecycle node
+   * enters the "cleaningup" state.
+   * Depending on the return value of this function, the state machine
+   * either invokes a transition to the "unconfigured" state or stays
+   * in "inactive".
+   * TRANSITION_CALLBACK_SUCCESS transitions to "unconfigured"
+   * TRANSITION_CALLBACK_FAILURE transitions to "inactive"
+   * TRANSITION_CALLBACK_ERROR or any uncaught exceptions to "errorprocessing"
+   */
+  lifecycle_return etaslNode::on_cleanup(const rclcpp_lifecycle::State &)
+  {
+    // In our cleanup phase, we release the shared pointers to the
+    // timer and publisher. These entities are no longer available
+    // and our node is "clean".
+    timer_->cancel();
+    // publisher_.reset();
+    this->reinitialize_data_structures();
+
+    RCUTILS_LOG_INFO_NAMED(get_name(), "on cleanup is called.");
+
+    // We return a success and hence invoke the transition to the next
+    // step: "unconfigured".
+    // If we returned TRANSITION_CALLBACK_FAILURE instead, the state machine
+    // would stay in the "inactive" state.
+    // In case of TRANSITION_CALLBACK_ERROR or any thrown exception within
+    // this callback, the state machine transitions to state "errorprocessing".
+    return lifecycle_return::SUCCESS;
+  }
+
+  /// Transition callback for state shutting down
+  /**
+   * on_shutdown callback is being called when the lifecycle node
+   * enters the "shuttingdown" state.
+   * Depending on the return value of this function, the state machine
+   * either invokes a transition to the "finalized" state or stays
+   * in its current state.
+   * TRANSITION_CALLBACK_SUCCESS transitions to "finalized"
+   * TRANSITION_CALLBACK_FAILURE transitions to current state
+   * TRANSITION_CALLBACK_ERROR or any uncaught exceptions to "errorprocessing"
+   */
+  lifecycle_return etaslNode::on_shutdown(const rclcpp_lifecycle::State & state)
+  {
+    // In our shutdown phase, we release the shared pointers to the
+    // timer and publisher. These entities are no longer available
+    // and our node is "clean".
+    timer_->cancel();
+    // publisher_->cancel();
+
+    RCUTILS_LOG_INFO_NAMED(get_name(), "on shutdown is called from state %s.", state.label().c_str());
+
+    // We return a success and hence invoke the transition to the next
+    // step: "finalized".
+    // If we returned TRANSITION_CALLBACK_FAILURE instead, the state machine
+    // would stay in the current state.
+    // In case of TRANSITION_CALLBACK_ERROR or any thrown exception within
+    // this callback, the state machine transitions to state "errorprocessing".
+    return lifecycle_return::SUCCESS;
+  }
+
 
 
 int main(int argc, char * argv[])
 {
-    
+
+    // force flush of the stdout buffer.
+    // this ensures a correct sync of all prints
+    // even when executed simultaneously within the launch file.
+    setvbuf(stdout, NULL, _IONBF, BUFSIZ);
+
     // Initialize node
     rclcpp::init(argc, argv);
-    std::shared_ptr<etaslNode> my_etasl_node = std::make_shared<etaslNode>();
-    my_etasl_node->configure_etasl();
-    my_etasl_node->configure_jointstate_msg();
+    rclcpp::executors::StaticSingleThreadedExecutor executor;
+
+    std::shared_ptr<etaslNode> my_etasl_node = std::make_shared<etaslNode>("simple_etasl_node");
+
+    executor.add_node(my_etasl_node->get_node_base_interface());
+    
+    // my_etasl_node->configure_etasl();
+    // my_etasl_node->configure_jointstate_msg();
 
 
     // Preparation for control loop
-    int periodicity_param = my_etasl_node->get_periodicity_param();
-    const std::chrono::nanoseconds periodicity = std::chrono::milliseconds(periodicity_param);
-    std::chrono::steady_clock::time_point  end_time_sleep = std::chrono::steady_clock::now() + periodicity;
+    // int periodicity_param = my_etasl_node->get_periodicity_param();
+    // const std::chrono::nanoseconds periodicity = std::chrono::milliseconds(periodicity_param);
+    // std::chrono::steady_clock::time_point  end_time_sleep = std::chrono::steady_clock::now() + periodicity;
 
+
+    executor.spin();
     /****************************************************
     * Control loop 
     ***************************************************/
-    while (rclcpp::ok()) {
+    // while (rclcpp::ok()) {
  
-        my_etasl_node->update();
-        // if you need to send output to a robot, do it here, using jvel_etasl or jpos_etasl
-        my_etasl_node->publishJointState();
-        // rclcpp::spin(my_etasl_node);
-        rclcpp::spin_some(my_etasl_node);//TODO: change to executor::spin_some()
+    //     my_etasl_node->update();
+    //     // if you need to send output to a robot, do it here, using jvel_etasl or jpos_etasl
+    //     my_etasl_node->publishJointState();
+    //     // rclcpp::spin(my_etasl_node);
+    //     // rclcpp::spin_some(my_etasl_node);//TODO: change to executor::spin_some()
+    //     executor.spin_some();//TODO: change to executor::spin_some()
 
-        std::this_thread::sleep_until(end_time_sleep);
-        // TODO: The following while might not be needed. Now it never gets executed.
-        while ( std::chrono::steady_clock::now() < end_time_sleep || errno == EINTR ) { // In case the sleep was interrupted, continues to execute it
-            errno = 0;
-            std::this_thread::sleep_until(end_time_sleep);
-            std::cout << "Needed some extra time"<< std::endl; //Temporarily placed for debugging
-        }
-        end_time_sleep = std::chrono::steady_clock::now() + periodicity; //adds periodicity
-    }
+    //     std::this_thread::sleep_until(end_time_sleep);
+    //     // TODO: The following while might not be needed. Now it never gets executed.
+    //     while ( std::chrono::steady_clock::now() < end_time_sleep || errno == EINTR ) { // In case the sleep was interrupted, continues to execute it
+    //         errno = 0;
+    //         std::this_thread::sleep_until(end_time_sleep);
+    //         std::cout << "Needed some extra time"<< std::endl; //Temporarily placed for debugging
+    //     }
+    //     end_time_sleep = std::chrono::steady_clock::now() + periodicity; //adds periodicity
+    // }
 
     std::cout << "Program terminated correctly." << std::endl;
+    rclcpp::shutdown();
 
   return 0;
 }
