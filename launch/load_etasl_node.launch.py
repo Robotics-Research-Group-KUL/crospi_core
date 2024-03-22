@@ -32,8 +32,8 @@ def generate_launch_description():
             name='etasl_node',
             namespace = '', #if declared the node becomes visible /namespace/name (e.g. in lifecyle commands from terminal)
             output='screen',
-            arguments=['--ros-args', '--log-level', 'warn'],
-            # arguments=['--ros-args', '--log-level', 'info'],
+            # arguments=['--ros-args', '--log-level', 'warn'],
+            arguments=['--ros-args', '--log-level', 'info'],
             parameters=[
                 {'task_specification_file': task_specification_file},
                 {'jointnames': ["shoulder_pan_joint","shoulder_lift_joint","elbow_joint","wrist_1_joint","wrist_2_joint","wrist_3_joint"]},
