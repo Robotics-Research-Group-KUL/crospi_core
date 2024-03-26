@@ -13,14 +13,16 @@
 
 // For lifecycle state machine node:
 #include "lifecycle_msgs/msg/transition.hpp"
+#include "lifecycle_msgs/srv/change_state.hpp"
 #include "rclcpp_lifecycle/lifecycle_node.hpp"
 #include "rclcpp_lifecycle/lifecycle_publisher.hpp"
+
 
 // For logging in ros2
 #include "rcutils/logging_macros.h"
 
 
-
+// For eTaSL
 #include <expressiongraph/context.hpp>
 #include <expressiongraph/context_scripting.hpp>
 #include <expressiongraph/solver_registry.hpp>
@@ -80,6 +82,9 @@ class etaslNode : public rclcpp_lifecycle::LifecycleNode
         void initialize_joints();
         void initialize_feature_variables();
         void configure_jointstate_msg();
+
+        bool srv_configure(const std::shared_ptr<lifecycle_msgs::srv::ChangeState::Request> request,
+          std::shared_ptr<lifecycle_msgs::srv::ChangeState::Response>  response);
         
     
 
@@ -87,12 +92,16 @@ class etaslNode : public rclcpp_lifecycle::LifecycleNode
     
     private:
         std::shared_ptr<rclcpp::TimerBase> timer_;
-        // rclcpp::Publisher<sensor_msgs::msg::JointState>::SharedPtr publisher_;
-        std::shared_ptr<rclcpp_lifecycle::LifecyclePublisher<sensor_msgs::msg::JointState>> publisher_;
+        // rclcpp::Publisher<sensor_msgs::msg::JointState>::SharedPtr joint_pub_;
+        std::shared_ptr<rclcpp_lifecycle::LifecyclePublisher<sensor_msgs::msg::JointState>> joint_pub_;
+        rclcpp::Publisher<std_msgs::msg::String>::SharedPtr events_pub_;
+
 
         int periodicity_param; //Expressed in milliseconds
         double time;
         sensor_msgs::msg::JointState joint_state_msg;
+        std_msgs::msg::String event_msg;
+
         Context::Ptr ctx;
         boost::shared_ptr<solver> slv;
         boost::shared_ptr<LuaContext> LUA;
@@ -131,6 +140,9 @@ class etaslNode : public rclcpp_lifecycle::LifecycleNode
         std::map<std::string,int>  name_ndx;
 
         bool first_time_configured;
+
+
+        rclcpp::Service<lifecycle_msgs::srv::ChangeState>::SharedPtr test_service_;
 
 
         

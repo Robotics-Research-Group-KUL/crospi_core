@@ -99,3 +99,4 @@ with this example you should see the robot executing a single task specification
 - Create simrobot node to easily transition between simulation and real robot in the future.
 - Implement services for configuration
 - Automatically deactivate node when exit monitor is triggered
+- Implement observers of monitors (etasl mechanism) to publish the events properly

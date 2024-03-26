@@ -32,8 +32,25 @@ etaslNode::etaslNode(const std::string & node_name, bool intra_process_comms = f
   // fname = "/home/santiregui/ros2_ws/src/etasl_ros2/etasl/taskspec2.lua";
   // this->declare_parameter("outpfilename",  outpfilename); //outpfilename as default val
   // this->declare_parameter("task_specification_file",  fname); //fname as default val
+
+  // this->create_service<lifecycle_msgs::srv::ChangeState>("configure", &srv_configure);
+  test_service_ = create_service<lifecycle_msgs::srv::ChangeState>("etasl_node/configure", std::bind(&etaslNode::srv_configure, this, std::placeholders::_1, std::placeholders::_2));
   
+  events_pub_ = this->create_publisher<std_msgs::msg::String>("fsm/events", 10); 
+  event_msg = std_msgs::msg::String();
+
 }
+
+bool etaslNode::srv_configure(const std::shared_ptr<lifecycle_msgs::srv::ChangeState::Request> request, std::shared_ptr<lifecycle_msgs::srv::ChangeState::Response>  response)
+      {
+          std::cout << "Request id: "<< request->transition.id << std::endl;
+          std::cout << "Request label: "<< request->transition.label << std::endl;
+          std::this_thread::sleep_for(5s);
+          std::cout << "Finish service call: " << std::endl;
+          response->success = true;
+          return true;
+
+      }
 
 
 void etaslNode::publishJointState() {
@@ -57,7 +74,7 @@ void etaslNode::publishJointState() {
 
       // std::cout << "publishing joints" << std::endl;
     // Print the current state for demo purposes
-    // if (!publisher_->is_activated()) {
+    // if (!joint_pub_->is_activated()) {
     //   RCLCPP_INFO(
     //     get_logger(), "Lifecycle publisher is currently inactive. Messages are not published.");
     // } 
@@ -66,11 +83,10 @@ void etaslNode::publishJointState() {
     // publisher.
     // Only if the publisher is in an active state, the message transfer is
     // enabled and the message actually published.
-    publisher_->publish(joint_state_msg);
+    joint_pub_->publish(joint_state_msg);
 }
 
-typename Observer::Ptr 
-create_PrintObserver(
+typename Observer::Ptr create_PrintObserver(
         typename boost::shared_ptr<solver> _slv, 
         const std::string& _action_name, 
         const std::string& _message, 
@@ -412,7 +428,12 @@ void etaslNode::update()
         ctx->checkMonitors();
         if (ctx->getFinishStatus()) {
             RCUTILS_LOG_INFO_NAMED(get_name(), "Finishing execution because exit monitor was triggered.");
-            rclcpp::shutdown();
+            event_msg.data = "etasl_finished";
+            events_pub_->publish(event_msg);
+            auto transition = this->deactivate();
+            // if (transition.id() != lifecycle_msgs::msg::Transition::SUCCESS) {
+            //     RCUTILS_LOG_ERROR_NAMED(get_name(), "Failed to transition node to deactivate state when the etasl monitor was triggered");
+            // }
             return;
             // break;
         }
@@ -535,7 +556,7 @@ void etaslNode::reinitialize_data_structures() {
 
     joint_state_msg = sensor_msgs::msg::JointState();
     if(!first_time_configured){
-      publisher_ = this->create_publisher<sensor_msgs::msg::JointState>("joint_states", 1); //queue_size 1 so that it sends the latest always
+      joint_pub_ = this->create_publisher<sensor_msgs::msg::JointState>("joint_states", 1); //queue_size 1 so that it sends the latest always
       timer_ = this->create_wall_timer(std::chrono::milliseconds(periodicity_param), std::bind(&etaslNode::publishJointState, this));
       jpos_init = VectorXd::Zero(6);
       jpos_init << 180.0/180.0*3.1416, -90.0/180.0*3.1416, 90.0/180.0*3.1416, -90.0/180.0*3.1416, -90.0/180.0*3.1416, 0.0/180.0*3.1416;
@@ -585,7 +606,7 @@ void etaslNode::reinitialize_data_structures() {
 
     // std::cout << "hello1" << std::endl;
     timer_->reset();
-    publisher_->on_activate();
+    joint_pub_->on_activate();
     //     std::cout << "hello2" << std::endl;
     // std::cout <<"The current state label is:" << state.label() << std::endl;
     // std::cout <<"The current state id is:" << state.id() << std::endl;
@@ -627,7 +648,7 @@ void etaslNode::reinitialize_data_structures() {
     // We explicitly deactivate the lifecycle publisher.
     // Starting from this point, all messages are no longer
     // sent into the network.
-    publisher_->on_deactivate();
+    joint_pub_->on_deactivate();
     timer_->cancel();
 
 
@@ -659,7 +680,7 @@ void etaslNode::reinitialize_data_structures() {
     // timer and publisher. These entities are no longer available
     // and our node is "clean".
     timer_->cancel();
-    // publisher_.reset();
+    // joint_pub_.reset();
     this->reinitialize_data_structures();
 
     RCUTILS_LOG_INFO_NAMED(get_name(), "on cleanup is called.");
@@ -690,7 +711,7 @@ void etaslNode::reinitialize_data_structures() {
     // timer and publisher. These entities are no longer available
     // and our node is "clean".
     timer_->cancel();
-    // publisher_->cancel();
+    // joint_pub_->cancel();
 
     RCUTILS_LOG_INFO_NAMED(get_name(), "on shutdown is called from state %s.", state.label().c_str());
 
@@ -717,9 +738,11 @@ int main(int argc, char * argv[])
     rclcpp::init(argc, argv);
     rclcpp::executors::StaticSingleThreadedExecutor executor;
 
-    std::shared_ptr<etaslNode> my_etasl_node = std::make_shared<etaslNode>("simple_etasl_node");
-
+    std::shared_ptr<etaslNode> my_etasl_node = std::make_shared<etaslNode>("etasl_node");
+    
     executor.add_node(my_etasl_node->get_node_base_interface());
+
+
     
     // my_etasl_node->configure_etasl();
     // my_etasl_node->configure_jointstate_msg();

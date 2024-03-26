@@ -25,12 +25,19 @@ from yasmin import CbState
 from yasmin import Blackboard
 from yasmin import StateMachine
 from yasmin_ros import ServiceState
+from yasmin_ros import MonitorState
 from yasmin_ros.basic_outcomes import SUCCEED, ABORT
 from yasmin_viewer import YasminViewerPub
 
 from lifecycle_msgs.srv import ChangeState
 from lifecycle_msgs.msg import Transition
+
 # from lifecycle_msgs.srv import ChangeState_Response
+
+from std_msgs.msg import String
+from rclpy.qos import qos_profile_sensor_data
+
+
 import time
 
 class ConfigureEtasl(ServiceState):
@@ -84,7 +91,6 @@ class ActivateEtasl(ServiceState):
         print("Managing output")
         print(response.success)
         blackboard.success = response.success
-        time.sleep(6)
         return SUCCEED
 
 class DeactivateEtasl(ServiceState):
@@ -142,6 +148,30 @@ class CleanupEtasl(ServiceState):
         return SUCCEED
 
 
+class WaitingEtasl(MonitorState):
+    def __init__(self, node: Node) -> None:
+        super().__init__(node,  # node
+                         String,  # msg type
+                         "fsm/events",  # topic name
+                         [SUCCEED,"outcome_continue"],  # outcomes
+                         self.monitor_handler,  # monitor handler callback
+                         qos=qos_profile_sensor_data,  # qos for the topic sbscription
+                         msg_queue=10,  # queue of the monitor handler callback
+                         timeout=None  # timeout to wait for msgs in seconds
+                                     # if not None, CANCEL outcome is added
+                         )
+
+    def monitor_handler(self, blackboard: Blackboard, msg: String) -> str:
+        print(msg.data)
+
+        # self.times -= 1
+
+        # if self.times <= 0:
+        #     return SUCCEED
+        if msg.data == "etasl_finished":
+            return SUCCEED
+
+        return "outcome_continue"
 
 
 class AddTwoIntsState(ServiceState):
@@ -198,7 +228,11 @@ class ServiceClientDemoNode(Node):
                 transitions={SUCCEED: "ACTIVATE_ETASL",
                             ABORT: "finished"})
         sm.add_state("ACTIVATE_ETASL", ActivateEtasl(self),
+                transitions={SUCCEED: "WAITING_ETASL",
+                            ABORT: "finished"})
+        sm.add_state("WAITING_ETASL", WaitingEtasl(self),
                 transitions={SUCCEED: "DEACTIVATE_ETASL",
+                            "outcome_continue": "WAITING_ETASL",
                             ABORT: "finished"})
         sm.add_state("DEACTIVATE_ETASL", DeactivateEtasl(self),
                 transitions={SUCCEED: "CLEANUP_ETASL",
