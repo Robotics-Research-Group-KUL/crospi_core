@@ -422,10 +422,15 @@ void etaslNode::update()
             RCUTILS_LOG_INFO_NAMED(get_name(), "Finishing execution because exit monitor was triggered.");
             // event_msg.data = "etasl_finished";
             // events_pub_->publish(event_msg);
-            // auto transition = this->deactivate();
-            // if (transition.id() != lifecycle_msgs::msg::Transition::SUCCESS) {
-            //     RCUTILS_LOG_ERROR_NAMED(get_name(), "Failed to transition node to deactivate state when the etasl monitor was triggered");
-            // }
+            auto transition = this->deactivate();
+            RCUTILS_LOG_INFO_NAMED(get_name(), "===============================================================");
+            if (transition.label() == "inactive") {
+              RCUTILS_LOG_INFO_NAMED(get_name(), "Node automatically deactivated due to triggered exit monitor");
+            }
+            else {
+              RCUTILS_LOG_ERROR_NAMED(get_name(), "Failed to automatically deactivate node when the etasl monitor was triggered");
+            }
+              RCUTILS_LOG_INFO_NAMED(get_name(), "===============================================================");
             return;
             // break;
         }

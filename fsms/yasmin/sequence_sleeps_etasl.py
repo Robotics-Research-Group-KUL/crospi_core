@@ -54,7 +54,6 @@ class ConfigureEtasl(ServiceState):
 
     def response_handler(self,blackboard: Blackboard,response: ChangeState.Response) -> str:
 
-        print("Managing output")
         print(response.success)
         blackboard.success = response.success
         time.sleep(1)
@@ -81,7 +80,6 @@ class ActivateEtasl(ServiceState):
 
     def response_handler(self,blackboard: Blackboard,response: ChangeState.Response) -> str:
 
-        print("Managing output")
         print(response.success)
         blackboard.success = response.success
         time.sleep(6)
@@ -108,7 +106,6 @@ class DeactivateEtasl(ServiceState):
 
     def response_handler(self,blackboard: Blackboard,response: ChangeState.Response) -> str:
 
-        print("Managing output")
         print(response.success)
         blackboard.success = response.success
         time.sleep(1)
@@ -135,7 +132,6 @@ class CleanupEtasl(ServiceState):
 
     def response_handler(self,blackboard: Blackboard,response: ChangeState.Response) -> str:
 
-        print("Managing output")
         print(response.success)
         blackboard.success = response.success
         time.sleep(1)

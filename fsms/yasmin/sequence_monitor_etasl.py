@@ -61,8 +61,7 @@ class ConfigureEtasl(ServiceState):
 
     def response_handler(self,blackboard: Blackboard,response: ChangeState.Response) -> str:
 
-        print("Managing output")
-        print(response.success)
+        print("Service response success: " + str(response.success))
         blackboard.success = response.success
         time.sleep(1)
         return SUCCEED
@@ -88,8 +87,7 @@ class ActivateEtasl(ServiceState):
 
     def response_handler(self,blackboard: Blackboard,response: ChangeState.Response) -> str:
 
-        print("Managing output")
-        print(response.success)
+        print("Service response success: " + str(response.success))
         blackboard.success = response.success
         return SUCCEED
 
@@ -114,8 +112,7 @@ class DeactivateEtasl(ServiceState):
 
     def response_handler(self,blackboard: Blackboard,response: ChangeState.Response) -> str:
 
-        print("Managing output")
-        print(response.success)
+        print("Service response success: " + str(response.success))
         blackboard.success = response.success
         time.sleep(1)
         return SUCCEED
@@ -141,8 +138,7 @@ class CleanupEtasl(ServiceState):
 
     def response_handler(self,blackboard: Blackboard,response: ChangeState.Response) -> str:
 
-        print("Managing output")
-        print(response.success)
+        print("Service response success: " + str(response.success))
         blackboard.success = response.success
         time.sleep(1)
         return SUCCEED
@@ -162,12 +158,7 @@ class WaitingEtasl(MonitorState):
                          )
 
     def monitor_handler(self, blackboard: Blackboard, msg: String) -> str:
-        print(msg.data)
-
-        # self.times -= 1
-
-        # if self.times <= 0:
-        #     return SUCCEED
+        # print(msg.data)
         if msg.data == "e_finished@etasl_node":
             return SUCCEED
 
