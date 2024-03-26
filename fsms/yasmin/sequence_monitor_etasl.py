@@ -168,7 +168,7 @@ class WaitingEtasl(MonitorState):
 
         # if self.times <= 0:
         #     return SUCCEED
-        if msg.data == "etasl_finished":
+        if msg.data == "e_finished@etasl_node":
             return SUCCEED
 
         return "outcome_continue"

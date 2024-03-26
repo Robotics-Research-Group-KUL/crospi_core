@@ -92,6 +92,25 @@ Monitor{
         expr=time-get_duration(mp) - constant(0.1)
 }
 
+Monitor{
+    context=ctx,
+    name='portevent_test',
+    upper=0.0,
+    actionname='portevent',
+    argument = "test_event",
+    expr=time-0.5
+}
+
+Monitor{
+    context=ctx,
+    name='event_test',
+    upper=0.0,
+    actionname='event',
+    argument = "test_event",
+    expr=time-0.5
+}
+
+
 ctx:setOutputExpression("time",time)
 
 

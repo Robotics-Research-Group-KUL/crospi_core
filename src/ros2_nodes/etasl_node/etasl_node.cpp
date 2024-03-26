@@ -1,5 +1,6 @@
 #include "etasl_node.hpp"
 #include "IO_handlers.hpp"
+#include "port_observer.hpp"
 
 // For real-time control loop
 #include <chrono>
@@ -20,6 +21,8 @@ etaslNode::etaslNode(const std::string & node_name, bool intra_process_comms = f
       rclcpp::NodeOptions().use_intra_process_comms(intra_process_comms))
 , periodicity_param(10) //Expressed in milliseconds
 , time(0.0)
+, event_msg(std_msgs::msg::String())
+, event_postfix(get_name())
 , first_time_configured(false)
 {
   //Used unless the ROS parameters are modified externally (e.g. through terminal or launchfile)
@@ -37,7 +40,6 @@ etaslNode::etaslNode(const std::string & node_name, bool intra_process_comms = f
   test_service_ = create_service<lifecycle_msgs::srv::ChangeState>("etasl_node/configure", std::bind(&etaslNode::srv_configure, this, std::placeholders::_1, std::placeholders::_2));
   
   events_pub_ = this->create_publisher<std_msgs::msg::String>("fsm/events", 10); 
-  event_msg = std_msgs::msg::String();
 
 }
 
@@ -84,16 +86,6 @@ void etaslNode::publishJointState() {
     // Only if the publisher is in an active state, the message transfer is
     // enabled and the message actually published.
     joint_pub_->publish(joint_state_msg);
-}
-
-typename Observer::Ptr create_PrintObserver(
-        typename boost::shared_ptr<solver> _slv, 
-        const std::string& _action_name, 
-        const std::string& _message, 
-        typename Observer::Ptr _next ) 
-{
-    PrintObserver::Ptr r( new PrintObserver(_slv, _action_name, _message,_next) );
-    return r; 
 }
 
 void etaslNode::update_controller_output(Eigen::VectorXd const& jvalues_solver){
@@ -313,12 +305,12 @@ void etaslNode::configure_etasl(){
     slv->setJointStates(jpos_etasl);
 
     // create observers for monitoring events:       
-    // only now because our PrintObserver monitor uses slv 
-    // (prepared for execution, not prepared for initialization):
-    // observers are chained together:
-    Observer::Ptr obs1     = create_default_observer(ctx, "exit");
-    Observer::Ptr obs2     = create_PrintObserver(slv, "print", "PrintObserver was triggered ", obs1);
-    ctx->addDefaultObserver(obs2);
+    Observer::Ptr obs = create_port_observer( ctx, events_pub_, "portevent","",false);
+    obs = create_port_observer( ctx, events_pub_, "event",event_postfix,false, obs);
+    obs = create_port_observer( ctx, events_pub_, "exit", event_postfix,true, obs);
+    //obs = create_default_observer(ctx,"exit",obs);
+    ctx->addDefaultObserver(obs);
+    // TODO: Create debug observer, such that it logs slv related data when triggered
 
     // fvelocities.resize( fnames.size() ); 
     // fvelocities = Eigen::VectorXd::Zero( fnames.size() );
@@ -428,9 +420,9 @@ void etaslNode::update()
         ctx->checkMonitors();
         if (ctx->getFinishStatus()) {
             RCUTILS_LOG_INFO_NAMED(get_name(), "Finishing execution because exit monitor was triggered.");
-            event_msg.data = "etasl_finished";
-            events_pub_->publish(event_msg);
-            auto transition = this->deactivate();
+            // event_msg.data = "etasl_finished";
+            // events_pub_->publish(event_msg);
+            // auto transition = this->deactivate();
             // if (transition.id() != lifecycle_msgs::msg::Transition::SUCCESS) {
             //     RCUTILS_LOG_ERROR_NAMED(get_name(), "Failed to transition node to deactivate state when the etasl monitor was triggered");
             // }
@@ -510,19 +502,6 @@ void etaslNode::reinitialize_data_structures() {
     jindex.clear();
     name_ndx.clear();
     
-    
-
-
-    // install observers:
-    // Observer::Ptr obs = create_port_observer( ctx, &eventPort, "portevent","",false);
-    // obs = create_port_observer( ctx, &eventPort, "event",event_postfix,false);
-    // obs = create_port_observer( ctx, &eventPort, "exit", event_postfix,true, obs);
-    //obs = create_default_observer(ctx,"exit",obs);
-    // ctx->addDefaultObserver(obs);
-    // initialized=false;
-    // etaslread=false;
-    // controller_input_defined=false;
-    // controller_output_defined=false;
 }
 
 

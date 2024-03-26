@@ -101,6 +101,7 @@ class etaslNode : public rclcpp_lifecycle::LifecycleNode
         double time;
         sensor_msgs::msg::JointState joint_state_msg;
         std_msgs::msg::String event_msg;
+        std::string event_postfix;
 
         Context::Ptr ctx;
         boost::shared_ptr<solver> slv;

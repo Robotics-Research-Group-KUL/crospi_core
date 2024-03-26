@@ -1,0 +1,85 @@
+#include <expressiongraph/context.hpp>
+#include "port_observer.hpp"
+#include <string>
+
+using namespace KDL;
+
+/**
+ * Observer that puts events on an rFSM event queue 
+ */
+class PortObserver: public Observer {
+    Context::Ptr ctx;
+    const std::string portname;
+    Observer::Ptr   next;                 ///< the next observer you want to react to monitors.
+    rclcpp::Publisher<std_msgs::msg::String>::SharedPtr outp;
+    std_msgs::msg::String event_msg;
+    const std::string action_name;
+    const std::string event_postfix;
+    bool  exit_when_triggered;
+    std::string            ename;
+ 
+public:
+    typedef boost::shared_ptr< PortObserver > Ptr;
+
+    PortObserver(
+            Context::Ptr _ctx,
+            rclcpp::Publisher<std_msgs::msg::String>::SharedPtr _outp,
+            const std::string& _action_name,
+            const std::string& _event_postfix,
+            bool  _exit_when_triggered,
+            Observer::Ptr _next 
+    ):   ctx(_ctx),
+         outp(_outp),
+         event_msg(std_msgs::msg::String()),
+         action_name(_action_name),
+         event_postfix(_event_postfix),
+         exit_when_triggered(_exit_when_triggered),
+         next(_next) 
+    {
+        ename.reserve(512);
+    }
+
+
+    /**
+     * The solver will call this when MonitoringScalar is activated.
+     * \param [in] mon the monitor that was activated.
+     */
+    virtual void monitor_activated(const  MonitorScalar& mon) {
+        if (mon.action_name.compare(action_name)==0) {
+            std::stringstream sstr(ename);
+            if (mon.argument.size()==0) {
+                sstr <<"e_finished";
+            } else {
+                sstr << mon.argument;
+            }
+            if (event_postfix.size()!=0) {
+                sstr << "@" << event_postfix;
+            } 
+            event_msg.data = sstr.str();
+            outp->publish(event_msg);
+            if (exit_when_triggered) {
+                ctx->setFinishStatus();
+            }
+        } else {
+            if (next) {
+                next->monitor_activated(mon);
+            }
+        }
+    }
+
+    virtual ~PortObserver() {}
+}; 
+
+Observer::Ptr create_port_observer(
+    Context::Ptr _ctx,
+    rclcpp::Publisher<std_msgs::msg::String>::SharedPtr _outp,
+    const std::string& _action_name,
+    const std::string& _event_postfix,
+    bool  _exit_when_triggered,
+    Observer::Ptr _next
+) {
+    
+    PortObserver::Ptr r( new PortObserver(_ctx,_outp, _action_name, _event_postfix, _exit_when_triggered, _next) );
+    return r;
+}
+
