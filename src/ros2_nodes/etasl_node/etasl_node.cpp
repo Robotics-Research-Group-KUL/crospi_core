@@ -38,7 +38,10 @@ etaslNode::etaslNode(const std::string & node_name, bool intra_process_comms = f
 
   // this->create_service<lifecycle_msgs::srv::ChangeState>("configure", &srv_configure);
   test_service_ = create_service<lifecycle_msgs::srv::ChangeState>("etasl_node/configure", std::bind(&etaslNode::srv_configure, this, std::placeholders::_1, std::placeholders::_2));
-  
+
+  srv_etasl_console_ = create_service<std_srvs::srv::Empty>("etasl_node/etasl_console", std::bind(&etaslNode::srv_etasl_console, this, std::placeholders::_1, std::placeholders::_2));
+
+
   events_pub_ = this->create_publisher<std_msgs::msg::String>("fsm/events", 10); 
 
 }
@@ -53,6 +56,22 @@ bool etaslNode::srv_configure(const std::shared_ptr<lifecycle_msgs::srv::ChangeS
           return true;
 
       }
+
+bool etaslNode::srv_etasl_console(const std::shared_ptr<std_srvs::srv::Empty::Request> request, std::shared_ptr<std_srvs::srv::Empty::Response>  response) {
+    // if (isRunning()) {
+    //     RTT::log(RTT::Error) << "etasl_rtt::etasl_console not allowed while running" << RTT::endlog();
+    //     return false;
+    // }
+    if (this->get_current_state().id() == lifecycle_msgs::msg::State::PRIMARY_STATE_ACTIVE) {
+            RCUTILS_LOG_ERROR_NAMED(get_name(), "etasl_console not allowed while the node is active");
+            return false;
+    } 
+    assert(LUA!=NULL);
+    assert(ctx!=NULL);
+    int retval = LUA->call_console();
+    return retval==0;
+}
+
 
 
 void etaslNode::publishJointState() {
@@ -400,6 +419,8 @@ std::string etaslNode::get_etasl_fname()
 {
   return fname;
 }
+
+
 
 
 // TODO: use the following to map jointnames and jvalues. Found in https://etasl.pages.gitlab.kuleuven.be/etasl-api-doc/api/etasl-rtt/solver__state_8hpp_source.html

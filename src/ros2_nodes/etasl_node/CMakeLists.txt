@@ -2,6 +2,7 @@ message("Compiling node located in ${CMAKE_CURRENT_SOURCE_DIR}")
 
 find_package(rclcpp REQUIRED)
 find_package(std_msgs REQUIRED)
+find_package(std_srvs REQUIRED)
 find_package(sensor_msgs REQUIRED)
 find_package(rclcpp_lifecycle REQUIRED)
 find_package(lifecycle_msgs REQUIRED)
@@ -20,6 +21,7 @@ ament_target_dependencies(etasl_node
   "lifecycle_msgs"
   "rclcpp_lifecycle"
   "std_msgs"
+  "std_srvs"
   "sensor_msgs"
 )
 

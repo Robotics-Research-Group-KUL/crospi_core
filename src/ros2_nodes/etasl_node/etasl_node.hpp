@@ -8,11 +8,14 @@
 
 #include "rclcpp/rclcpp.hpp"
 #include "std_msgs/msg/string.hpp"
+#include "std_srvs/srv/empty.hpp"
+
 #include "sensor_msgs/msg/joint_state.hpp"
 #include "builtin_interfaces/msg/time.hpp" // Include Time message header
 
 // For lifecycle state machine node:
 #include "lifecycle_msgs/msg/transition.hpp"
+#include "lifecycle_msgs/msg/state.hpp"
 #include "lifecycle_msgs/srv/change_state.hpp"
 #include "rclcpp_lifecycle/lifecycle_node.hpp"
 #include "rclcpp_lifecycle/lifecycle_publisher.hpp"
@@ -85,6 +88,8 @@ class etaslNode : public rclcpp_lifecycle::LifecycleNode
 
         bool srv_configure(const std::shared_ptr<lifecycle_msgs::srv::ChangeState::Request> request,
           std::shared_ptr<lifecycle_msgs::srv::ChangeState::Response>  response);
+
+        bool srv_etasl_console(const std::shared_ptr<std_srvs::srv::Empty::Request> request, std::shared_ptr<std_srvs::srv::Empty::Response>  response);
         
     
 
@@ -144,6 +149,8 @@ class etaslNode : public rclcpp_lifecycle::LifecycleNode
 
 
         rclcpp::Service<lifecycle_msgs::srv::ChangeState>::SharedPtr test_service_;
+        rclcpp::Service<std_srvs::srv::Empty>::SharedPtr srv_etasl_console_;
+
 
 
         
