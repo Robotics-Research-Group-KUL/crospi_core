@@ -87,6 +87,23 @@ ros2 launch etasl_ros2 load_etasl_node.py
 
 with this example you should see the robot executing a single task specification, which is specified in the `load_etasl_node.py` launch file. This example can only execute a single task specification, since it is currently lacking integration with a finite state machine or other coordinator (future work).
 
+
+## Debugging
+
+An interactive LUA console can be accessed to debug. In order to do this, it is very important to execute the etasl_node by calling `ros2 run` instead of `ros2 launch`, since the terminal needs to "own" the process executed. You can do this by calling:
+```bash
+ros2 run etasl_ros2 etasl_node --ros-args --params-file param_test.yaml
+```
+
+where `param_test.yaml` contains the parameters of the node. For example this file can contain the following:
+```yaml
+etasl_node:
+    ros__parameters:
+        task_specification_file: "/home/santiregui/ros2_ws/src/etasl_ros2/etasl/move_cartesianspace.lua"
+        jointnames: ["shoulder_pan_joint","shoulder_lift_joint","elbow_joint","wrist_1_joint","wrist_2_joint","wrist_3_joint"]
+```
+
+
 ## Authors
 
 - Santiago Iregui <santiago.iregui@kuleuven.be>
@@ -99,3 +116,4 @@ with this example you should see the robot executing a single task specification
 - Create simrobot node to easily transition between simulation and real robot in the future.
 - Implement services for configuration
 - Implement a service to access the etasl_console()
+- Implement services to read task specification file and read task specification string
