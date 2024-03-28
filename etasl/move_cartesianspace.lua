@@ -88,7 +88,7 @@ Monitor{
         context=ctx,
         name='finish_after_motion',
         upper=0.0,
-        actionname='debug',
+        actionname='exit',
         expr=time-get_duration(mp) - constant(0.1)
 }
 

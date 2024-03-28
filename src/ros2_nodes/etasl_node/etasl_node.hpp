@@ -67,16 +67,8 @@ class etaslNode : public rclcpp_lifecycle::LifecycleNode
 
         // void setJointValues(const std::vector<double>& jval, const std::vector<std::string>& jvalnames);
 
-        Context::Ptr get_ctx();
-        boost::shared_ptr<solver> get_slv();
-        boost::shared_ptr<eTaSL_OutputHandler>  get_output_handler();
-        boost::shared_ptr<eTaSL_InputHandler> get_input_handler();
         int get_periodicity_param();
-        VectorXd get_fpos_etasl();
-        VectorXd get_jpos_etasl();
-        double get_time();
-        std::string get_outpfilename();
-        std::string get_etasl_fname();
+
 
         void update_controller_output(Eigen::VectorXd const& jvalues);
         void update_controller_input(Eigen::VectorXd const& jvalues);
@@ -89,7 +81,7 @@ class etaslNode : public rclcpp_lifecycle::LifecycleNode
         bool srv_configure(const std::shared_ptr<lifecycle_msgs::srv::ChangeState::Request> request,
           std::shared_ptr<lifecycle_msgs::srv::ChangeState::Response>  response);
 
-        bool srv_etasl_console(const std::shared_ptr<std_srvs::srv::Empty::Request> request, std::shared_ptr<std_srvs::srv::Empty::Response>  response);
+        bool etasl_console(const std::shared_ptr<std_srvs::srv::Empty::Request> request, std::shared_ptr<std_srvs::srv::Empty::Response>  response);
         
     
 

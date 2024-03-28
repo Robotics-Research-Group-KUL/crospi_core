@@ -39,7 +39,7 @@ etaslNode::etaslNode(const std::string & node_name, bool intra_process_comms = f
   // this->create_service<lifecycle_msgs::srv::ChangeState>("configure", &srv_configure);
   test_service_ = create_service<lifecycle_msgs::srv::ChangeState>("etasl_node/configure", std::bind(&etaslNode::srv_configure, this, std::placeholders::_1, std::placeholders::_2));
 
-  srv_etasl_console_ = create_service<std_srvs::srv::Empty>("etasl_node/etasl_console", std::bind(&etaslNode::srv_etasl_console, this, std::placeholders::_1, std::placeholders::_2));
+  srv_etasl_console_ = create_service<std_srvs::srv::Empty>("etasl_node/etasl_console", std::bind(&etaslNode::etasl_console, this, std::placeholders::_1, std::placeholders::_2));
 
 
   events_pub_ = this->create_publisher<std_msgs::msg::String>("fsm/events", 10); 
@@ -57,19 +57,26 @@ bool etaslNode::srv_configure(const std::shared_ptr<lifecycle_msgs::srv::ChangeS
 
       }
 
-bool etaslNode::srv_etasl_console(const std::shared_ptr<std_srvs::srv::Empty::Request> request, std::shared_ptr<std_srvs::srv::Empty::Response>  response) {
-    // if (isRunning()) {
-    //     RTT::log(RTT::Error) << "etasl_rtt::etasl_console not allowed while running" << RTT::endlog();
-    //     return false;
-    // }
-    if (this->get_current_state().id() == lifecycle_msgs::msg::State::PRIMARY_STATE_ACTIVE) {
-            RCUTILS_LOG_ERROR_NAMED(get_name(), "etasl_console not allowed while the node is active");
+bool etaslNode::etasl_console(const std::shared_ptr<std_srvs::srv::Empty::Request> request, std::shared_ptr<std_srvs::srv::Empty::Response>  response) {
+
+    if (this->get_current_state().label() == "unconfigured" || this->get_current_state().label() == "finalized") {
+            RCUTILS_LOG_ERROR_NAMED(get_name(), "etasl_console not allowed while the node is unconfigured or finalized");
             return false;
     } 
-    assert(LUA!=NULL);
-    assert(ctx!=NULL);
-    int retval = LUA->call_console();
-    return retval==0;
+    else if (this->get_current_state().label() == "active") {
+            RCUTILS_LOG_INFO_NAMED(get_name(), "Node automatically deactivating and entering to the etasl_console...");
+            auto transition = this->deactivate();
+            int retval = LUA->call_console(); 
+            return retval==0;
+    }
+    else{
+            RCUTILS_LOG_INFO_NAMED(get_name(), "Entering to the etasl_console...");
+            int retval = LUA->call_console(); 
+            return retval==0;
+    }
+
+    return false;
+
 }
 
 
@@ -77,34 +84,26 @@ bool etaslNode::srv_etasl_console(const std::shared_ptr<std_srvs::srv::Empty::Re
 void etaslNode::publishJointState() {
     // auto joint_state_msg = std::make_shared<sensor_msgs::msg::JointState>();
 
-    // if(this->get_current_state()){
+      this->update(); // get_current_state().label() could change here, e.g. if a monitor is triggered
 
-    // }
+      if(this->get_current_state().label() == "active"){
 
-      this->update();
+        joint_state_msg.header.stamp = this->now(); // Set the timestamp to the current time
+        // joint_state_msg.name = jointnames; //No need to update if defined in configuration
+        
+        for (unsigned int i=0;i<jnames_in_expr.size();++i) {
+        // Populate the joint state message according to your robot configuration
+        joint_state_msg.position[i]  = jpos_ros[i];
+        joint_state_msg.velocity[i]  = 0.0;
+        joint_state_msg.effort[i]  = 0.0;
+        } 
 
-      joint_state_msg.header.stamp = this->now(); // Set the timestamp to the current time
-      // joint_state_msg.name = jointnames; //No need to update if defined in configuration
-      
-      for (unsigned int i=0;i<jnames_in_expr.size();++i) {
-      // Populate the joint state message according to your robot configuration
-      joint_state_msg.position[i]  = jpos_ros[i];
-      joint_state_msg.velocity[i]  = 0.0;
-      joint_state_msg.effort[i]  = 0.0;
+        // Even if not checked, only if the publisher is in an active state the message transfer is
+        // enabled and the message is actually published.
+        joint_pub_->publish(joint_state_msg);
       } 
+    
 
-      // std::cout << "publishing joints" << std::endl;
-    // Print the current state for demo purposes
-    // if (!joint_pub_->is_activated()) {
-    //   RCLCPP_INFO(
-    //     get_logger(), "Lifecycle publisher is currently inactive. Messages are not published.");
-    // } 
-
-    // We independently from the current state call publish on the lifecycle
-    // publisher.
-    // Only if the publisher is in an active state, the message transfer is
-    // enabled and the message actually published.
-    joint_pub_->publish(joint_state_msg);
 }
 
 void etaslNode::update_controller_output(Eigen::VectorXd const& jvalues_solver){
@@ -373,54 +372,11 @@ void etaslNode::configure_etasl(){
 
 
 
-// Get methods
-
-Context::Ptr etaslNode::get_ctx()
-{
-  return ctx;
-}
-boost::shared_ptr<solver> etaslNode::get_slv()
-{
-  return slv;
-}
-boost::shared_ptr<eTaSL_OutputHandler> etaslNode::get_output_handler()
-{
-  return oh;
-}
-boost::shared_ptr<eTaSL_InputHandler> etaslNode::get_input_handler()
-{
-  return ih;
-}
-
-VectorXd etaslNode::get_fpos_etasl()
-{
-  return fpos_etasl;
-}
-
-VectorXd etaslNode::get_jpos_etasl()
-{
-  return jpos_etasl;
-}
-
-double etaslNode::get_time()
-{
-  return time;
-}
-
 int etaslNode::get_periodicity_param()
 {
   return periodicity_param;
 }
 
-std::string etaslNode::get_outpfilename()
-{
-  return outpfilename;
-}
-
-std::string etaslNode::get_etasl_fname()
-{
-  return fname;
-}
 
 
 
@@ -657,6 +613,9 @@ void etaslNode::reinitialize_data_structures() {
     // sent into the network.
     joint_pub_->on_deactivate();
     timer_->cancel();
+
+    jvel_etasl = VectorXd::Zero(slv->getNrOfJointStates()); //Sets joint velocities to zero
+    fvel_etasl  = VectorXd::Zero(slv->getNrOfFeatureStates()); //Sets feature variables to zero
 
 
     RCUTILS_LOG_INFO_NAMED(get_name(), "on_deactivate() is called.");
