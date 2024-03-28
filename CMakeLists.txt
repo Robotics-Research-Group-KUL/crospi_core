@@ -10,6 +10,9 @@ endif()
 
 # find dependencies
 find_package(ament_cmake REQUIRED)
+find_package(std_msgs REQUIRED)
+find_package(rosidl_default_generators REQUIRED)
+
 # uncomment the following section in order to fill in
 # further dependencies manually.
 # find_package(<dependency> REQUIRED)
@@ -18,8 +21,17 @@ find_package(ament_cmake REQUIRED)
 install(DIRECTORY launch robot_description etasl
   DESTINATION share/${PROJECT_NAME})
 
+
 include_directories(
    include
+)
+
+rosidl_generate_interfaces(${PROJECT_NAME}
+  # "msg/Num.msg"
+  "msg/Test.msg"
+  "srv/TaskSpecificationString.srv"
+  "srv/TaskSpecificationFile.srv"
+  DEPENDENCIES std_msgs # Add packages that above messages depend on, in this case geometry_msgs for Sphere.msg
 )
 
 add_subdirectory(src/misc)

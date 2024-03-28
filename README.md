@@ -142,4 +142,5 @@ Monitor{
 - Create simrobot node to easily transition between simulation and real robot in the future.
 - Implement services for configuration
 - Implement services to read task specification file and read task specification string
-- Check the state of the lifecycle when calling the etasl_console service, and perhaps deactivate the node if necessary.
+- Implement rosparam to select which topic the /jointstates and fsm/events are published.
+- Create ROS param to specify initial joints instead of hardcoding them

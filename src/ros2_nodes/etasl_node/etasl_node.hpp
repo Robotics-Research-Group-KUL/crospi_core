@@ -36,9 +36,11 @@
 #include <algorithm>
 #include <iomanip>
 #include <boost/chrono.hpp>
-#include "featurevariableinitializer.hpp"
 
+#include "featurevariableinitializer.hpp"
 #include "IO_handlers.hpp"
+#include "etasl_ros2/srv/task_specification_string.hpp" 
+#include "etasl_ros2/srv/task_specification_file.hpp" 
 
 
 using namespace KDL;
@@ -82,8 +84,9 @@ class etaslNode : public rclcpp_lifecycle::LifecycleNode
           std::shared_ptr<lifecycle_msgs::srv::ChangeState::Response>  response);
 
         bool etasl_console(const std::shared_ptr<std_srvs::srv::Empty::Request> request, std::shared_ptr<std_srvs::srv::Empty::Response>  response);
-        
-    
+        bool readTaskSpecificationFile(const std::shared_ptr<etasl_ros2::srv::TaskSpecificationFile::Request> request, std::shared_ptr<etasl_ros2::srv::TaskSpecificationFile::Response>  response);
+        bool readTaskSpecificationString(const std::shared_ptr<etasl_ros2::srv::TaskSpecificationString::Request> request, std::shared_ptr<etasl_ros2::srv::TaskSpecificationString::Response>  response);
+
 
 
     
@@ -142,6 +145,9 @@ class etaslNode : public rclcpp_lifecycle::LifecycleNode
 
         rclcpp::Service<lifecycle_msgs::srv::ChangeState>::SharedPtr test_service_;
         rclcpp::Service<std_srvs::srv::Empty>::SharedPtr srv_etasl_console_;
+        rclcpp::Service<etasl_ros2::srv::TaskSpecificationString>::SharedPtr srv_readTaskSpecificationString_;
+        rclcpp::Service<etasl_ros2::srv::TaskSpecificationFile>::SharedPtr srv_readTaskSpecificationFile_;
+
 
 
 

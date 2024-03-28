@@ -2,6 +2,9 @@
 #include "IO_handlers.hpp"
 #include "port_observer.hpp"
 
+# include <ament_index_cpp/get_package_share_directory.hpp> 
+
+
 // For real-time control loop
 #include <chrono>
 #include <thread>
@@ -41,8 +44,13 @@ etaslNode::etaslNode(const std::string & node_name, bool intra_process_comms = f
 
   srv_etasl_console_ = create_service<std_srvs::srv::Empty>("etasl_node/etasl_console", std::bind(&etaslNode::etasl_console, this, std::placeholders::_1, std::placeholders::_2));
 
+  srv_readTaskSpecificationFile_ = create_service<etasl_ros2::srv::TaskSpecificationFile>("etasl_node/readTaskSpecificationFile", std::bind(&etaslNode::readTaskSpecificationFile, this, std::placeholders::_1, std::placeholders::_2));
+
+  srv_readTaskSpecificationString_ = create_service<etasl_ros2::srv::TaskSpecificationString>("etasl_node/readTaskSpecificationString", std::bind(&etaslNode::readTaskSpecificationString, this, std::placeholders::_1, std::placeholders::_2));
 
   events_pub_ = this->create_publisher<std_msgs::msg::String>("fsm/events", 10); 
+
+  reinitialize_data_structures();
 
 }
 
@@ -79,6 +87,93 @@ bool etaslNode::etasl_console(const std::shared_ptr<std_srvs::srv::Empty::Reques
 
 }
 
+bool etaslNode::readTaskSpecificationFile(const std::shared_ptr<etasl_ros2::srv::TaskSpecificationFile::Request> request, std::shared_ptr<etasl_ros2::srv::TaskSpecificationFile::Response>  response) {
+
+	if(this->get_current_state().label() != "unconfigured"){
+		RCUTILS_LOG_ERROR_NAMED(get_name(), "Service etasl_node/readTaskSpecificationFile can only be read in unconfigured state");
+		response->success = false;
+		return false;
+	}
+
+	// std::stringstream file_path;
+	// file_path << "Solver and initialization properties : \n";
+	// file_path.str()).c_str()
+	std::string file_path = "";
+
+	if(request->rel_shared_dir){
+		std::string shared_dir = ament_index_cpp::get_package_share_directory("etasl_ros2");
+		file_path = shared_dir + "/etasl/" + request->file_path;
+	}
+	else{
+		file_path = request->file_path;
+	}
+	std::cout << file_path <<std::endl; 
+	// std::cout << "response:" <<request->file_path <<std::endl; 
+
+	try{
+		// Read eTaSL specification:
+		int retval = LUA->executeFile(std::string(file_path));
+		// int retval = LUA->executeFile("/home/santiregui/ros2_ws/install/etasl_ros2/share/etasl_ros2/etasl/move_cartesianspace.lua");
+		std::cout << "--------read lua file " <<std::endl; 
+		if (retval !=0) {
+			RCUTILS_LOG_ERROR_NAMED(get_name(), "Error executing task specification file. Shuting down.");
+			response->success = false;
+			rclcpp::shutdown();
+			return false;
+		}
+	} catch (const char* msg) {
+		// can be thrown by file/string errors during reading
+		// by lua_bind during reading
+		// by expressiongraph during reading ( expressiongraph will not throw when evaluating)
+		std::string message = "The following error was throuwn while reading the task specification: " + std::string(msg);
+		RCUTILS_LOG_ERROR_NAMED(get_name(), message.c_str());
+		response->success = false;
+		rclcpp::shutdown();
+		return false;
+	}
+
+
+	response->success = true;
+
+	return true;
+}
+
+
+bool etaslNode::readTaskSpecificationString(const std::shared_ptr<etasl_ros2::srv::TaskSpecificationString::Request> request, std::shared_ptr<etasl_ros2::srv::TaskSpecificationString::Response>  response) {
+	
+	if(this->get_current_state().label() != "unconfigured"){
+		RCUTILS_LOG_ERROR_NAMED(get_name(), "Service etasl_node/readTaskSpecificationString can only be read in unconfigured state");
+		response->success = false;
+		return false;
+	}
+
+	try{
+		// Read eTaSL specification:
+		int retval = LUA->executeString(request->str);
+		// int retval = LUA->executeFile("/home/santiregui/ros2_ws/install/etasl_ros2/share/etasl_ros2/etasl/move_cartesianspace.lua");
+		if (retval !=0) {
+			RCUTILS_LOG_ERROR_NAMED(get_name(), "Error executing specificed string command in LUA within the etasl_node/readTaskSpecificationString service. Shuting down.");
+			response->success = false;
+			rclcpp::shutdown();
+			return false;
+		}
+	} catch (const char* msg) {
+		// can be thrown by file/string errors during reading
+		// by lua_bind during reading
+		// by expressiongraph during reading ( expressiongraph will not throw when evaluating)
+		std::string message = "The following error was throuwn while reading the task specification: " + std::string(msg);
+		RCUTILS_LOG_ERROR_NAMED(get_name(), message.c_str());
+		response->success = false;
+		rclcpp::shutdown();
+		return false;
+	}
+
+
+	response->success = true;
+
+	return true;
+
+}
 
 
 void etaslNode::publishJointState() {
@@ -92,18 +187,16 @@ void etaslNode::publishJointState() {
         // joint_state_msg.name = jointnames; //No need to update if defined in configuration
         
         for (unsigned int i=0;i<jnames_in_expr.size();++i) {
-        // Populate the joint state message according to your robot configuration
-        joint_state_msg.position[i]  = jpos_ros[i];
-        joint_state_msg.velocity[i]  = 0.0;
-        joint_state_msg.effort[i]  = 0.0;
+          // Populate the joint state message according to your robot configuration
+          joint_state_msg.position[i]  = jpos_ros[i];
+          joint_state_msg.velocity[i]  = 0.0;
+          joint_state_msg.effort[i]  = 0.0;
         } 
 
         // Even if not checked, only if the publisher is in an active state the message transfer is
         // enabled and the message is actually published.
         joint_pub_->publish(joint_state_msg);
       } 
-    
-
 }
 
 void etaslNode::update_controller_output(Eigen::VectorXd const& jvalues_solver){
@@ -255,7 +348,6 @@ void etaslNode::configure_jointstate_msg(){
 void etaslNode::configure_etasl(){
 
 
-    ctx = create_context(); //Create context used for etasl
 
     // Read configuration ROS parameters
     fname = this->get_parameter("task_specification_file").as_string();
@@ -267,31 +359,12 @@ void etaslNode::configure_etasl(){
      */
 
     // Setup context for robot control problem:
-    ctx->addType("robot");
-    ctx->addType("feature");
+    // ctx->addType("robot");
+    // ctx->addType("feature");
 
     std::string message = "The task specification file used is: "+ fname;
     RCUTILS_LOG_INFO_NAMED(get_name(), message.c_str());
 
-    try{
-        // Read eTaSL specification:
-        LUA = boost::make_shared<LuaContext>();
-        LUA->initContext(ctx);
-        int retval = LUA->executeFile(fname);
-        if (retval !=0) {
-            RCUTILS_LOG_ERROR_NAMED(get_name(), "Error executing task specification file");
-            rclcpp::shutdown();
-            return;
-        }
-    } catch (const char* msg) {
-        // can be thrown by file/string errors during reading
-        // by lua_bind during reading
-        // by expressiongraph during reading ( expressiongraph will not throw when evaluating)
-        std::string message = "The following error was throuwn while reading the task specification: " + std::string(msg);
-        RCUTILS_LOG_ERROR_NAMED(get_name(), message.c_str());
-        rclcpp::shutdown();
-        return;
-    }
 
     // oh( ctx);     // or   std::vector<std::string> varnames =  {"q","f","dx","dy"};
                                       //      eTaSL_OutputHandler oh( ctx, varnames); for only specific outputs
@@ -462,8 +535,8 @@ void etaslNode::update()
 void etaslNode::reinitialize_data_structures() {
     ctx = create_context();
     slv.reset();
-    // ctx->addType("robot");
-    // ctx->addType("feature");
+    ctx->addType("robot");
+    ctx->addType("feature");
     LUA = boost::make_shared<LuaContext>();
     // define a variable that only depends on time
     LUA->initContext(ctx);
@@ -707,11 +780,6 @@ int main(int argc, char * argv[])
     std::shared_ptr<etaslNode> my_etasl_node = std::make_shared<etaslNode>("etasl_node");
     
     executor.add_node(my_etasl_node->get_node_base_interface());
-
-
-    
-    // my_etasl_node->configure_etasl();
-    // my_etasl_node->configure_jointstate_msg();
 
 
     // Preparation for control loop

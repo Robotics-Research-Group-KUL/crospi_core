@@ -37,11 +37,18 @@ from lifecycle_msgs.msg import Transition
 from std_msgs.msg import String
 from rclpy.qos import qos_profile_sensor_data
 
+from etasl_ros2.srv import TaskSpecificationFile
+from etasl_ros2.srv import TaskSpecificationString
+
+from functools import partial
+
+
 
 import time
 
 class ConfigureEtasl(ServiceState):
     def __init__(self, node: Node) -> None:
+        self.node = node
         super().__init__(
             node,  # node
             ChangeState,  # srv type
@@ -210,10 +217,32 @@ def print_sum(blackboard: Blackboard) -> str:
     return SUCCEED
 
 
+def readTaskSpecificationFile(blackboard: Blackboard, node: Node, file_name: String, rel_shared_dir: bool):
+    req_task = TaskSpecificationFile.Request()
+    req_task.file_path = file_name
+    req_task.rel_shared_dir = rel_shared_dir
+    resp_task = node.etasl_file_cli.call(req_task) 
+    print("The response call is" + str(resp_task))
+    time.sleep(1)
+
+    return SUCCEED
+
+def readTaskSpecificationString(blackboard: Blackboard, node: Node, string_p: String):
+
+    req_task = TaskSpecificationString.Request()
+    req_task.str = string_p
+    resp_task = node.etasl_string_cli.call(req_task)
+    print("The response call is" + str(resp_task))
+
+    return SUCCEED
+
 class EtaslFSMNode(Node):
 
     def __init__(self):
         super().__init__("yasmin_node")
+
+        self.etasl_file_cli = self.create_client(TaskSpecificationFile, 'etasl_node/readTaskSpecificationFile')
+        self.etasl_string_cli = self.create_client(TaskSpecificationString, 'etasl_node/readTaskSpecificationString')
 
         # create a state machine
         sm = StateMachine(outcomes=["finished","finished_inner"])
@@ -237,10 +266,11 @@ class EtaslFSMNode(Node):
                 transitions={SUCCEED: "finished_inner",
                             ABORT: "finished"})
 
+        task_spec_cb = partial(readTaskSpecificationFile, node=self,file_name= "move_cartesianspace.lua", rel_shared_dir=True)
         
         sm_out = StateMachine(outcomes=["finished_outer"])
 
-        sm_out.add_state("STATE_OUTER_A", CbState([SUCCEED], test_callback),
+        sm_out.add_state("STATE_OUTER_A", CbState([SUCCEED], task_spec_cb),
                      transitions={SUCCEED: "NESTED_FSM_INNER"})
         sm_out.add_state("NESTED_FSM_INNER", sm,
                     transitions={"finished_inner": "STATE_OUTER_B",
