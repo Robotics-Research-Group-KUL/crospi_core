@@ -16,6 +16,8 @@ class PortObserver: public Observer {
     const std::string action_name;
     const std::string event_postfix;
     bool  exit_when_triggered;
+    bool activate_console;
+    boost::shared_ptr<LuaContext> LUA;
     std::string            ename;
  
 public:
@@ -27,6 +29,8 @@ public:
             const std::string& _action_name,
             const std::string& _event_postfix,
             bool  _exit_when_triggered,
+            bool _activate_console,
+            boost::shared_ptr<LuaContext> _LUA,
             Observer::Ptr _next 
     ):   ctx(_ctx),
          outp(_outp),
@@ -34,6 +38,8 @@ public:
          action_name(_action_name),
          event_postfix(_event_postfix),
          exit_when_triggered(_exit_when_triggered),
+         activate_console(_activate_console),
+         LUA(_LUA),
          next(_next) 
     {
         ename.reserve(512);
@@ -55,12 +61,17 @@ public:
             if (event_postfix.size()!=0) {
                 sstr << "@" << event_postfix;
             } 
-            event_msg.data = sstr.str();
-            outp->publish(event_msg);
-            if (exit_when_triggered) {
+            if(activate_console){
+                ctx->setFinishStatus();
+                int retval = LUA->call_console();
+            }
+            else if (exit_when_triggered) {
                 ctx->setFinishStatus();
             }
-        } else {
+            event_msg.data = sstr.str();
+            outp->publish(event_msg);
+        } 
+        else {
             if (next) {
                 next->monitor_activated(mon);
             }
@@ -76,10 +87,12 @@ Observer::Ptr create_port_observer(
     const std::string& _action_name,
     const std::string& _event_postfix,
     bool  _exit_when_triggered,
+    bool _activate_console,
+    boost::shared_ptr<LuaContext> _LUA,
     Observer::Ptr _next
 ) {
     
-    PortObserver::Ptr r( new PortObserver(_ctx,_outp, _action_name, _event_postfix, _exit_when_triggered, _next) );
+    PortObserver::Ptr r( new PortObserver(_ctx,_outp, _action_name, _event_postfix, _exit_when_triggered, _activate_console, _LUA, _next) );
     return r;
 }
 

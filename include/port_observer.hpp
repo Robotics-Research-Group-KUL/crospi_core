@@ -1,6 +1,7 @@
 #ifndef EXPRESSIONGRAPH_PORT_OBSERVER_ROS_HPP
 #define EXPRESSIONGRAPH_PORT_OBSERVER_ROS_HPP
 #include <expressiongraph/context.hpp>
+#include <expressiongraph/context_scripting.hpp>
 #include "rclcpp/rclcpp.hpp"
 #include "std_msgs/msg/string.hpp"
 
@@ -16,6 +17,9 @@ using namespace KDL;
  * \param _action_name [in] should match the  action_name that is specified in the monitor 
  * \param _exit_when_triggered [in] when true, the triggered monitor will also cause the component to 
  *        stop.
+ *\param _activate_console [in] when true, it activates the etasl_console for debugging purposes. 
+ *          If true, the value of _exit_when_triggered will be taken as true always. 
+ *\param _LUA [in] shared_ptr of the LuaContext
  * \param _next  [in] points to the next handler for an observer.
  */
 Observer::Ptr create_port_observer(
@@ -24,6 +28,8 @@ Observer::Ptr create_port_observer(
     const std::string& _action_name,
     const std::string& _event_postfix,
     bool  exit_when_triggered,
+    bool _activate_console,
+    boost::shared_ptr<LuaContext> _LUA,
     Observer::Ptr _next = Observer::Ptr() 
 );
 

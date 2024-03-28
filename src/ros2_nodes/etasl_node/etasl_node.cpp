@@ -324,9 +324,11 @@ void etaslNode::configure_etasl(){
     slv->setJointStates(jpos_etasl);
 
     // create observers for monitoring events:       
-    Observer::Ptr obs = create_port_observer( ctx, events_pub_, "portevent","",false);
-    obs = create_port_observer( ctx, events_pub_, "event",event_postfix,false, obs);
-    obs = create_port_observer( ctx, events_pub_, "exit", event_postfix,true, obs);
+    Observer::Ptr obs = create_port_observer( ctx, events_pub_, "portevent","",false,false,LUA);
+    obs = create_port_observer( ctx, events_pub_, "event",event_postfix,false, false, LUA, obs);
+    obs = create_port_observer( ctx, events_pub_, "exit", event_postfix,true, false, LUA, obs);
+    obs = create_port_observer( ctx, events_pub_, "debug", event_postfix,true, true, LUA, obs);
+
     //obs = create_default_observer(ctx,"exit",obs);
     ctx->addDefaultObserver(obs);
     // TODO: Create debug observer, such that it logs slv related data when triggered

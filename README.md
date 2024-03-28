@@ -103,6 +103,14 @@ etasl_node:
         jointnames: ["shoulder_pan_joint","shoulder_lift_joint","elbow_joint","wrist_1_joint","wrist_2_joint","wrist_3_joint"]
 ```
 
+From a different terminal call the following ros2 service:
+```bash
+ros2 service call /etasl_node/etasl_console std_srvs/srv/Empty
+```
+
+This will activate the interactive LUA console where you can, for example, print the values of all the variables defined in the task specification (e.g. move_cartesianspace.lua).
+
+Try entering `ctx` in the console, which will print information about the solver and task specification.
 
 ## Authors
 
@@ -115,5 +123,5 @@ etasl_node:
 - Add Input and Output handlers. 
 - Create simrobot node to easily transition between simulation and real robot in the future.
 - Implement services for configuration
-- Implement a service to access the etasl_console()
 - Implement services to read task specification file and read task specification string
+- Check the state of the lifecycle when calling the etasl_console service, and perhaps deactivate the node if necessary.
