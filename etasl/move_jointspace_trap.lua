@@ -114,22 +114,22 @@ end
 
 -- =================================== MONITOR TO FINISH THE MOTION ========================
 
--- Monitor{
---         context=ctx,
---         name='finish_after_motion_ended',
---         upper=0.0,
---         actionname='exit',
---         expr=time-duration
--- }
-
-Monitor {
-    context = ctx,
-    name    = "time_elapsed",
-    expr    = time,
-    upper   = 1.0,
-    actionname = "print",
-    argument = "addtional argument"
+Monitor{
+        context=ctx,
+        name='finish_after_motion_ended',
+        upper=0.0,
+        actionname='exit',
+        expr=time-duration +constant(0.2)
 }
+
+-- Monitor {
+--     context = ctx,
+--     name    = "time_elapsed",
+--     expr    = time,
+--     upper   = 1.0,
+--     actionname = "print",
+--     argument = "addtional argument"
+-- }
 
 
 

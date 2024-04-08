@@ -19,7 +19,6 @@
 import rclpy
 
 from simple_node import Node
-from example_interfaces.srv import AddTwoInts
 
 from yasmin import CbState
 from yasmin import Blackboard
@@ -41,6 +40,8 @@ from etasl_ros2.srv import TaskSpecificationFile
 from etasl_ros2.srv import TaskSpecificationString
 
 from functools import partial
+
+import etasl_yasmin_utils as etasl
 
 
 
@@ -172,32 +173,6 @@ class WaitingEtasl(MonitorState):
         return "outcome_continue"
 
 
-class AddTwoIntsState(ServiceState):
-    def __init__(self, node: Node) -> None:
-        super().__init__(
-            node,  # node
-            AddTwoInts,  # srv type
-            "/add_two_ints",  # service name
-            self.create_request_handler,  # cb to create the request
-            ["outcome1"],  # outcomes. Includes (SUCCEED, ABORT)
-            self.response_handler  # cb to process the response
-        )
-
-    def create_request_handler(self, blackboard: Blackboard) -> AddTwoInts.Request:
-
-        req = AddTwoInts.Request()
-        req.a = blackboard.a
-        req.b = blackboard.b
-        print("AddTwoIntsState")
-        time.sleep(1)
-        return req
-
-    def response_handler(self, blackboard: Blackboard, response: AddTwoInts.Response) -> str:
-
-        blackboard.sum = response.sum
-        return "outcome1"
-
-
 def init_callback(blackboard: Blackboard) -> str:
     blackboard.a = 10
     blackboard.b = 5
@@ -217,32 +192,35 @@ def print_sum(blackboard: Blackboard) -> str:
     return SUCCEED
 
 
-def readTaskSpecificationFile(blackboard: Blackboard, node: Node, file_name: String, rel_shared_dir: bool):
-    req_task = TaskSpecificationFile.Request()
-    req_task.file_path = file_name
-    req_task.rel_shared_dir = rel_shared_dir
-    resp_task = node.etasl_file_cli.call(req_task) 
-    print("The response call is" + str(resp_task))
-    time.sleep(1)
+# def readTaskSpecificationFile(blackboard: Blackboard, node: Node, file_name: String, rel_shared_dir: bool):
+#     req_task = TaskSpecificationFile.Request()
+#     req_task.file_path = file_name
+#     req_task.rel_shared_dir = rel_shared_dir
+#     resp_task = node.etasl_file_cli.call(req_task) 
+#     print("The response call is" + str(resp_task))
+#     time.sleep(1)
 
-    return SUCCEED
+#     return SUCCEED
 
-def readTaskSpecificationString(blackboard: Blackboard, node: Node, string_p: String):
+# def readTaskSpecificationString(blackboard: Blackboard, node: Node, string_p: String):
 
-    req_task = TaskSpecificationString.Request()
-    req_task.str = string_p
-    resp_task = node.etasl_string_cli.call(req_task)
-    print("The response call is" + str(resp_task))
+#     req_task = TaskSpecificationString.Request()
+#     req_task.str = string_p
+#     resp_task = node.etasl_string_cli.call(req_task)
+#     print("The response call is" + str(resp_task))
 
-    return SUCCEED
+#     return SUCCEED
 
 class EtaslFSMNode(Node):
 
+
     def __init__(self):
         super().__init__("yasmin_node")
+        self.etasl_clients = {} #used to add service clients on the fly
 
-        self.etasl_file_cli = self.create_client(TaskSpecificationFile, 'etasl_node/readTaskSpecificationFile')
-        self.etasl_string_cli = self.create_client(TaskSpecificationString, 'etasl_node/readTaskSpecificationString')
+
+        # self.etasl_file_cli = self.create_client(TaskSpecificationFile, 'etasl_node/readTaskSpecificationFile')
+        # self.etasl_string_cli = self.create_client(TaskSpecificationString, 'etasl_node/readTaskSpecificationString')
 
         # create a state machine
         sm = StateMachine(outcomes=["finished","finished_inner"])
@@ -266,7 +244,7 @@ class EtaslFSMNode(Node):
                 transitions={SUCCEED: "finished_inner",
                             ABORT: "finished"})
 
-        task_spec_cb = partial(readTaskSpecificationFile, node=self,file_name= "move_cartesianspace.lua", rel_shared_dir=True)
+        task_spec_cb = partial(etasl.readTaskSpecificationFile, node=self,file_name= "move_cartesianspace.lua", rel_shared_dir=True)
         
         sm_out = StateMachine(outcomes=["finished_outer"])
 
@@ -291,9 +269,20 @@ class EtaslFSMNode(Node):
         YasminViewerPub(self, "Lifecycle FSM", sm)
         YasminViewerPub(self, "Complete FSM", sm_out)
 
+        etasl.define_services(self) #Creates all the etasl service clients and adds them to self.etasl_clients 
+
         # execute
-        outcome = sm_out()
+        outcome = sm_out() #This function will block until the output of sm_out is achieved
         print(outcome)
+    
+    def add_client(self, name: String, service_type):
+        self.etasl_clients[name] = self.create_client(service_type, 'etasl_node/{}'.format(name))
+        print("adding service: etasl_node/{}".format(name))
+        return
+    
+    def call_service(self, srv_name: String, req_task):
+        self.etasl_clients[srv_name].call(req_task)
+        return 
 
 
 # main
