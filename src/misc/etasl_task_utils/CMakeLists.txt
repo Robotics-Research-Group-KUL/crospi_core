@@ -1,0 +1,76 @@
+message("Compiling misc/etasl_task_utils libraries ${CMAKE_CURRENT_SOURCE_DIR}")
+
+
+
+# find dependencies
+find_package(ament_cmake REQUIRED)
+find_package(ament_index_cpp REQUIRED)
+find_package(rclcpp REQUIRED)
+find_package(rclcpp_action REQUIRED)
+find_package(etasl REQUIRED)
+find_package(resource_retriever REQUIRED)
+find_package(etasl_interfaces REQUIRED)
+find_package(sensor_msgs REQUIRED)
+find_package(std_msgs REQUIRED)
+find_package(Lua51 REQUIRED)
+find_package(Eigen3 REQUIRED)
+# find_package(pugixml REQUIRED)
+find_package(jsoncpp REQUIRED)
+# find_package(Sphinx REQUIRED)
+find_package(tf2 REQUIRED)
+find_package(tf2_geometry_msgs REQUIRED)
+find_package(tf2_ros REQUIRED)
+#add_subdirectory( doc )
+
+set(CMAKE_CXX_STANDARD 17)
+
+include_directories(include ${LUA_INCLUDE_DIR})
+
+
+set(src_etasl_task_utils
+    featurevariableinitializer.cpp
+    outputhandler.cpp
+    task.cpp
+    blackboard.cpp
+    printobserver.cpp
+    string_interpolate.cpp
+    #solverregistry.cpp
+    #solverfactory_qpoases.cpp
+    qpoasessolverfactory.cpp
+    fileoutputhandler.cpp
+    fileoutputhandlerfactory.cpp
+)
+
+set(rosdependencies 
+    rclcpp
+    rclcpp_action
+    etasl_interfaces
+    resource_retriever
+    ament_index_cpp
+    Eigen3
+    sensor_msgs
+    tf2
+    tf2_geometry_msgs
+    tf2_ros
+)
+
+set(dependencies
+    fmt
+    etasl::expressiongraph_context 
+    etasl::expressiongraph_solver_qpoases 
+    etasl::expressiongraph_context_lua    
+    # pugixml
+    jsoncpp
+)
+
+
+add_library(etasl_task_utils ${src_etasl_task_utils})
+
+target_include_directories(etasl_task_utils PUBLIC
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+  $<INSTALL_INTERFACE:include>)
+ament_target_dependencies(etasl_task_utils ${rosdependencies})  
+target_link_libraries(etasl_task_utils ${dependencies})
+
+install(TARGETS etasl_task_utils
+  DESTINATION lib/${PROJECT_NAME})

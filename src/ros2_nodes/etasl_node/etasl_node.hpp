@@ -38,13 +38,26 @@
 #include <boost/chrono.hpp>
 
 #include "featurevariableinitializer.hpp"
-#include "IO_handlers.hpp"
+#include "IO_handlers_deleteme.hpp"
 #include "etasl_ros2/srv/task_specification_string.hpp" 
 #include "etasl_ros2/srv/task_specification_file.hpp" 
 
 
+#include "etasl_node_utils/rostask.hpp"
+
+#include "etasl_task_utils/outputhandler.hpp"
+#include "etasl_task_utils/outputhandlerfactory.hpp"
+#include "etasl_node_utils/topicinputhandlerfactory.hpp"
+#include "etasl_node_utils/jointstateoutputhandlerfactory.hpp"
+#include "etasl_node_utils/topicoutputhandlerfactory.hpp"
+#include "etasl_task_utils/fileoutputhandlerfactory.hpp"
+#include "etasl_node_utils/tfoutputhandlerfactory.hpp"
+
+
+
 using namespace KDL;
 using namespace Eigen;
+// using namespace etasl;
 
 typedef rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn  lifecycle_return;
 
@@ -88,7 +101,7 @@ class etaslNode : public rclcpp_lifecycle::LifecycleNode
         bool readTaskSpecificationString(const std::shared_ptr<etasl_ros2::srv::TaskSpecificationString::Request> request, std::shared_ptr<etasl_ros2::srv::TaskSpecificationString::Response>  response);
 
 
-
+        bool configure_task();
     
     private:
         std::shared_ptr<rclcpp::TimerBase> timer_;
@@ -147,6 +160,9 @@ class etaslNode : public rclcpp_lifecycle::LifecycleNode
         rclcpp::Service<std_srvs::srv::Empty>::SharedPtr srv_etasl_console_;
         rclcpp::Service<etasl_ros2::srv::TaskSpecificationString>::SharedPtr srv_readTaskSpecificationString_;
         rclcpp::Service<etasl_ros2::srv::TaskSpecificationFile>::SharedPtr srv_readTaskSpecificationFile_;
+
+
+        boost::shared_ptr<etasl::RosTask> task;
 
 
 

@@ -144,3 +144,4 @@ Monitor{
 - Implement services to read task specification file and read task specification string
 - Implement rosparam to select which topic the /jointstates and fsm/events are published.
 - Create ROS param to specify initial joints instead of hardcoding them
+- Use properties for solver. Take a loop on the ros2 featurevariableinitializer.cpp which takes JSON properties and to configure

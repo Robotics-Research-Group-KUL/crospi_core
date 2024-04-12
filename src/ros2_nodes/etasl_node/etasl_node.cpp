@@ -1,8 +1,15 @@
 #include "etasl_node.hpp"
-#include "IO_handlers.hpp"
+#include "IO_handlers_deleteme.hpp"
 #include "port_observer.hpp"
 
 # include <ament_index_cpp/get_package_share_directory.hpp> 
+
+#include "etasl_task_utils/blackboard.hpp"
+#include "etasl_task_utils/etasl_error.hpp"
+
+
+
+#include <jsoncpp/json/json.h>
 
 
 // For real-time control loop
@@ -10,9 +17,12 @@
 #include <thread>
 #include <vector>
 
+
+
 using namespace std::chrono_literals;
 using namespace KDL;
 using namespace Eigen;
+// using namespace etasl;
 
 
 
@@ -347,7 +357,7 @@ void etaslNode::configure_jointstate_msg(){
 
 void etaslNode::configure_etasl(){
 
-
+  
 
     // Read configuration ROS parameters
     fname = this->get_parameter("task_specification_file").as_string();
@@ -561,6 +571,75 @@ void etaslNode::reinitialize_data_structures() {
     
 }
 
+bool etaslNode::configure_task()
+{
+    // std::string cmd_filename = "/home/santiregui/ros2_ws/src/etasl_ros2/etasl/json/test_io_handlers.json";
+    // Json::Value cmd = etasl::loadJSONFile(cmd_filename);
+    // if (!cmd) {
+    //     throw etasl::etasl_error(etasl::etasl_error::FAILED_TO_LOAD, "Cannot find file '{}'", cmd_filename);
+    //     return false;
+    // }
+
+    // etasl::registerTopicInputHandlerFactory(my_etasl_node);
+    // etasl::registerTopicOutputHandlerFactory(my_etasl_node);
+
+    // std::vector<etasl::OutputHandler::SharedPtr> outputhandlers;
+
+
+    // // for (const auto& p : cmd["etasl"]["outputhandlers"]) {
+    // //     // etasl::add_output_handler(
+    // //     //     etasl::Registry<etasl::OutputHandlerFactory>::create(p));
+    // //       outputhandlers.push_back(etasl::Registry<etasl::OutputHandlerFactory>::create(p));
+    // // }
+
+
+
+
+    etasl::BlackBoard board(1);
+    std::cout << " loading blackboard" << std::endl;
+    board.setSearchPath("$[etasl_ros2]/scripts/schema:$[etasl_ros2]/scripts/schema/tasks");
+
+    board.load_process_and_validate("$[etasl_ros2]/scripts/json/blackboard.json");
+    fmt::print("{:->80}\n", "-");
+    fmt::print("blackboard/default-etasl : ");
+    Json::Value param = board.getPath("/default-etasl", false);
+    fmt::print("After processing and validating:\n{}", param);
+    fmt::print("{:->80}\n", "-");
+
+    const std::string cmd_filename = etasl::string_interpolate("$[etasl_ros2]/scripts/etasl/move_circle.json");
+    Json::Value cmd = etasl::loadJSONFile(cmd_filename);
+    if (!cmd) {
+        throw etasl::etasl_error(etasl::etasl_error::FAILED_TO_LOAD, "Cannot find file '{}'", cmd_filename);
+        return false;
+    }
+    cmd = board.process_and_validate("", cmd, "cmd");
+    fmt::print("Command after validation and processing: \n{}\n", cmd);
+    etasl::addIfNotExists(cmd["etasl"], param);
+
+    fmt::print("Command after fusion: \n{}\n", cmd);
+    etasl::saveJSONFILE(cmd, "tst.json");
+    fmt::print("{:->80}\n", "-");
+    double freq = 1.0 / cmd["etasl"]["sample_time"].asDouble();
+    rclcpp::Rate rate(freq);
+    int counter = 0;
+
+
+    // rclcpp_lifecycle::LifecycleNode::SharedPtr life_cicle_node = this->shared_from_this();
+    // etasl::registerQPOasesSolverFactory();
+    etasl::registerTopicOutputHandlerFactory(shared_from_this()); //shared_from_this() can be used because rclcpp_lifecycle::LifecycleNode inherits from std::enable_shared_from_this<etaslNode>
+    etasl::registerFileOutputHandlerFactory();
+    etasl::registerJointStateOutputHandlerFactory(shared_from_this());
+    etasl::registerTopicInputHandlerFactory(shared_from_this());
+    etasl::registerTFOutputHandlerFactory(shared_from_this());
+
+
+    task =  boost::make_shared<etasl::RosTask>(shared_from_this(), cmd);
+    task->load();
+
+    return true;
+
+}
+
 
 
 
@@ -586,6 +665,8 @@ void etaslNode::reinitialize_data_structures() {
     // can comply to the current state of the node.
     // As of the beta version, there is only a lifecycle publisher
     // available.
+
+
 
 
 
@@ -778,9 +859,28 @@ int main(int argc, char * argv[])
     rclcpp::executors::StaticSingleThreadedExecutor executor;
 
     std::shared_ptr<etaslNode> my_etasl_node = std::make_shared<etaslNode>("etasl_node");
+    // auto my_etasl_node = std::make_shared<etaslNode>("etasl_node");
     
     executor.add_node(my_etasl_node->get_node_base_interface());
 
+    // std::string cmd_filename = "/home/santiregui/ros2_ws/src/etasl_ros2/etasl/json/test_io_handlers.json";
+    // Json::Value cmd = etasl::loadJSONFile(cmd_filename);
+    // if (!cmd) {
+    //     throw etasl::etasl_error(etasl::etasl_error::FAILED_TO_LOAD, "Cannot find file '{}'", cmd_filename);
+    //     return -1;
+    // }
+
+    // etasl::registerTopicInputHandlerFactory(my_etasl_node);
+    // etasl::registerTopicOutputHandlerFactory(my_etasl_node);
+
+    // std::vector<etasl::OutputHandler::SharedPtr> outputhandlers;
+
+
+    // for (const auto& p : cmd["etasl"]["outputhandlers"]) {
+    //     // etasl::add_output_handler(
+    //     //     etasl::Registry<etasl::OutputHandlerFactory>::create(p));
+    //       outputhandlers.push_back(etasl::Registry<etasl::OutputHandlerFactory>::create(p));
+    // }
 
     // Preparation for control loop
     // int periodicity_param = my_etasl_node->get_periodicity_param();
