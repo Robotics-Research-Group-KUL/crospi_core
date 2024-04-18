@@ -1,0 +1,30 @@
+{
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "$id": "./taskspecification.json",
+    "title": "Task specification",
+    "type": "object",
+    "properties": {
+        "description" : {
+            "type":"string",
+            "format":"xhtml"
+        },
+        "worldmodel" : {
+            "type": "object",
+            "$ref": "/schema/worldmodel.json"
+        },       
+        "taskframeconstraints": {
+            "type": "array",
+            "$ref": "/schema/taskframeconstraints.json"
+        }
+    },
+    "required" : [
+        "description",
+        "worldmodel",
+        "taskframeconstraints"
+    ],
+    "options" : {
+        "disable_collapse" : true,
+        "disable_edit_json": true,
+        "disable_properties": true
+    }
+}

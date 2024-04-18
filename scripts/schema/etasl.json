@@ -1,0 +1,48 @@
+{
+    "$schema":"http://json-schema.org/draft-04/schema",
+    "$id":"etasl.json",
+    "title":"eTaSL Parameters",
+    "type":"object",
+    "description":"Parameters needed to run eTaSL",
+    "properties": {
+        "$schema" : {
+            "type":"string"
+        },
+        "initializer":{
+            "description": "determines how the feature variables are initialized during initialization of an eTaSL execution",
+            "$ref":"initializer.json"
+        },
+        "solver":{
+            "oneOf" : [
+                {"$ref":"qpoasessolver.json"}
+            ]
+        },
+        "sample_time":{
+            "description":"At each sample_time, eTaSL computes new robot joint velocities",
+            "type":"number",
+            "default":0.01
+        },
+        "reporting_interval": {
+            "description":"Interval in seconds to report the timing statistics to the console",
+            "type" : "number",
+            "default": 3
+        },
+        "outputhandlers": {
+            "title":"Outputhandlers",
+            "description":"Outputhandlers extract data from eTaSL and communicate it in some way to the outside world, such as writing to a file or using a ROS Topic",
+            "type" : "array",
+            "items" : {
+                "$ref" : "outputhandler.json"
+            }
+        },
+        "inputhandlers": {
+            "title":"Inputhandlers",
+            "description":"Inputhandlers get information from the outside world and puts it into eTaSL",
+            "type" : "array",
+            "items" : {
+                "$ref": "inputhandler.json"
+            }
+        }
+    },
+    "additionalProperties":false
+}

@@ -60,6 +60,7 @@ void JointStateOutputHandler::finalize()
     }
     msg.header.stamp = node->get_clock()->now();
     pub->publish(msg);
+    pub.reset();
 }
 
 } // namespace etasl

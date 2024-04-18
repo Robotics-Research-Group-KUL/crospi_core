@@ -71,4 +71,9 @@ void TopicOutputHandler::update(
     pub->publish(msg);
 }
 
+void TopicOutputHandler::finalize()
+{
+    pub.reset();
+}
+
 } // namespace etasl

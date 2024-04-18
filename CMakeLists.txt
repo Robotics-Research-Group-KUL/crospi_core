@@ -21,7 +21,7 @@ find_package(rosidl_default_generators REQUIRED)
 # find_package(<dependency> REQUIRED)
 
 
-install(DIRECTORY launch robot_description etasl
+install(DIRECTORY launch robot_description etasl scripts
   DESTINATION share/${PROJECT_NAME})
 
 
@@ -41,6 +41,8 @@ add_subdirectory(src/misc)
 add_subdirectory(src/ros2_nodes/simple_etasl_node)
 add_subdirectory(src/ros2_nodes/etasl_node)
 add_subdirectory(src/ros2_nodes/test_publisher_node)
+add_subdirectory(src/ros2_nodes/erwin_node)
+
 
 
 if(BUILD_TESTING)

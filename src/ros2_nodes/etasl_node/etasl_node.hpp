@@ -43,11 +43,13 @@
 #include "etasl_ros2/srv/task_specification_file.hpp" 
 
 
-#include "etasl_node_utils/rostask.hpp"
+// #include "etasl_node_utils/rostask.hpp"
+#include "etasl_task_utils/registry.hpp"
+#include "etasl_task_utils/inputhandlerfactory.hpp"
+#include "etasl_node_utils/topicinputhandlerfactory.hpp"
 
 #include "etasl_task_utils/outputhandler.hpp"
 #include "etasl_task_utils/outputhandlerfactory.hpp"
-#include "etasl_node_utils/topicinputhandlerfactory.hpp"
 #include "etasl_node_utils/jointstateoutputhandlerfactory.hpp"
 #include "etasl_node_utils/topicoutputhandlerfactory.hpp"
 #include "etasl_task_utils/fileoutputhandlerfactory.hpp"
@@ -88,7 +90,7 @@ class etaslNode : public rclcpp_lifecycle::LifecycleNode
         void update_controller_output(Eigen::VectorXd const& jvalues);
         void update_controller_input(Eigen::VectorXd const& jvalues);
 
-        void solver_configuration();
+        void solver_configuration(Json::Value const& param);
         void initialize_joints();
         void initialize_feature_variables();
         void configure_jointstate_msg();
@@ -101,7 +103,7 @@ class etaslNode : public rclcpp_lifecycle::LifecycleNode
         bool readTaskSpecificationString(const std::shared_ptr<etasl_ros2::srv::TaskSpecificationString::Request> request, std::shared_ptr<etasl_ros2::srv::TaskSpecificationString::Response>  response);
 
 
-        bool configure_task();
+        bool configure_task(Json::Value const& param);
     
     private:
         std::shared_ptr<rclcpp::TimerBase> timer_;
@@ -125,8 +127,14 @@ class etaslNode : public rclcpp_lifecycle::LifecycleNode
         boost::shared_ptr<eTaSL_InputHandler> ih;
         boost::shared_ptr<std::ofstream > outpfile_ptr;
 
+        std::vector<etasl::OutputHandler::SharedPtr> outputhandlers;
+        std::vector<etasl::InputHandler::SharedPtr> inputhandlers;
+        std::vector<bool> ih_initialized;
+
         std::vector< std::string > jointnames;
         std::vector<std::string> jnames_in_expr;
+        std::vector< std::string > fnames;
+
 
         
 
@@ -160,9 +168,6 @@ class etaslNode : public rclcpp_lifecycle::LifecycleNode
         rclcpp::Service<std_srvs::srv::Empty>::SharedPtr srv_etasl_console_;
         rclcpp::Service<etasl_ros2::srv::TaskSpecificationString>::SharedPtr srv_readTaskSpecificationString_;
         rclcpp::Service<etasl_ros2::srv::TaskSpecificationFile>::SharedPtr srv_readTaskSpecificationFile_;
-
-
-        boost::shared_ptr<etasl::RosTask> task;
 
 
 

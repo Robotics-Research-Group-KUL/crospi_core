@@ -1,0 +1,42 @@
+{
+    "$schema": "http://json-schema.org/draft-04/schema",
+    "$id": "robot-configuration.json",
+    "title": "DRAFT Robot configuration",
+    "description": " DRAFT Describes the robot configuration. This does not change for the whole robot application.",
+    "type": "object",
+    "properties": {
+        "$schema": {
+            "description": "allow $schema in a datafile such that we have editor support and self-description of the content",
+            "type": "string"
+        },
+        "name": {
+            "description": "Name of the robot configuration",
+            "type": "string"
+        },
+        "description": {
+            "description": "Description of the robot configuration, i.e. where it is located in the lab, special considerations, etc.",
+            "type": "string"
+        },
+        "robots" : {
+            "type" : "array",
+            "items" : {
+                "$ref":"robot.json"
+            }
+        },
+        "real_world_time": {
+            "description": "true if executed in real-world time.  If false, computations are done as fast as possible without regards to the specified sample time.  If false, the simulation property should be true.",
+            "type": "boolean"
+        },
+        "default-task" : {
+            "$ref" : "default-task.json"
+        }
+    },
+    "required": [
+        "name",
+        "description",
+        "real_world_time",
+        "robots",
+        "default-task"
+    ],
+    "additionalProperties": false
+}

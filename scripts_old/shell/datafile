@@ -1,0 +1,15 @@
+#!/bin/bash
+
+# To be used in string_interpolate using $(..) to automatically organize output files
+# should always be called with 3 arguments:
+#    package-name  file-name   extension
+#
+fn=$(date +%Y_%M_%d-%H_%M)
+mkdir -p "/workspaces/data/$1"
+fn_date="/workspaces/data/$1/$2-${fn}.$3"
+fn_latest="/workspaces/data/$1/$2-latest.$3"
+rm -f $fn_latest
+ln -s "$fn_date" "$fn_latest"
+echo "$fn_date"
+
+

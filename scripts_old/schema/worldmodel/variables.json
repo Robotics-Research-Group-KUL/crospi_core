@@ -1,0 +1,61 @@
+{
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "$id": "./variables.json",
+    "title": "Variables",
+    "type": "array",
+    "format": "table",
+    "items": {
+        "type": "object",
+        "format" : "grid-strict",
+        "headerTemplate": "{{self.name}}",
+        "properties": {
+            "name": {
+                "title": "Variable name",
+                "type": "string"         
+            },
+            "objtype": {
+                "type": "string",
+                "enum": [
+                    "VariableDescription"
+                ],
+                "options" : {
+                    "hidden":true
+                }
+            },
+            "value": {
+                "title": "Initial value",
+                "type": "number",
+                "default": 0
+            },
+            "vartype": {
+                "title": "Type",
+                "type": "string",
+                "enum": [
+                    "robot",
+                    "feature",
+                    "expression",
+                    "input",
+                    "time"
+                ],
+                "default": "robot"
+            },
+            "specification": {
+                "title": "Specification (e.g. formula of the expression)",
+                "type": "string"
+            }
+        },
+        "required": [
+            "name",
+            "objtype",
+            "value",
+            "vartype",
+            "specification"
+        ]
+    },
+    "options": {
+        "disable_collapse": true,
+        "disable_edit_json": true,
+        "disable_properties": true
+    },
+    "additionalProperties": false
+}

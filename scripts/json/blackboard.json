@@ -1,0 +1,28 @@
+{
+    "$schema": "../schema/blackboard-schema.json",
+    "blackboard": {
+        "default-etasl": {
+            "initializer": {
+                "full": true,
+                "sample_time": 0.01,
+                "duration": 3.0,
+                "convergence_criterion": 1E-8,
+                "weightfactor": 1E4
+            },
+            "solver": {
+                "is-qpoasessolver": true,
+                "nWSR": 100,
+                "regularization_factor": 1E-8,
+                "cputime": 10
+            },
+            "sample_time": 0.01,
+            "outputhandlers": [
+                {
+                    "is-jointstateoutputhandler": true,
+                    "topic-name": "velcmd"
+                }
+            ]
+        }
+    },
+    "$defs": {}
+}

@@ -1,0 +1,18 @@
+{
+    "$id": "topicinputhandler.json",
+    "type" : "object",
+    "title":"TopicInputHandler",
+    "description" : "An input handler that reads from a topic",
+    "properties" : {
+        "is-topicinputhandler" : {
+            "description":"A key to indicate that this describes a TopicInputHandler",
+            "type":"boolean"
+        },                            
+        "topic-name" : {
+            "description":"Name of the ROS topic that will serve as input",
+            "type":"string"
+        }
+    },
+    "required": ["is-topicinputhandler","topic-name"],
+    "additionalProperties" : false
+}

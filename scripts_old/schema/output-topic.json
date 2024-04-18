@@ -1,0 +1,13 @@
+{
+    "$id":"output-topic.json",
+    "title": "OUtput Topic",
+    "description": "Describes an input topic and how to handle it",
+    "type": "object",
+    "required" :[ "handler","topic"],
+    "additionalProperties": false,
+    "properties": {
+        "handler": { "type":"string" },
+        "topic": { "type":"string" },
+        "output-expression": { "type":"string" }
+    }
+}

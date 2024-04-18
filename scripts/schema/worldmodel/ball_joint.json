@@ -1,0 +1,130 @@
+{
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "$id": "./ball_joint.json",
+    "title": "Ball joint",
+    "description": "A singularity free ball joint representation using quaternion.  Automatically introduces a normalization constraint",
+    "type": "object",
+    "format": "grid-strict",
+    "id": "conid",
+    "properties": {
+        "connectiontype": {
+            "type": "string",
+            "enum": [
+                "balljoint"
+            ],
+            "options": {
+                "hidden": true
+            }
+        },
+        "objtype": {
+            "title": "Connection",
+            "type": "string",
+            "enum": [
+                "Connection"
+            ],
+            "options": {
+                "hidden": true
+            }
+        },
+        "name": {
+            "title": "Name",
+            "type": "string",
+            "options": {
+                "hidden": false,
+                "grid_columns": 4
+            }
+        },
+        "parent": {
+            "title": "Parent node",
+            "type": "string",
+            "options": {
+                "hidden": false,
+                "grid_columns": 4
+            }
+        },
+        "child": {
+            "title": "Child node",
+            "type": "string",
+            "options": {
+                "hidden": false,
+                "grid_columns": 4,
+                "grid_break": true
+            }
+        },
+        "origin-orientation": {
+            "title": "Orientation",
+            "description": "String representation of orientation of origin frame",
+            "type": "string",
+            "default": "EulerZYX(0,0,0)",
+            "options": {
+                "grid_columns": 3
+            }
+        },
+        "origin-position": {
+            "title": "Position",
+            "description": "String representation of position of origin frame",
+            "type": "string",
+            "default": "[0,0,0]",
+            "options": {
+                "grid_columns": 3
+            }
+        },
+        "origin-string": {
+            "title": "Array representation of origin",
+            "type": "string",
+            "template": "computePair",
+            "watch": {
+                "expr1": "conid.origin-orientation",
+                "expr2": "conid.origin-position"
+            },
+            "options": {
+                "grid_columns": 6,
+                "grid_break": true,
+                "hidden": false
+            }
+        },
+        "origin": {
+            "title": "Origin",
+            "type": "array",
+            "options": {
+                "hidden": true
+            }
+        },
+        "vars": {
+            "title": "Variable",
+            "type": "array",
+            "$ref": "./variables.json",
+            "minItems": 4,
+            "maxItems": 4,
+            "options": {
+                "grid_columns": 12,
+                "grid_break": true,
+                "compact": true
+            },
+            "default" : [
+                {"name":"ball_quat_w","vartype":"feature","value":1},
+                {"name":"ball_quat_x","vartype":"feature"},
+                {"name":"ball_quat_y","vartype":"feature"},
+                {"name":"ball_quat_z","vartype":"feature"}
+            ]
+        }
+    },
+    "required": [
+        "connectiontype",
+        "objtype",
+        "name",
+        "parent",
+        "child",
+        "origin-orientation",
+        "origin-position",
+        "origin",
+        "origin-string",
+        "vars"
+    ],
+    "additionalProperties": false,
+    "options": {
+        "disable_collapse": true,
+        "disable_edit_json": true,
+        "disable_properties": true
+    }
+}

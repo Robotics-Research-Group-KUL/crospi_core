@@ -2,7 +2,7 @@
     "task": {
         "radius": 0.1,
         "velocity": 0.1,
-        "worldmodel": "$[etasl_node]/scripts/worldmodels/worldmodel.json"
+        "worldmodel": "$[etasl_ros2]/scripts/worldmodels/worldmodel.json"
     },
     "etasl" :{
         "outputhandlers": [

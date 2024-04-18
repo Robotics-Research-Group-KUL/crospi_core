@@ -60,5 +60,7 @@ public:
         const Eigen::VectorXd& fvel,
         const Eigen::VectorXd& fpos) override;
 
+    virtual void finalize();
+
 }; // TopicOutputHandler
 } // namespace KDL

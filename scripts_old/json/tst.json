@@ -1,0 +1,54 @@
+{
+   "$schema" : "../schema/four_bar_mechanism-schema.json",
+   "amplitude" : 1.0,
+   "etasl" : {
+      "initializer" : {
+         "convergence_criterion" : 0.0001,
+         "duration" : 3.0,
+         "full" : true,
+         "sample_time" : 0.01,
+         "weightfactor" : 10000.0
+      },
+      "inputhandlers" : [
+         {
+            "is-topicinputhandler" : true,
+            "topic-name" : "/input"
+         }
+      ],
+      "outputhandlers" : [
+         {
+            "filename" : "/workspaces/install/share/etasl_node/second.csv",
+            "header" : true,
+            "is-fileoutputhandler" : true,
+            "maxlines" : 100000,
+            "variable-names" : [ "time", "closure_x", "closure_y" ]
+         },
+         {
+            "is-topicoutputhandler" : true,
+            "topic-name" : "/my_topic",
+            "variable-names" : []
+         },
+         {
+            "is-jointstateoutputhandler" : true,
+            "topic-name" : "joint_states"
+         },
+         {
+            "filename" : "/workspaces/install/share/etasl_node/output.csv",
+            "header" : true,
+            "is-fileoutputhandler" : true,
+            "maxlines" : 100000,
+            "variable-names" : []
+         }
+      ],
+      "sample_time" : 0.02,
+      "solver" : {
+         "cputime" : 100,
+         "is-qpoasessolver" : true,
+         "nWSR" : 100,
+         "regularization_factor" : 0.0001
+      },
+      "use_sim_time" : true
+   },
+   "etaslfile" : "/workspaces/install/share/etasl_node/scripts/etasl/four_bar_mechanism.lua",
+   "frequency" : 0.5
+}

@@ -32,13 +32,11 @@ Task::Task(const Json::Value& _param)
     reporting_interval = param["etasl"]["reporting_interval"].asDouble();
     // create outputhandlers:
     for (const auto& p : param["etasl"]["outputhandlers"]) {
-        add_output_handler(
-            Registry<OutputHandlerFactory>::create(p));
+        add_output_handler(Registry<OutputHandlerFactory>::create(p));
     }
     // create inputhandlers:
     for (const auto& p : param["etasl"]["inputhandlers"]) {
-        add_input_handler(
-            Registry<InputHandlerFactory>::create(p));
+        add_input_handler(Registry<InputHandlerFactory>::create(p));
         ih_initialized.push_back(false);
     }
     slv = Registry<SolverFactory>::create(param["etasl"]["solver"]);
@@ -217,10 +215,7 @@ bool Task::onTimer()
         // measure timing
         timestats.update();
         // integrate previous outputs:
-        jpos += jvel * dt; // or replace with reading joint positions from real robot
-        fpos += fvel * dt; // you always integrate feature variables yourself
 
-        time += dt; // idem.
 
         // gets inputs, this can includes joint values in jpos,
         // which will be overwritten if used.
@@ -267,12 +262,19 @@ bool Task::onTimer()
         log->log(INFO, timestats.getStatistics(time));
         timestats.reset(dt);
     }
+
+    jpos += jvel * dt; // or replace with reading joint positions from real robot
+    fpos += fvel * dt; // you always integrate feature variables yourself
+    time += dt; // idem.
+
     return false;
 }
 
 void Task::finalize()
 {
     log->log(INFO, "{} : Finalize called", name);
+    jvel.setZero();
+    fvel.setZero();
     for (auto& h : inputhandlers) {
         h->finalize();
     }
@@ -280,5 +282,7 @@ void Task::finalize()
         h->finalize();
     }
 }
+
+
 
 } // namespace etasl
