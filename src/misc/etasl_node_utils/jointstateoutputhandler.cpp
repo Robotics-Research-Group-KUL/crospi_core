@@ -60,7 +60,20 @@ void JointStateOutputHandler::finalize()
     }
     msg.header.stamp = node->get_clock()->now();
     pub->publish(msg);
-    pub.reset();
+}
+
+void JointStateOutputHandler::on_activate(Context::Ptr ctx) {
+    pub->on_activate();
+}
+
+void JointStateOutputHandler::on_deactivate(Context::Ptr ctx) {
+    for (size_t i = 0; i < msg.velocity.size(); ++i) {
+        msg.velocity[i] = 0.0;
+    }
+    msg.header.stamp = node->get_clock()->now();
+    pub->publish(msg);
+
+    pub->on_deactivate();
 }
 
 } // namespace etasl

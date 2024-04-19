@@ -26,7 +26,7 @@ private:
     Context::Ptr ctx;
     std::string topicname;
     rclcpp_lifecycle::LifecycleNode::SharedPtr node;
-    rclcpp::Publisher<MsgType>::SharedPtr pub;
+    rclcpp_lifecycle::LifecyclePublisher<MsgType>::SharedPtr pub;
     MsgType msg;
     bool initialized;
     std::string name;
@@ -61,7 +61,11 @@ public:
         const Eigen::VectorXd& fvel,
         const Eigen::VectorXd& fpos) override;
 
-    virtual void finalize();
+    virtual void finalize() override;
+
+
+    virtual void on_activate(Context::Ptr ctx) override;
+    virtual void on_deactivate(Context::Ptr ctx) override;
 
     
 }; // JointStateOutputHandler

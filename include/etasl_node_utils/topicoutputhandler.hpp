@@ -17,7 +17,7 @@ private:
     std::string topicname;
     std::vector<std::string> varnames;
     rclcpp_lifecycle::LifecycleNode::SharedPtr node;
-    rclcpp::Publisher<etasl_interfaces::msg::Output>::SharedPtr pub;
+    rclcpp_lifecycle::LifecyclePublisher<etasl_interfaces::msg::Output>::SharedPtr pub;
     etasl_interfaces::msg::Output msg;
     bool initialized;
     std::string name;
@@ -60,7 +60,10 @@ public:
         const Eigen::VectorXd& fvel,
         const Eigen::VectorXd& fpos) override;
 
-    virtual void finalize();
+    // virtual void finalize();
+
+    virtual void on_activate(Context::Ptr ctx) override;
+    virtual void on_deactivate(Context::Ptr ctx) override;
 
 }; // TopicOutputHandler
 } // namespace KDL

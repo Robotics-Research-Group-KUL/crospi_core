@@ -53,6 +53,18 @@ namespace etasl {
             */
             virtual void finalize() {}
 
+            /**
+             * @brief on_activate
+             * Handles the deactivation of the outputhandler
+             */
+            virtual void on_activate(Context::Ptr ctx) {};
+
+            /**
+             * @brief on_activate
+             * Handles the deactivation of the outputhandler
+             */
+            virtual void on_deactivate(Context::Ptr ctx) {};
+
             virtual ~InputHandler() {};
 
     }; // InputHandler

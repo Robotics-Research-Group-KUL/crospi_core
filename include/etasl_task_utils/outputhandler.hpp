@@ -38,6 +38,18 @@ namespace etasl {
             virtual void finalize() {};
 
             /**
+             * @brief on_activate
+             * Handles the activation of the outputhandler
+             */
+            virtual void on_activate(Context::Ptr ctx) {};
+
+            /**
+             * @brief on_deactivate
+             * Handles the deactivation of the outputhandler
+             */
+            virtual void on_deactivate(Context::Ptr ctx) {};
+
+            /**
              * Returns a name for an instance of this handler
             */
             virtual const std::string& getName() const = 0;

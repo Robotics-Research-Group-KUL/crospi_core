@@ -78,9 +78,11 @@ class etaslNode : public rclcpp_lifecycle::LifecycleNode
 
 
         void publishJointState();
-        void configure_etasl();
+        void configure_etasl(Json::Value const& param);
         void update();
         void reinitialize_data_structures();
+        bool initialize_input_handlers();
+        bool initialize_output_handlers();
 
         // void setJointValues(const std::vector<double>& jval, const std::vector<std::string>& jvalnames);
 

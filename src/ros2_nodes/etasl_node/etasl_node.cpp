@@ -191,7 +191,9 @@ void etaslNode::publishJointState() {
 
       this->update(); // get_current_state().label() could change here, e.g. if a monitor is triggered
 
+      // TODO: Remove the default publisher
       if(this->get_current_state().label() == "active"){
+        
 
         joint_state_msg.header.stamp = this->now(); // Set the timestamp to the current time
         // joint_state_msg.name = jointnames; //No need to update if defined in configuration
@@ -387,39 +389,7 @@ void etaslNode::configure_jointstate_msg(){
     joint_state_msg.effort.resize(jnames_in_expr.size(),0.0);
 }
 
-void etaslNode::configure_etasl(){
-
-
-
-    etasl::BlackBoard board(1);
-    std::cout << " loading blackboard" << std::endl;
-    board.setSearchPath("$[etasl_ros2]/scripts/schema:$[etasl_ros2]/scripts/schema/tasks");
-
-    board.load_process_and_validate("$[etasl_ros2]/scripts/json/blackboard.json");
-    fmt::print("{:->80}\n", "-");
-    fmt::print("blackboard/default-etasl : ");
-    Json::Value param = board.getPath("/default-etasl", false);
-    fmt::print("After processing and validating:\n{}", param);
-    fmt::print("{:->80}\n", "-");
-
-    // const std::string cmd_filename = etasl::string_interpolate("$[etasl_ros2]/scripts/etasl/move_circle.json");
-    // Json::Value cmd = etasl::loadJSONFile(cmd_filename);
-    // if (!cmd) {
-    //     throw etasl::etasl_error(etasl::etasl_error::FAILED_TO_LOAD, "Cannot find file '{}'", cmd_filename);
-    //     return false;
-    // }
-    // cmd = board.process_and_validate("", cmd, "cmd");
-    // fmt::print("Command after validation and processing: \n{}\n", cmd);
-    // etasl::addIfNotExists(cmd["etasl"], param);
-
-    // fmt::print("Command after fusion: \n{}\n", cmd);
-    // etasl::saveJSONFILE(cmd, "tst_hello.json");
-    // fmt::print("{:->80}\n", "-");
-    // double freq = 1.0 / cmd["etasl"]["sample_time"].asDouble();
-    // rclcpp::Rate rate(freq);
-    // int counter = 0;
-
-
+void etaslNode::configure_etasl(Json::Value const& param){
   
 
     // Read configuration ROS parameters
@@ -448,23 +418,6 @@ void etaslNode::configure_etasl(){
     // ih->update(time);                                              
     ih->update(0.0);  
 
-    /****************************************************
-     * Adding input and output handlers from the read JSON file 
-     ***************************************************/
-
-    for (const auto& p : param["outputhandlers"]) {
-        // add_output_handler(Registry<OutputHandlerFactory>::create(p));
-        RCUTILS_LOG_INFO_NAMED(get_name(), "register_output_handler");
-        // TODO: add info about the output handler added (e.g. p[is-...] and p[topic-name])
-        outputhandlers.push_back(etasl::Registry<etasl::OutputHandlerFactory>::create(p));
-    }
-    // create inputhandlers:
-    for (const auto& p : param["inputhandlers"]) {
-        RCUTILS_LOG_INFO_NAMED(get_name(), "register_input_handler");
-        inputhandlers.push_back(etasl::Registry<etasl::InputHandlerFactory>::create(p));
-        ih_initialized.push_back(false);
-    }  
-
 
     // reset all monitors:
     ctx->resetMonitors();
@@ -482,24 +435,8 @@ void etaslNode::configure_etasl(){
     this->initialize_feature_variables();
 
       /****************************************************
-     * Initialize input handlers
+     * Update input handlers (i.e. read values for solver initialization)
      ***************************************************/
-
-    RCUTILS_LOG_INFO_NAMED(get_name(), "Initializing input handlers...");
-    // initial input is used for initialization.
-    for (size_t i = 0; i < inputhandlers.size(); ++i) {
-        std::string message = "Initializing input handler: "+ inputhandlers[i]->getName();
-        RCUTILS_LOG_INFO_NAMED(get_name(), message.c_str());
-        if (!ih_initialized[i]) {
-            ih_initialized[i] = inputhandlers[i]->initialize(ctx, jnames_in_expr, fnames, jpos_ros, fpos_etasl);
-            if (!ih_initialized[i]) {
-                std::string message = "Could not initialize input handler : " + inputhandlers[i]->getName();
-                RCUTILS_LOG_ERROR_NAMED(get_name(), message.c_str());
-                rclcpp::shutdown();
-                return;
-            }
-        }
-    }
     for (auto h : inputhandlers) {
         h->update(time, jnames_in_expr, jpos_ros, fnames, fpos_etasl);
     }
@@ -518,7 +455,6 @@ void etaslNode::configure_etasl(){
 
     //obs = create_default_observer(ctx,"exit",obs);
     ctx->addDefaultObserver(obs);
-    // TODO: Create debug observer, such that it logs slv related data when triggered
 
     // fvelocities.resize( fnames.size() ); 
     // fvelocities = Eigen::VectorXd::Zero( fnames.size() );
@@ -548,15 +484,6 @@ void etaslNode::configure_etasl(){
     
     
     oh->printHeader(*outpfile_ptr);
-
-    // initialize output-handlers
-    RCUTILS_LOG_INFO_NAMED(get_name(), "Initializing output handlers...");
-    for (auto& h : outputhandlers) {
-        std::stringstream message;
-        message << "Initializing output handler:" <<  h->getName();
-        RCUTILS_LOG_INFO_NAMED(get_name(), (message.str()).c_str());
-        h->initialize(ctx, jnames_in_expr, fnames);
-    }
 
     // std::vector<std::string> hello;
     // slv->getJointNameVector(hello);
@@ -695,14 +622,48 @@ void etaslNode::reinitialize_data_structures() {
     name_ndx.clear();
     fnames.clear();
 
-    inputhandlers.clear();
-    outputhandlers.clear();
-    ih_initialized.clear();
+    // inputhandlers.clear();
+    // outputhandlers.clear();
+    // ih_initialized.clear();
 
     
 }
 
+bool etaslNode::initialize_input_handlers(){
+    RCUTILS_LOG_INFO_NAMED(get_name(), "Initializing input handlers...");
+    // initial input is used for initialization.
+    for (size_t i = 0; i < inputhandlers.size(); ++i) {
+        if (!ih_initialized[i]) {
+            std::string message = "Initializing input handler: "+ inputhandlers[i]->getName();
+            RCUTILS_LOG_INFO_NAMED(get_name(), message.c_str());
+            ih_initialized[i] = inputhandlers[i]->initialize(ctx, jnames_in_expr, fnames, jpos_ros, fpos_etasl);
+            if (!ih_initialized[i]) {
+                std::string message = "Could not initialize input handler : " + inputhandlers[i]->getName();
+                RCUTILS_LOG_ERROR_NAMED(get_name(), message.c_str());
+                rclcpp::shutdown();
+                return false;
+            }
+        }
+    }
 
+    return true;
+}
+
+
+bool etaslNode::initialize_output_handlers(){
+    // initialize output-handlers
+    RCUTILS_LOG_INFO_NAMED(get_name(), "Initializing output handlers...");
+    for (auto& h : outputhandlers) {
+        std::stringstream message;
+        message << "Initializing output handler:" <<  h->getName();
+        RCUTILS_LOG_INFO_NAMED(get_name(), (message.str()).c_str());
+        RCUTILS_LOG_INFO_NAMED(get_name(), "helloo1");
+
+        h->initialize(ctx, jnames_in_expr, fnames);
+        RCUTILS_LOG_INFO_NAMED(get_name(), "helloo2");
+    }
+    return true;
+}
 
 
  /// Transition callback for state configuring
@@ -729,6 +690,33 @@ void etaslNode::reinitialize_data_structures() {
 
 
 
+    etasl::BlackBoard board(1);
+    std::cout << " loading blackboard" << std::endl;
+    board.setSearchPath("$[etasl_ros2]/scripts/schema:$[etasl_ros2]/scripts/schema/tasks");
+
+    board.load_process_and_validate("$[etasl_ros2]/scripts/json/blackboard.json");
+    fmt::print("{:->80}\n", "-");
+    fmt::print("blackboard/default-etasl : ");
+    Json::Value param = board.getPath("/default-etasl", false);
+    fmt::print("After processing and validating:\n{}", param);
+    fmt::print("{:->80}\n", "-");
+
+    // const std::string cmd_filename = etasl::string_interpolate("$[etasl_ros2]/scripts/etasl/move_circle.json");
+    // Json::Value cmd = etasl::loadJSONFile(cmd_filename);
+    // if (!cmd) {
+    //     throw etasl::etasl_error(etasl::etasl_error::FAILED_TO_LOAD, "Cannot find file '{}'", cmd_filename);
+    //     return false;
+    // }
+    // cmd = board.process_and_validate("", cmd, "cmd");
+    // fmt::print("Command after validation and processing: \n{}\n", cmd);
+    // etasl::addIfNotExists(cmd["etasl"], param);
+
+    // fmt::print("Command after fusion: \n{}\n", cmd);
+    // etasl::saveJSONFILE(cmd, "tst_hello.json");
+    // fmt::print("{:->80}\n", "-");
+    // double freq = 1.0 / cmd["etasl"]["sample_time"].asDouble();
+    // rclcpp::Rate rate(freq);
+    // int counter = 0;
 
 
 
@@ -747,6 +735,22 @@ void etaslNode::reinitialize_data_structures() {
         etasl::registerJointStateOutputHandlerFactory(shared_from_this());
         etasl::registerTopicInputHandlerFactory(shared_from_this());
         etasl::registerTFOutputHandlerFactory(shared_from_this());
+
+        /****************************************************
+        * Adding input and output handlers from the read JSON file 
+        ***************************************************/
+        for (const auto& p : param["outputhandlers"]) {
+            // add_output_handler(Registry<OutputHandlerFactory>::create(p));
+            RCUTILS_LOG_INFO_NAMED(get_name(), "register_output_handler");
+            // TODO: add info about the output handler added (e.g. p[is-...] and p[topic-name])
+            outputhandlers.push_back(etasl::Registry<etasl::OutputHandlerFactory>::create(p));
+        }
+        // create inputhandlers:
+        for (const auto& p : param["inputhandlers"]) {
+            RCUTILS_LOG_INFO_NAMED(get_name(), "register_input_handler");
+            inputhandlers.push_back(etasl::Registry<etasl::InputHandlerFactory>::create(p));
+            ih_initialized.push_back(false);
+        }  
     }
     else{
       jpos_init = jpos_etasl;
@@ -755,8 +759,17 @@ void etaslNode::reinitialize_data_structures() {
   
     
     timer_->cancel();
-    this->configure_etasl();
+    this->configure_etasl(param);
     this->configure_jointstate_msg();
+
+    // std::cout << "The time is:" << std::endl;
+    // auto timeee = ctx->getOutputExpression<double>("time");
+    // std::cout << timeee->value() << std::endl;
+
+    if(!first_time_configured){
+      this->initialize_input_handlers();
+      this->initialize_output_handlers();
+    }
 
 
     RCUTILS_LOG_INFO_NAMED(get_name(), "on_configure() is called.");
@@ -769,6 +782,7 @@ void etaslNode::reinitialize_data_structures() {
     // this callback, the state machine transitions to state "errorprocessing".
     
     first_time_configured = true;
+
     return lifecycle_return::SUCCESS;
   }
 
@@ -794,6 +808,14 @@ void etaslNode::reinitialize_data_structures() {
     // std::cout << "hello1" << std::endl;
     timer_->reset();
     joint_pub_->on_activate();
+
+    for (auto& h : inputhandlers) {
+        h->on_activate(ctx);
+    }
+    for (auto& h : outputhandlers) {
+        h->on_activate(ctx);
+    }
+
     //     std::cout << "hello2" << std::endl;
     // std::cout <<"The current state label is:" << state.label() << std::endl;
     // std::cout <<"The current state id is:" << state.id() << std::endl;
@@ -840,6 +862,13 @@ void etaslNode::reinitialize_data_structures() {
 
     jvel_etasl.setZero(); //Sets joint velocities to zero
     fvel_etasl.setZero(); //Sets feature variables to zero
+    for (auto& h : inputhandlers) {
+        h->on_deactivate(ctx);
+    }
+    for (auto& h : outputhandlers) {
+        h->on_deactivate(ctx);
+    }
+
     for (auto& h : inputhandlers) {
         h->finalize();
     }
@@ -890,6 +919,9 @@ void etaslNode::reinitialize_data_structures() {
     return lifecycle_return::SUCCESS;
   }
 
+  // on_shutdown is only called when calling shutdown() method and not when closing program e.g. with ctrl+c.
+  // Its kind of useless...
+
   /// Transition callback for state shutting down
   /**
    * on_shutdown callback is being called when the lifecycle node
@@ -903,14 +935,20 @@ void etaslNode::reinitialize_data_structures() {
    */
   lifecycle_return etaslNode::on_shutdown(const rclcpp_lifecycle::State & state)
   {
+    
     // In our shutdown phase, we release the shared pointers to the
     // timer and publisher. These entities are no longer available
     // and our node is "clean".
-    timer_->cancel();
-    // joint_pub_->cancel();
 
     RCUTILS_LOG_INFO_NAMED(get_name(), "on shutdown is called from state %s.", state.label().c_str());
 
+
+    for (auto& h : inputhandlers) {
+        h->finalize();
+    }
+    for (auto& h : outputhandlers) {
+        h->finalize();
+    }
     // We return a success and hence invoke the transition to the next
     // step: "finalized".
     // If we returned TRANSITION_CALLBACK_FAILURE instead, the state machine
