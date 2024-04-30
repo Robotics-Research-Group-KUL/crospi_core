@@ -137,11 +137,26 @@ Monitor{
 
 
 ## TODOs (some...):
-- Use QoS profile suitable to the communication for control and sensors. Some examples (including one for sensor streaming) are found [here](https://github.com/ros2/rmw/blob/rolling/rmw/include/rmw/qos_profiles.h) and explanation about it [here](https://docs.ros.org/en/rolling/Concepts/Intermediate/About-Quality-of-Service-Settings.html). This is (sort of) equivalent to the connection policy of orocos.
+
 - Add Input and Output handlers. 
 - Create simrobot node to easily transition between simulation and real robot in the future.
-- Implement services for configuration
-- Implement services to read task specification file and read task specification string
-- Implement rosparam to select which topic the /jointstates and fsm/events are published.
+- Implement JSON entry to select which topic fsm/events are published.
 - Create ROS param to specify initial joints instead of hardcoding them
-- Use properties for solver. Take a loop on the ros2 featurevariableinitializer.cpp which takes JSON properties and to configure
+-Enable a JSON entry to specify (optionally) the QOS for each input/output handler that subscribes/pubishes to ros topics.Some examples (including one for sensor streaming) are found [here](https://github.com/ros2/rmw/blob/rolling/rmw/include/rmw/qos_profiles.h) and explanation about it [here](https://docs.ros.org/en/rolling/Concepts/Intermediate/About-Quality-of-Service-Settings.html). This is (sort of) equivalent to the connection policy of orocos.
+
+-fileoutputhandler is not outputing any file for some reason...
+
+
+## To debug segmentation fault:
+
+First compile with
+```bash
+colcon_make --cmake-args -DCMAKE_BUILD_TYPE=RelWithDebInfo
+```
+
+Then:
+
+```bash
+ros2 run --prefix 'gdb -ex run --args' etasl_ros2 etasl_node --ros-args --params-file param_test.yaml
+```
+

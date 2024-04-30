@@ -1,0 +1,42 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "source_ros",
+            "type": "shell",
+            "command": "source /opt/ros/humble/setup.bash"
+        },
+        {
+            "label": "source_colcon",
+            "type": "shell",
+            "command": "source /usr/share/colcon_cd/function/colcon_cd.sh"
+        },
+        {
+            "label": "export_colcon",
+            "type": "shell",
+            "command": "export _colcon_cd_root=/opt/ros/humble/"
+        },
+        {
+            "label": "source_etasl",
+            "type": "shell",
+            "command": "source ~/etasl-cmake/standalone-cmake/install/bin/set_etasl_paths.sh"
+        },
+        {
+            "label": "source_ws",
+            "type": "shell",
+            "command": "source ~/ros2_ws/install/setup.bash"        
+        },
+        {
+            "label": "compile",
+            "type": "shell",
+            "command": "colcon build",
+            "args": ["--symlink-install", "--cmake-args", "-DCMAKE_BUILD_TYPE=Debug"]
+        },
+        {
+            "label": "source_all",
+            "type": "shell",
+            "dependsOrder": "sequence",
+            "dependsOn": ["source_ros", "source_etasl", "source_ws"]
+        }
+    ]
+  }

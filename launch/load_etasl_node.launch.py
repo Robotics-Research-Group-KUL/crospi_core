@@ -32,6 +32,8 @@ def generate_launch_description():
             name='etasl_node',
             namespace = '', #if declared the node becomes visible /namespace/name (e.g. in lifecyle commands from terminal)
             output='screen',
+            # prefix=['valgrind --tool=callgrind --dump-instr=yes -v --instr-atstart=no'],
+            prefix=['valgrind --tool=memcheck --leak-check=yes --show-reachable=yes --num-callers=20 --track-fds=yes --track-origins=yes -v'],
             # arguments=['--ros-args', '--log-level', 'warn'],
             arguments=['--ros-args', '--log-level', 'info'],
             parameters=[

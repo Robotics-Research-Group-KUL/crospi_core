@@ -4,7 +4,7 @@
 
 # include <ament_index_cpp/get_package_share_directory.hpp> 
 
-#include "etasl_task_utils/blackboard.hpp"
+// #include "etasl_task_utils/blackboard.hpp"
 #include "etasl_task_utils/etasl_error.hpp"
 
 
@@ -50,30 +50,37 @@ etaslNode::etaslNode(const std::string & node_name, bool intra_process_comms = f
   // this->declare_parameter("task_specification_file",  fname); //fname as default val
 
   // this->create_service<lifecycle_msgs::srv::ChangeState>("configure", &srv_configure);
-  test_service_ = create_service<lifecycle_msgs::srv::ChangeState>("etasl_node/configure", std::bind(&etaslNode::srv_configure, this, std::placeholders::_1, std::placeholders::_2));
+//   test_service_ = create_service<lifecycle_msgs::srv::ChangeState>("etasl_node/configure", std::bind(&etaslNode::srv_configure, this, std::placeholders::_1, std::placeholders::_2));
 
   srv_etasl_console_ = create_service<std_srvs::srv::Empty>("etasl_node/etasl_console", std::bind(&etaslNode::etasl_console, this, std::placeholders::_1, std::placeholders::_2));
 
-  srv_readTaskSpecificationFile_ = create_service<etasl_ros2::srv::TaskSpecificationFile>("etasl_node/readTaskSpecificationFile", std::bind(&etaslNode::readTaskSpecificationFile, this, std::placeholders::_1, std::placeholders::_2));
+  srv_readTaskSpecificationFile_ = create_service<etasl_interfaces::srv::TaskSpecificationFile>("etasl_node/readTaskSpecificationFile", std::bind(&etaslNode::readTaskSpecificationFile, this, std::placeholders::_1, std::placeholders::_2));
 
-  srv_readTaskSpecificationString_ = create_service<etasl_ros2::srv::TaskSpecificationString>("etasl_node/readTaskSpecificationString", std::bind(&etaslNode::readTaskSpecificationString, this, std::placeholders::_1, std::placeholders::_2));
+  srv_readTaskSpecificationString_ = create_service<etasl_interfaces::srv::TaskSpecificationString>("etasl_node/readTaskSpecificationString", std::bind(&etaslNode::readTaskSpecificationString, this, std::placeholders::_1, std::placeholders::_2));
 
   events_pub_ = this->create_publisher<std_msgs::msg::String>("fsm/events", 10); 
 
   reinitialize_data_structures();
 
+    board = boost::make_shared<etasl::BlackBoard>(1);
+    // etasl::BlackBoard board(1);
+    std::cout << " loading blackboard" << std::endl;
+    board->setSearchPath("$[etasl_ros2]/scripts/schema:$[etasl_ros2]/scripts/schema/tasks");
+    board->load_process_and_validate("$[etasl_ros2]/scripts/json/blackboard.json");
+    fmt::print("{:->80}\n", "-");
+
 }
 
-bool etaslNode::srv_configure(const std::shared_ptr<lifecycle_msgs::srv::ChangeState::Request> request, std::shared_ptr<lifecycle_msgs::srv::ChangeState::Response>  response)
-      {
-          std::cout << "Request id: "<< request->transition.id << std::endl;
-          std::cout << "Request label: "<< request->transition.label << std::endl;
-          std::this_thread::sleep_for(5s);
-          std::cout << "Finish service call: " << std::endl;
-          response->success = true;
-          return true;
+// bool etaslNode::srv_configure(const std::shared_ptr<lifecycle_msgs::srv::ChangeState::Request> request, std::shared_ptr<lifecycle_msgs::srv::ChangeState::Response>  response)
+//       {
+//           std::cout << "Request id: "<< request->transition.id << std::endl;
+//           std::cout << "Request label: "<< request->transition.label << std::endl;
+//           std::this_thread::sleep_for(5s);
+//           std::cout << "Finish service call: " << std::endl;
+//           response->success = true;
+//           return true;
 
-      }
+//       }
 
 bool etaslNode::etasl_console(const std::shared_ptr<std_srvs::srv::Empty::Request> request, std::shared_ptr<std_srvs::srv::Empty::Response>  response) {
 
@@ -97,7 +104,7 @@ bool etaslNode::etasl_console(const std::shared_ptr<std_srvs::srv::Empty::Reques
 
 }
 
-bool etaslNode::readTaskSpecificationFile(const std::shared_ptr<etasl_ros2::srv::TaskSpecificationFile::Request> request, std::shared_ptr<etasl_ros2::srv::TaskSpecificationFile::Response>  response) {
+bool etaslNode::readTaskSpecificationFile(const std::shared_ptr<etasl_interfaces::srv::TaskSpecificationFile::Request> request, std::shared_ptr<etasl_interfaces::srv::TaskSpecificationFile::Response>  response) {
 
 	if(this->get_current_state().label() != "unconfigured"){
 		RCUTILS_LOG_ERROR_NAMED(get_name(), "Service etasl_node/readTaskSpecificationFile can only be read in unconfigured state");
@@ -149,7 +156,7 @@ bool etaslNode::readTaskSpecificationFile(const std::shared_ptr<etasl_ros2::srv:
 }
 
 
-bool etaslNode::readTaskSpecificationString(const std::shared_ptr<etasl_ros2::srv::TaskSpecificationString::Request> request, std::shared_ptr<etasl_ros2::srv::TaskSpecificationString::Response>  response) {
+bool etaslNode::readTaskSpecificationString(const std::shared_ptr<etasl_interfaces::srv::TaskSpecificationString::Request> request, std::shared_ptr<etasl_interfaces::srv::TaskSpecificationString::Response>  response) {
 	
 	if(this->get_current_state().label() != "unconfigured"){
 		RCUTILS_LOG_ERROR_NAMED(get_name(), "Service etasl_node/readTaskSpecificationString can only be read in unconfigured state");
@@ -188,6 +195,9 @@ bool etaslNode::readTaskSpecificationString(const std::shared_ptr<etasl_ros2::sr
 
 void etaslNode::publishJointState() {
     // auto joint_state_msg = std::make_shared<sensor_msgs::msg::JointState>();
+
+        // RCUTILS_LOG_INFO_NAMED(get_name(), "Entering publishJointState.");
+
 
       this->update(); // get_current_state().label() could change here, e.g. if a monitor is triggered
 
@@ -230,8 +240,10 @@ void etaslNode::update_controller_input(Eigen::VectorXd const& jvalues_meas){
   } 
 }
 
-void etaslNode::solver_configuration(Json::Value const& param){
+void etaslNode::solver_configuration(){
       // Create registry and register known solvers: 
+    Json::Value param = board->getPath("/default-etasl", false);
+
     solver_registry = boost::make_shared<SolverRegistry>();
     registerSolverFactory_qpOases(solver_registry, "qpoases");
     //registerSolverFactory_hqp(R, "hqp");
@@ -389,8 +401,12 @@ void etaslNode::configure_jointstate_msg(){
     joint_state_msg.effort.resize(jnames_in_expr.size(),0.0);
 }
 
-void etaslNode::configure_etasl(Json::Value const& param){
+void etaslNode::configure_etasl(){
   
+    // fmt::print("blackboard/default-etasl : ");
+    Json::Value param = board->getPath("/default-etasl", false);
+    // fmt::print("After processing and validating:\n{}", param);
+    // fmt::print("{:->80}\n", "-");
 
     // Read configuration ROS parameters
     fname = this->get_parameter("task_specification_file").as_string();
@@ -425,7 +441,7 @@ void etaslNode::configure_etasl(Json::Value const& param){
     /****************************************************
      * Solver configuration based with parameters
      ***************************************************/
-    this->solver_configuration(param);
+    this->solver_configuration();
 
     /****************************************************
      * Initialization
@@ -581,15 +597,15 @@ void etaslNode::update()
         slv->getJointVelocities(jvel_etasl);
         slv->getFeatureVelocities(fvel_etasl);
 
-        for (auto& h : outputhandlers) {
-            // TODO: Check if jpos_ros or jpos_etasl should be used
-            h->update(jnames_in_expr, jpos_ros, jvel_etasl, fnames, fpos_etasl, fvel_etasl);
-        }
 
         jpos_etasl += jvel_etasl*(periodicity_param/1000.0);  // or replace with reading joint positions from real robot
         fpos_etasl += fvel_etasl*(periodicity_param/1000.0);  // you always integrate feature variables yourself
         time += (periodicity_param/1000.0);       // idem.
 
+        for (auto& h : outputhandlers) {
+            // TODO: Check if jpos_ros or jpos_etasl should be used
+            h->update(jnames_in_expr, jpos_ros, jvel_etasl, fnames, fpos_etasl, fvel_etasl);
+        }
         // std::cout << "jointpos:" << jpos_etasl.transpose() << std::endl;
 
 }
@@ -662,7 +678,39 @@ bool etaslNode::initialize_output_handlers(){
         h->initialize(ctx, jnames_in_expr, fnames);
         RCUTILS_LOG_INFO_NAMED(get_name(), "helloo2");
     }
+    RCUTILS_LOG_INFO_NAMED(get_name(), "finished initializing output handlers");
     return true;
+}
+
+void etaslNode::configure_node(){
+    
+    // The following registers each factory. If you don't declare this, the program will not be able to create objects from
+    // such factory when specified in the JSON files.
+    // etasl::registerQPOasesSolverFactory();
+    etasl::registerTopicOutputHandlerFactory(shared_from_this()); 
+    // etasl::registerFileOutputHandlerFactory();
+    etasl::registerJointStateOutputHandlerFactory(shared_from_this());
+    // etasl::registerTopicInputHandlerFactory(shared_from_this());
+    // etasl::registerTFOutputHandlerFactory(shared_from_this());
+
+
+    Json::Value param = board->getPath("/default-etasl", false);
+
+    /****************************************************
+    * Adding input and output handlers from the read JSON file 
+    ***************************************************/
+    for (const auto& p : param["outputhandlers"]) {
+        // add_output_handler(Registry<OutputHandlerFactory>::create(p));
+        RCUTILS_LOG_INFO_NAMED(get_name(), "register_output_handler");
+        // TODO: add info about the output handler added (e.g. p[is-...] and p[topic-name])
+        outputhandlers.push_back(etasl::Registry<etasl::OutputHandlerFactory>::create(p));
+    }
+    // create inputhandlers:
+    for (const auto& p : param["inputhandlers"]) {
+        RCUTILS_LOG_INFO_NAMED(get_name(), "register_input_handler");
+        inputhandlers.push_back(etasl::Registry<etasl::InputHandlerFactory>::create(p));
+        ih_initialized.push_back(false);
+    }  
 }
 
 
@@ -677,7 +725,7 @@ bool etaslNode::initialize_output_handlers(){
    * TRANSITION_CALLBACK_FAILURE transitions to "unconfigured"
    * TRANSITION_CALLBACK_ERROR or any uncaught exceptions to "errorprocessing"
    */
-  lifecycle_return etaslNode::on_configure(const rclcpp_lifecycle::State &)
+  lifecycle_return etaslNode::on_configure(const rclcpp_lifecycle::State & state)
   {
     // This callback is supposed to be used for initialization and
     // configuring purposes.
@@ -690,67 +738,14 @@ bool etaslNode::initialize_output_handlers(){
 
 
 
-    etasl::BlackBoard board(1);
-    std::cout << " loading blackboard" << std::endl;
-    board.setSearchPath("$[etasl_ros2]/scripts/schema:$[etasl_ros2]/scripts/schema/tasks");
-
-    board.load_process_and_validate("$[etasl_ros2]/scripts/json/blackboard.json");
-    fmt::print("{:->80}\n", "-");
-    fmt::print("blackboard/default-etasl : ");
-    Json::Value param = board.getPath("/default-etasl", false);
-    fmt::print("After processing and validating:\n{}", param);
-    fmt::print("{:->80}\n", "-");
-
-    // const std::string cmd_filename = etasl::string_interpolate("$[etasl_ros2]/scripts/etasl/move_circle.json");
-    // Json::Value cmd = etasl::loadJSONFile(cmd_filename);
-    // if (!cmd) {
-    //     throw etasl::etasl_error(etasl::etasl_error::FAILED_TO_LOAD, "Cannot find file '{}'", cmd_filename);
-    //     return false;
-    // }
-    // cmd = board.process_and_validate("", cmd, "cmd");
-    // fmt::print("Command after validation and processing: \n{}\n", cmd);
-    // etasl::addIfNotExists(cmd["etasl"], param);
-
-    // fmt::print("Command after fusion: \n{}\n", cmd);
-    // etasl::saveJSONFILE(cmd, "tst_hello.json");
-    // fmt::print("{:->80}\n", "-");
-    // double freq = 1.0 / cmd["etasl"]["sample_time"].asDouble();
-    // rclcpp::Rate rate(freq);
-    // int counter = 0;
-
-
 
     joint_state_msg = sensor_msgs::msg::JointState();
+
     if(!first_time_configured){
       joint_pub_ = this->create_publisher<sensor_msgs::msg::JointState>("joint_states", 1); //queue_size 1 so that it sends the latest always
       timer_ = this->create_wall_timer(std::chrono::milliseconds(periodicity_param), std::bind(&etaslNode::publishJointState, this));
       jpos_init = VectorXd::Zero(6);
       jpos_init << 180.0/180.0*3.1416, -90.0/180.0*3.1416, 90.0/180.0*3.1416, -90.0/180.0*3.1416, -90.0/180.0*3.1416, 0.0/180.0*3.1416;
-
-        // The following registers each factory. If you don't declare this, the program will not be able to create objects from
-        // such factory when specified in the JSON files.
-        // etasl::registerQPOasesSolverFactory();
-        etasl::registerTopicOutputHandlerFactory(shared_from_this()); //shared_from_this() can be used because rclcpp_lifecycle::LifecycleNode inherits from std::enable_shared_from_this<etaslNode>
-        etasl::registerFileOutputHandlerFactory();
-        etasl::registerJointStateOutputHandlerFactory(shared_from_this());
-        etasl::registerTopicInputHandlerFactory(shared_from_this());
-        etasl::registerTFOutputHandlerFactory(shared_from_this());
-
-        /****************************************************
-        * Adding input and output handlers from the read JSON file 
-        ***************************************************/
-        for (const auto& p : param["outputhandlers"]) {
-            // add_output_handler(Registry<OutputHandlerFactory>::create(p));
-            RCUTILS_LOG_INFO_NAMED(get_name(), "register_output_handler");
-            // TODO: add info about the output handler added (e.g. p[is-...] and p[topic-name])
-            outputhandlers.push_back(etasl::Registry<etasl::OutputHandlerFactory>::create(p));
-        }
-        // create inputhandlers:
-        for (const auto& p : param["inputhandlers"]) {
-            RCUTILS_LOG_INFO_NAMED(get_name(), "register_input_handler");
-            inputhandlers.push_back(etasl::Registry<etasl::InputHandlerFactory>::create(p));
-            ih_initialized.push_back(false);
-        }  
     }
     else{
       jpos_init = jpos_etasl;
@@ -759,7 +754,7 @@ bool etaslNode::initialize_output_handlers(){
   
     
     timer_->cancel();
-    this->configure_etasl(param);
+    this->configure_etasl();
     this->configure_jointstate_msg();
 
     // std::cout << "The time is:" << std::endl;
@@ -805,15 +800,20 @@ bool etaslNode::initialize_output_handlers(){
 
     // TODO: Only allow transitions from configure, and not from deactivate
 
-    // std::cout << "hello1" << std::endl;
+    RCUTILS_LOG_INFO_NAMED(get_name(), "Entering on activate.");
+
     timer_->reset();
     joint_pub_->on_activate();
 
+    RCUTILS_LOG_INFO_NAMED(get_name(), "Entering on activate for input handlers.");
+
     for (auto& h : inputhandlers) {
-        h->on_activate(ctx);
+        h->on_activate(ctx, jnames_in_expr, fnames);
     }
+
+    RCUTILS_LOG_INFO_NAMED(get_name(), "Entering on activate for output handlers.");
     for (auto& h : outputhandlers) {
-        h->on_activate(ctx);
+        h->on_activate(ctx, jnames_in_expr, fnames);
     }
 
     //     std::cout << "hello2" << std::endl;
@@ -869,12 +869,12 @@ bool etaslNode::initialize_output_handlers(){
         h->on_deactivate(ctx);
     }
 
-    for (auto& h : inputhandlers) {
-        h->finalize();
-    }
-    for (auto& h : outputhandlers) {
-        h->finalize();
-    }
+    // for (auto& h : inputhandlers) {
+    //     h->finalize();
+    // }
+    // for (auto& h : outputhandlers) {
+    //     h->finalize();
+    // }
 
 
     RCUTILS_LOG_INFO_NAMED(get_name(), "on_deactivate() is called.");
@@ -899,7 +899,7 @@ bool etaslNode::initialize_output_handlers(){
    * TRANSITION_CALLBACK_FAILURE transitions to "inactive"
    * TRANSITION_CALLBACK_ERROR or any uncaught exceptions to "errorprocessing"
    */
-  lifecycle_return etaslNode::on_cleanup(const rclcpp_lifecycle::State &)
+  lifecycle_return etaslNode::on_cleanup(const rclcpp_lifecycle::State & state)
   {
     // In our cleanup phase, we release the shared pointers to the
     // timer and publisher. These entities are no longer available
@@ -959,6 +959,16 @@ bool etaslNode::initialize_output_handlers(){
   }
 
 
+    void etaslNode::safe_shutdown(){
+        RCUTILS_LOG_INFO_NAMED(get_name(), "safe_shutdown callback is called ");
+
+        for (auto& h : inputhandlers) {
+            h->finalize();
+        }
+        for (auto& h : outputhandlers) {
+            h->finalize();
+        }
+    }
 
 int main(int argc, char * argv[])
 {
@@ -970,12 +980,30 @@ int main(int argc, char * argv[])
 
     // Initialize node
     rclcpp::init(argc, argv);
-    rclcpp::executors::StaticSingleThreadedExecutor executor;
 
     std::shared_ptr<etaslNode> my_etasl_node = std::make_shared<etaslNode>("etasl_node");
     // auto my_etasl_node = std::make_shared<etaslNode>("etasl_node");
+
+    my_etasl_node->configure_node();
     
+
+    // executor.add_node(my_etasl_node->get_node_base_interface());
+    // rclcpp::spin(my_etasl_node->get_node_base_interface());
+    // executor.spin();
+
+    rclcpp::ExecutorOptions options;
+    options.context = my_etasl_node->get_node_base_interface()->get_context();
+    rclcpp::executors::SingleThreadedExecutor executor(options);
     executor.add_node(my_etasl_node->get_node_base_interface());
+    executor.spin(); //This method blocks!
+    executor.remove_node(my_etasl_node->get_node_base_interface());
+
+
+    // The following gives a segmentation fault after the on_configure() call:
+    // rclcpp::executors::StaticSingleThreadedExecutor executor;
+    // executor.add_node(my_etasl_node->get_node_base_interface());
+    // executor.spin();
+
 
     // std::string cmd_filename = "/home/santiregui/ros2_ws/src/etasl_ros2/etasl/json/test_io_handlers.json";
     // Json::Value cmd = etasl::loadJSONFile(cmd_filename);
@@ -1002,7 +1030,6 @@ int main(int argc, char * argv[])
     // std::chrono::steady_clock::time_point  end_time_sleep = std::chrono::steady_clock::now() + periodicity;
 
 
-    executor.spin();
     /****************************************************
     * Control loop 
     ***************************************************/

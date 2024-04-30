@@ -19,7 +19,7 @@
             "outputhandlers": [
                 {
                     "is-jointstateoutputhandler": true,
-                    "topic-name": "velcmd"
+                    "topic-name": "/velcmd"
                 },
                 {
                     "is-topicoutputhandler" : true,

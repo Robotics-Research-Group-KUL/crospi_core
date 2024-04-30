@@ -1,0 +1,14 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "C++ Debugger",
+            "request": "launch",
+            "type": "cppdbg",
+            "miDebuggerServerAddress": "localhost:3000",
+            "cwd": "/",
+            "program": "/home/santiregui/ros2_ws/install/etasl_ros2/lib/etasl_ros2/etasl_node",
+            "preLaunchTask": "source_all",      
+        }
+    ]
+}

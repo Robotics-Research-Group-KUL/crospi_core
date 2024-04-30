@@ -130,6 +130,13 @@ int main(int argc, char* argv[])
     fmt::print("After processing and validating:\n{}", param);
     fmt::print("{:->80}\n", "-"); //Prints 80 times -
 
+
+    std::vector<double> outputhandlers = {1,2,3};
+    for (auto h : outputhandlers) {
+        std::cout<< "entered for loop" << std::endl;
+        std::cout<< "contains: " << h << std::endl;
+    }
+
     // const std::string cmd_filename = string_interpolate("$[etasl_ros2]/scripts/etasl/move_circle.json");
     // Json::Value cmd = loadJSONFile(cmd_filename);
     // if (!cmd) {

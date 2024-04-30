@@ -20,6 +20,7 @@ private:
     rclcpp_lifecycle::LifecyclePublisher<etasl_interfaces::msg::Output>::SharedPtr pub;
     etasl_interfaces::msg::Output msg;
     bool initialized;
+    bool activated;
     std::string name;
 
 public:
@@ -62,7 +63,11 @@ public:
 
     // virtual void finalize();
 
-    virtual void on_activate(Context::Ptr ctx) override;
+    virtual void on_activate(Context::Ptr ctx,    
+                            const std::vector<std::string>& jnames,
+                            const std::vector<std::string>& fnames) override;
+
+
     virtual void on_deactivate(Context::Ptr ctx) override;
 
 }; // TopicOutputHandler

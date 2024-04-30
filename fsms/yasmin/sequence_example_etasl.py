@@ -38,8 +38,8 @@ from lifecycle_msgs.msg import Transition
 from std_msgs.msg import String
 from rclpy.qos import qos_profile_sensor_data
 
-from etasl_ros2.srv import TaskSpecificationFile
-from etasl_ros2.srv import TaskSpecificationString
+from etasl_interfaces.srv import TaskSpecificationFile
+from etasl_interfaces.srv import TaskSpecificationString
 
 from functools import partial
 from colorama import Fore, Back, Style
@@ -109,8 +109,15 @@ class MovingHome(EtaslState):
         etasl.deactivate(self.node)
         etasl.cleanup(self.node)
         etasl.readTaskSpecificationFile(blackboard=blackboard, node=self.node,file_name= "move_jointspace_trap.lua", rel_shared_dir=True)
+        print("read task spacecification... waiting...")
+        # time.sleep(5)
         etasl.configure(self.node)
+        print("configured... waiting...")
+        # time.sleep(5)
         etasl.activate(self.node)
+        print("activated... waiting...")
+        # time.sleep(5)
+
         return
 
     def exit_handler(self, blackboard: Blackboard):
@@ -167,8 +174,8 @@ class EtaslFSMNode(Node):
         return
     
     def call_service(self, srv_name: str, req_task):
-        self.etasl_clients[srv_name].call(req_task)
-        return 
+        
+        return self.etasl_clients[srv_name].call(req_task)
 
 
 # main

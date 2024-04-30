@@ -29,13 +29,16 @@ include_directories(
    include
 )
 
-rosidl_generate_interfaces(${PROJECT_NAME}
-  # "msg/Num.msg"
-  "msg/Test.msg"
-  "srv/TaskSpecificationString.srv"
-  "srv/TaskSpecificationFile.srv"
-  DEPENDENCIES std_msgs # Add packages that above messages depend on, in this case geometry_msgs for Sphere.msg
-)
+# Delete the following. It is only used for debug in VSCODE:
+include_directories("/home/santiregui/etasl-cmake/standalone-cmake/install/include")
+
+# rosidl_generate_interfaces(${PROJECT_NAME}
+#   # "msg/Num.msg"
+#   "msg/Test.msg"
+#   "srv/TaskSpecificationString.srv"
+#   "srv/TaskSpecificationFile.srv"
+#   DEPENDENCIES std_msgs # Add packages that above messages depend on, in this case geometry_msgs for Sphere.msg
+# )
 
 add_subdirectory(src/misc)
 add_subdirectory(src/ros2_nodes/simple_etasl_node)

@@ -41,7 +41,9 @@ namespace etasl {
              * @brief on_activate
              * Handles the activation of the outputhandler
              */
-            virtual void on_activate(Context::Ptr ctx) {};
+            virtual void on_activate(Context::Ptr ctx,    
+                                    const std::vector<std::string>& jnames,
+                                    const std::vector<std::string>& fnames) {};
 
             /**
              * @brief on_deactivate

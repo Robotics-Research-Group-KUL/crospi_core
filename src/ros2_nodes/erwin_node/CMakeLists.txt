@@ -7,7 +7,7 @@ find_package(sensor_msgs REQUIRED)
 find_package(rclcpp_lifecycle REQUIRED)
 find_package(lifecycle_msgs REQUIRED)
 find_package(etasl REQUIRED)
-find_package(etasl_ros2 REQUIRED) #Needed to read srv and msgs generated with rosidl_generate_interfaces
+# find_package(etasl_ros2 REQUIRED) #Needed to read srv and msgs generated with rosidl_generate_interfaces
 
 
 add_executable(erwin_node erwin_node_test.cpp)
@@ -24,7 +24,7 @@ target_link_libraries(erwin_node
 # ament_target_dependencies(etasl_node rclcpp std_msgs sensor_msgs)
 
 ament_target_dependencies(erwin_node
-  "etasl_ros2" #Needed to read srv and msgs generated with rosidl_generate_interfaces
+  # "etasl_ros2" #Needed to read srv and msgs generated with rosidl_generate_interfaces
   "rclcpp"
   "lifecycle_msgs"
   "rclcpp_lifecycle"

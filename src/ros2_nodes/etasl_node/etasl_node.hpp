@@ -39,11 +39,13 @@
 
 #include "featurevariableinitializer.hpp"
 #include "IO_handlers_deleteme.hpp"
-#include "etasl_ros2/srv/task_specification_string.hpp" 
-#include "etasl_ros2/srv/task_specification_file.hpp" 
+#include "etasl_interfaces/srv/task_specification_string.hpp" 
+#include "etasl_interfaces/srv/task_specification_file.hpp" 
+
 
 
 // #include "etasl_node_utils/rostask.hpp"
+#include "etasl_task_utils/blackboard.hpp"
 #include "etasl_task_utils/registry.hpp"
 #include "etasl_task_utils/inputhandlerfactory.hpp"
 #include "etasl_node_utils/topicinputhandlerfactory.hpp"
@@ -70,19 +72,20 @@ class etaslNode : public rclcpp_lifecycle::LifecycleNode
     public:
         explicit etaslNode(const std::string & node_name, bool intra_process_comms);
         
-        lifecycle_return on_configure(const rclcpp_lifecycle::State &);
-        lifecycle_return on_activate(const rclcpp_lifecycle::State &);
-        lifecycle_return on_deactivate(const rclcpp_lifecycle::State &);    
-        lifecycle_return on_cleanup(const rclcpp_lifecycle::State &);
+        lifecycle_return on_configure(const rclcpp_lifecycle::State & state);
+        lifecycle_return on_activate(const rclcpp_lifecycle::State & state);
+        lifecycle_return on_deactivate(const rclcpp_lifecycle::State & state);    
+        lifecycle_return on_cleanup(const rclcpp_lifecycle::State & state);
         lifecycle_return on_shutdown(const rclcpp_lifecycle::State & state);
 
 
         void publishJointState();
-        void configure_etasl(Json::Value const& param);
+        void configure_etasl();
         void update();
         void reinitialize_data_structures();
         bool initialize_input_handlers();
         bool initialize_output_handlers();
+        void safe_shutdown();
 
         // void setJointValues(const std::vector<double>& jval, const std::vector<std::string>& jvalnames);
 
@@ -92,20 +95,19 @@ class etaslNode : public rclcpp_lifecycle::LifecycleNode
         void update_controller_output(Eigen::VectorXd const& jvalues);
         void update_controller_input(Eigen::VectorXd const& jvalues);
 
-        void solver_configuration(Json::Value const& param);
+        void solver_configuration();
         void initialize_joints();
         void initialize_feature_variables();
         void configure_jointstate_msg();
+        void configure_node();
 
-        bool srv_configure(const std::shared_ptr<lifecycle_msgs::srv::ChangeState::Request> request,
-          std::shared_ptr<lifecycle_msgs::srv::ChangeState::Response>  response);
+
+        // bool srv_configure(const std::shared_ptr<lifecycle_msgs::srv::ChangeState::Request> request,
+        //   std::shared_ptr<lifecycle_msgs::srv::ChangeState::Response>  response);
 
         bool etasl_console(const std::shared_ptr<std_srvs::srv::Empty::Request> request, std::shared_ptr<std_srvs::srv::Empty::Response>  response);
-        bool readTaskSpecificationFile(const std::shared_ptr<etasl_ros2::srv::TaskSpecificationFile::Request> request, std::shared_ptr<etasl_ros2::srv::TaskSpecificationFile::Response>  response);
-        bool readTaskSpecificationString(const std::shared_ptr<etasl_ros2::srv::TaskSpecificationString::Request> request, std::shared_ptr<etasl_ros2::srv::TaskSpecificationString::Response>  response);
-
-
-        bool configure_task(Json::Value const& param);
+        bool readTaskSpecificationFile(const std::shared_ptr<etasl_interfaces::srv::TaskSpecificationFile::Request> request, std::shared_ptr<etasl_interfaces::srv::TaskSpecificationFile::Response>  response);
+        bool readTaskSpecificationString(const std::shared_ptr<etasl_interfaces::srv::TaskSpecificationString::Request> request, std::shared_ptr<etasl_interfaces::srv::TaskSpecificationString::Response>  response);
     
     private:
         std::shared_ptr<rclcpp::TimerBase> timer_;
@@ -137,7 +139,7 @@ class etaslNode : public rclcpp_lifecycle::LifecycleNode
         std::vector<std::string> jnames_in_expr;
         std::vector< std::string > fnames;
 
-
+        boost::shared_ptr<etasl::BlackBoard> board;
         
 
 
@@ -168,8 +170,8 @@ class etaslNode : public rclcpp_lifecycle::LifecycleNode
 
         rclcpp::Service<lifecycle_msgs::srv::ChangeState>::SharedPtr test_service_;
         rclcpp::Service<std_srvs::srv::Empty>::SharedPtr srv_etasl_console_;
-        rclcpp::Service<etasl_ros2::srv::TaskSpecificationString>::SharedPtr srv_readTaskSpecificationString_;
-        rclcpp::Service<etasl_ros2::srv::TaskSpecificationFile>::SharedPtr srv_readTaskSpecificationFile_;
+        rclcpp::Service<etasl_interfaces::srv::TaskSpecificationString>::SharedPtr srv_readTaskSpecificationString_;
+        rclcpp::Service<etasl_interfaces::srv::TaskSpecificationFile>::SharedPtr srv_readTaskSpecificationFile_;
 
 
 
