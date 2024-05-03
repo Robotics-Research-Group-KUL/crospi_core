@@ -143,6 +143,7 @@ Monitor{
 - Implement JSON entry to select which topic fsm/events are published.
 - Create ROS param to specify initial joints instead of hardcoding them
 -Enable a JSON entry to specify (optionally) the QOS for each input/output handler that subscribes/pubishes to ros topics.Some examples (including one for sensor streaming) are found [here](https://github.com/ros2/rmw/blob/rolling/rmw/include/rmw/qos_profiles.h) and explanation about it [here](https://docs.ros.org/en/rolling/Concepts/Intermediate/About-Quality-of-Service-Settings.html). This is (sort of) equivalent to the connection policy of orocos.
+- Change some values of the Schema that Erwin defined as number to integer, to avoid the use of decimals
 
 -fileoutputhandler is not outputing any file for some reason...
 
@@ -152,6 +153,7 @@ Monitor{
 First compile with
 ```bash
 colcon_make --cmake-args -DCMAKE_BUILD_TYPE=RelWithDebInfo
+colcon_make --packages-select etasl_ros2 --cmake-args -DCMAKE_BUILD_TYPE=Debug -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
 ```
 
 Then:

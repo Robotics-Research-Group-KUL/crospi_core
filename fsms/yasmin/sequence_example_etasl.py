@@ -125,6 +125,36 @@ class MovingHome(EtaslState):
         return
         # time.sleep(1)
 
+class MovingJoystick(EtaslState):
+    def __init__(self, node: Node) -> None:
+        super().__init__(node=node,  # node
+                         topic_name="fsm/events",  # topic name
+                         outcomes=["e_finished@etasl_node",],  # explicitly list the events that can be received through the topic. Events that are not specified are ignored
+                         entry_handler = self.entry_handler,  # entry handler callback, called once when entering
+                         monitor_handler = None,  # monitor handler callback, called several times. If omitted or set to None, the default behavior is to match the topic msg to the outcome
+                         exit_handler = self.exit_handler,  # exit handler callback, called once when exiting
+                         state_name = "MovingJoystick", #If omitted or set to None, no printing in colors when entering/exiting state
+                         )
+    
+    def entry_handler(self, blackboard: Blackboard):
+        etasl.deactivate(self.node)
+        etasl.cleanup(self.node)
+        etasl.readTaskSpecificationFile(blackboard=blackboard, node=self.node,file_name= "move_joystick.lua", rel_shared_dir=True)
+        print("read task spacecification... waiting...")
+        # time.sleep(5)
+        etasl.configure(self.node)
+        print("configured... waiting...")
+        # time.sleep(5)
+        etasl.activate(self.node)
+        print("activated... waiting...")
+        # time.sleep(5)
+        return
+
+    def exit_handler(self, blackboard: Blackboard):
+        self.node.get_logger().info("exit handler called")
+        return
+        # time.sleep(1)
+
 
 def test_callback(blackboard: Blackboard) -> str:
     blackboard.a = 10
@@ -151,6 +181,9 @@ class EtaslFSMNode(Node):
                      transitions={"e_finished@etasl_node": "MovingCartesian"})
         
         sm_out.add_state("MovingCartesian", MovingCartesian(self),
+                     transitions={"e_finished@etasl_node": "MovingJoystick"})
+        
+        sm_out.add_state("MovingJoystick", MovingJoystick(self),
                      transitions={"e_finished@etasl_node": "STATE_OUTER_B"})
         
         sm_out.add_state("STATE_OUTER_B", CbState([SUCCEED], test_callback),

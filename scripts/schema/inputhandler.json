@@ -9,6 +9,9 @@
         },
         {
             "$ref":"jointstateinputhandler.json"
+        },
+        {
+            "$ref":"twistinputhandler.json"
         }
     ]
 }

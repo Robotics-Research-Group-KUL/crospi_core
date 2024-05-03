@@ -56,6 +56,7 @@
 #include "etasl_node_utils/topicoutputhandlerfactory.hpp"
 #include "etasl_task_utils/fileoutputhandlerfactory.hpp"
 #include "etasl_node_utils/tfoutputhandlerfactory.hpp"
+#include "etasl_node_utils/twistinputhandlerfactory.hpp"
 
 
 

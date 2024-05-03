@@ -92,6 +92,10 @@ function transform_pre(schema, data, transform)
             retval={}
             retval["origin"]      = transform_pre( schema.properties["origin"], data:Origin(), transform)
             retval["orientation"] = transform_pre( schema.properties["orientation"], data:Rotation(), transform)
+        elseif extendedtype(data) == "Twist" then --TODO: Santiago, check if this works
+            retval={}
+            retval["linear"]      = transform_pre( schema.properties["linear"], data:Transvel(), transform)
+            retval["angular"] = transform_pre( schema.properties["angular"], data:Rotvel(), transform)
         end
     end
     return retval
@@ -112,6 +116,10 @@ function transform_post(schema, data, transform)
             local R = toRot(data["orientation"])
             local p = data["origin"]
             return Frame(R,p)
+        elseif schema.transform_to=="twist" then
+            local linear = data["linear"]
+            local angular = data["angular"]
+            retval = Twist(linear,angular)
         else
             check(schema.transform_to~=nil,ctx,"do not now how to handle transform_to value")
         end
@@ -265,6 +273,7 @@ end
 
 references = {}
 add_schema(references, "vector.json")
+add_schema(references, "twist.json")
 add_schema(references, "orientation.json")
 add_schema(references, "frame.json")
 add_schema(references, "moveto.json")

@@ -1,0 +1,14 @@
+{
+    "$id" : "screw_linear.json",
+    "title": "Screw Linear",
+    "description": "Linear term (i.e. angular velocity or torque) of a screw (i.e. twist or wrench) vector",
+    "type": "object",
+    "properties" : {
+        "x" : { "type" : "number" },
+        "y" : { "type" : "number" },
+        "z" : { "type" : "number" }
+    },
+    "required" : [ "x","y","z"],
+    "additionalProperties" : false,
+    "transform_to" : "vector"
+}

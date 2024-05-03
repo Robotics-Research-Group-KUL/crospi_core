@@ -646,21 +646,31 @@ void etaslNode::reinitialize_data_structures() {
 }
 
 bool etaslNode::initialize_input_handlers(){
+    // RCUTILS_LOG_INFO_NAMED(get_name(), "Initializing input handlers...");
+    // // initial input is used for initialization.
+    // for (size_t i = 0; i < inputhandlers.size(); ++i) {
+    //     if (!ih_initialized[i]) {
+    //         std::string message = "Initializing input handler: "+ inputhandlers[i]->getName();
+    //         RCUTILS_LOG_INFO_NAMED(get_name(), message.c_str());
+    //         ih_initialized[i] = inputhandlers[i]->initialize(ctx, jnames_in_expr, fnames, jpos_ros, fpos_etasl);
+    //         if (!ih_initialized[i]) {
+    //             std::string message = "Could not initialize input handler : " + inputhandlers[i]->getName();
+    //             RCUTILS_LOG_ERROR_NAMED(get_name(), message.c_str());
+    //             rclcpp::shutdown();
+    //             return false;
+    //         }
+    //     }
+    // }
+
     RCUTILS_LOG_INFO_NAMED(get_name(), "Initializing input handlers...");
-    // initial input is used for initialization.
-    for (size_t i = 0; i < inputhandlers.size(); ++i) {
-        if (!ih_initialized[i]) {
-            std::string message = "Initializing input handler: "+ inputhandlers[i]->getName();
-            RCUTILS_LOG_INFO_NAMED(get_name(), message.c_str());
-            ih_initialized[i] = inputhandlers[i]->initialize(ctx, jnames_in_expr, fnames, jpos_ros, fpos_etasl);
-            if (!ih_initialized[i]) {
-                std::string message = "Could not initialize input handler : " + inputhandlers[i]->getName();
-                RCUTILS_LOG_ERROR_NAMED(get_name(), message.c_str());
-                rclcpp::shutdown();
-                return false;
-            }
-        }
+    for (auto& h : inputhandlers) {
+        std::stringstream message;
+        message << "Initializing input handler:" <<  h->getName();
+        RCUTILS_LOG_INFO_NAMED(get_name(), (message.str()).c_str());
+
+        h->initialize(ctx, jnames_in_expr, fnames, jpos_ros, fpos_etasl);
     }
+    RCUTILS_LOG_INFO_NAMED(get_name(), "finished initializing input handlers");
 
     return true;
 }
@@ -692,6 +702,7 @@ void etaslNode::configure_node(){
     etasl::registerJointStateOutputHandlerFactory(shared_from_this());
     // etasl::registerTopicInputHandlerFactory(shared_from_this());
     // etasl::registerTFOutputHandlerFactory(shared_from_this());
+    etasl::registerTwistInputHandlerFactory(shared_from_this());
 
 
     Json::Value param = board->getPath("/default-etasl", false);
@@ -754,6 +765,10 @@ void etaslNode::configure_node(){
   
     
     timer_->cancel();
+    
+    if(!first_time_configured){
+      this->initialize_input_handlers();
+    }
     this->configure_etasl();
     this->configure_jointstate_msg();
 
@@ -761,8 +776,8 @@ void etaslNode::configure_node(){
     // auto timeee = ctx->getOutputExpression<double>("time");
     // std::cout << timeee->value() << std::endl;
 
+
     if(!first_time_configured){
-      this->initialize_input_handlers();
       this->initialize_output_handlers();
     }
 

@@ -38,12 +38,14 @@ set( src_etasl_node_utils
     jointstateinputhandler.cpp
     topicinputhandler.cpp
     tfoutputhandler.cpp
+    twistinputhandler.cpp
 
     topicoutputhandlerfactory.cpp
     jointstateoutputhandlerfactory.cpp
     jointstateinputhandlerfactory.cpp    
     topicinputhandlerfactory.cpp
     tfoutputhandlerfactory.cpp
+    twistinputhandlerfactory.cpp
     #robotsimulator.cpp
     robotsimulatorfactory.cpp    
 )
@@ -57,6 +59,7 @@ set(rosdependencies
     ament_index_cpp
     Eigen3
     sensor_msgs
+    geometry_msgs
     tf2
     tf2_geometry_msgs
     tf2_ros
