@@ -147,6 +147,9 @@ Monitor{
 
 -fileoutputhandler is not outputing any file for some reason...
 
+-add on_configure to all input and output handlers. Right now I use the initialize in the on_configure but this is confusing and leads to errors.
+
+- Handle proper shutdown when ctrl+c to safely stop robot execution (send zero velocities). Right now I am using the function `rclcpp::on_shutdown(std::bind( &etaslNode::safe_shutdown, my_etasl_node))` to bind my own callback.
 
 ## To debug segmentation fault:
 

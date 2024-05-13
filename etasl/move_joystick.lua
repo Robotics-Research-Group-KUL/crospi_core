@@ -23,6 +23,8 @@ tf = ee
 -- =============================== INITIAL POSE ==============================
 K_joystick = 0.2
 joystick_input   = ctx:createInputChannelTwist("joystick_input")
+-- joystick_input = twist(vector(0,0,-0.05),vector(0,0,0))
+
 
 -- =============================== INSTANTANEOUS FRAME ==============================
 

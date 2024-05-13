@@ -133,19 +133,21 @@ bool etaslNode::readTaskSpecificationFile(const std::shared_ptr<etasl_interfaces
 		// int retval = LUA->executeFile("/home/santiregui/ros2_ws/install/etasl_ros2/share/etasl_ros2/etasl/move_cartesianspace.lua");
 		std::cout << "--------read lua file " <<std::endl; 
 		if (retval !=0) {
-			RCUTILS_LOG_ERROR_NAMED(get_name(), "Error executing task specification file. Shuting down.");
+			RCUTILS_LOG_ERROR_NAMED(get_name(), "Error executing task specification file. Please provide a valid task specification file");
 			response->success = false;
-			rclcpp::shutdown();
+      auto transition = this->shutdown(); //calls on_shutdown() hook.
+      // this->safe_shutdown();
 			return false;
 		}
 	} catch (const char* msg) {
 		// can be thrown by file/string errors during reading
 		// by lua_bind during reading
 		// by expressiongraph during reading ( expressiongraph will not throw when evaluating)
-		std::string message = "The following error was throuwn while reading the task specification: " + std::string(msg);
+		std::string message = "The following error was thrown while reading the task specification: " + std::string(msg);
 		RCUTILS_LOG_ERROR_NAMED(get_name(), message.c_str());
 		response->success = false;
-		rclcpp::shutdown();
+    auto transition = this->shutdown(); //calls on_shutdown() hook.
+    // this->safe_shutdown();
 		return false;
 	}
 
@@ -169,19 +171,19 @@ bool etaslNode::readTaskSpecificationString(const std::shared_ptr<etasl_interfac
 		int retval = LUA->executeString(request->str);
 		// int retval = LUA->executeFile("/home/santiregui/ros2_ws/install/etasl_ros2/share/etasl_ros2/etasl/move_cartesianspace.lua");
 		if (retval !=0) {
-			RCUTILS_LOG_ERROR_NAMED(get_name(), "Error executing specificed string command in LUA within the etasl_node/readTaskSpecificationString service. Shuting down.");
+			RCUTILS_LOG_ERROR_NAMED(get_name(), "Error executing specificed string command in LUA within the etasl_node/readTaskSpecificationString service. ");
 			response->success = false;
-			rclcpp::shutdown();
+      auto transition = this->shutdown(); //calls on_shutdown() hook.
 			return false;
 		}
 	} catch (const char* msg) {
 		// can be thrown by file/string errors during reading
 		// by lua_bind during reading
 		// by expressiongraph during reading ( expressiongraph will not throw when evaluating)
-		std::string message = "The following error was throuwn while reading the task specification: " + std::string(msg);
+		std::string message = "The following error was thrown while reading the task specification: " + std::string(msg);
 		RCUTILS_LOG_ERROR_NAMED(get_name(), message.c_str());
 		response->success = false;
-		rclcpp::shutdown();
+    auto transition = this->shutdown(); //calls on_shutdown() hook.
 		return false;
 	}
 
@@ -252,9 +254,11 @@ void etaslNode::solver_configuration(){
     // create a parameter plist (instead of ctx->solver_property) :
         // parameters of the solver:
 
+        // TODO: Delete the following after handling solvers with register factory (same as with IO handlers)
         if (!param["solver"]["is-qpoasessolver"].asBool()){
           RCUTILS_LOG_ERROR_NAMED(get_name(), "is-qpoasessolver should be true in the JSON definition since currently only qpoases solver is supported.");
-          rclcpp::shutdown();
+          // this->safe_shutdown();
+          auto transition = this->shutdown(); //calls on_shutdown() hook.
           return;
         }
 
@@ -294,7 +298,8 @@ void etaslNode::solver_configuration(){
     if (result!=0) {
         std::string message = "Failed to create the solver " + solver_name;
         RCUTILS_LOG_ERROR_NAMED(get_name(), message.c_str());
-        rclcpp::shutdown();
+        auto transition = this->shutdown(); //calls on_shutdown() hook.
+        // this->safe_shutdown();
         return;
     }
     ctx->setSolverProperty("sample_time", periodicity_param/1000.0);
@@ -361,7 +366,8 @@ void etaslNode::initialize_feature_variables(){
     int retval = initializer->prepareSolver();
     if (retval!=0) {
         RCUTILS_LOG_ERROR_NAMED(get_name(), (initializer->errorMessage(retval)).c_str());
-        rclcpp::shutdown();
+        auto transition = this->shutdown(); //calls on_shutdown() hook.
+        // this->safe_shutdown();
         return;
     }
 
@@ -377,7 +383,8 @@ void etaslNode::initialize_feature_variables(){
     retval = initializer->initialize_feature_variables();
     if (retval!=0) {
         RCUTILS_LOG_ERROR_NAMED(get_name(), (initializer->errorMessage(retval)).c_str());
-        rclcpp::shutdown();
+        auto transition = this->shutdown(); //calls on_shutdown() hook.
+        // this->safe_shutdown();
         return; 
     }
 
@@ -589,7 +596,8 @@ void etaslNode::update()
 
             std::string message = "The solver encountered the following error : \n" + slv->errorMessage(c);
             RCUTILS_LOG_ERROR_NAMED(get_name(), message.c_str());
-            rclcpp::shutdown();
+            auto transition = this->shutdown(); //calls on_shutdown() hook.
+            // this->safe_shutdown();
             return;
             // break;
         }
@@ -656,7 +664,7 @@ bool etaslNode::initialize_input_handlers(){
     //         if (!ih_initialized[i]) {
     //             std::string message = "Could not initialize input handler : " + inputhandlers[i]->getName();
     //             RCUTILS_LOG_ERROR_NAMED(get_name(), message.c_str());
-    //             rclcpp::shutdown();
+    //             this->safe_shutdown();
     //             return false;
     //         }
     //     }
@@ -955,15 +963,17 @@ void etaslNode::configure_node(){
     // timer and publisher. These entities are no longer available
     // and our node is "clean".
 
-    RCUTILS_LOG_INFO_NAMED(get_name(), "on shutdown is called from state %s.", state.label().c_str());
+    RCUTILS_LOG_INFO_NAMED(get_name(), "on_shutdown() is called from state %s.", state.label().c_str());
 
 
-    for (auto& h : inputhandlers) {
-        h->finalize();
-    }
-    for (auto& h : outputhandlers) {
-        h->finalize();
-    }
+    // for (auto& h : inputhandlers) {
+    //     h->finalize();
+    // }
+    // for (auto& h : outputhandlers) {
+    //     h->finalize();
+    // }
+
+    this->safe_shutdown();
     // We return a success and hence invoke the transition to the next
     // step: "finalized".
     // If we returned TRANSITION_CALLBACK_FAILURE instead, the state machine
@@ -975,14 +985,18 @@ void etaslNode::configure_node(){
 
 
     void etaslNode::safe_shutdown(){
-        RCUTILS_LOG_INFO_NAMED(get_name(), "safe_shutdown callback is called ");
+      // RCUTILS_LOG_INFO_NAMED(get_name(), "Program shutting down safely.");
 
-        for (auto& h : inputhandlers) {
-            h->finalize();
-        }
-        for (auto& h : outputhandlers) {
-            h->finalize();
-        }
+      std::cout << "Program shutting down safely." << std::endl;
+
+      for (auto& h : inputhandlers) {
+          h->finalize();
+      }
+      for (auto& h : outputhandlers) {
+          h->finalize();
+      }
+
+			// rclcpp::shutdown(); 
     }
 
 int main(int argc, char * argv[])
@@ -996,11 +1010,13 @@ int main(int argc, char * argv[])
     // Initialize node
     rclcpp::init(argc, argv);
 
+
     std::shared_ptr<etaslNode> my_etasl_node = std::make_shared<etaslNode>("etasl_node");
     // auto my_etasl_node = std::make_shared<etaslNode>("etasl_node");
 
     my_etasl_node->configure_node();
     
+    rclcpp::on_shutdown(std::bind( &etaslNode::safe_shutdown, my_etasl_node));
 
     // executor.add_node(my_etasl_node->get_node_base_interface());
     // rclcpp::spin(my_etasl_node->get_node_base_interface());
@@ -1067,8 +1083,9 @@ int main(int argc, char * argv[])
     //     end_time_sleep = std::chrono::steady_clock::now() + periodicity; //adds periodicity
     // }
 
-    RCUTILS_LOG_INFO_NAMED(my_etasl_node->get_name(), "Program terminated correctly.");
     rclcpp::shutdown();
+    // my_etasl_node->safe_shutdown();
 
+    RCUTILS_LOG_INFO("Program terminated correctly.");
   return 0;
 }
