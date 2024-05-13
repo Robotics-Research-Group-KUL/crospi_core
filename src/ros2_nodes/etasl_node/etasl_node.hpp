@@ -80,7 +80,6 @@ class etaslNode : public rclcpp_lifecycle::LifecycleNode
         lifecycle_return on_shutdown(const rclcpp_lifecycle::State & state);
 
 
-        void publishJointState();
         void configure_etasl();
         void update();
         void reinitialize_data_structures();
@@ -99,7 +98,6 @@ class etaslNode : public rclcpp_lifecycle::LifecycleNode
         void solver_configuration();
         void initialize_joints();
         void initialize_feature_variables();
-        void configure_jointstate_msg();
         void configure_node();
 
 
@@ -112,14 +110,11 @@ class etaslNode : public rclcpp_lifecycle::LifecycleNode
     
     private:
         std::shared_ptr<rclcpp::TimerBase> timer_;
-        // rclcpp::Publisher<sensor_msgs::msg::JointState>::SharedPtr joint_pub_;
-        std::shared_ptr<rclcpp_lifecycle::LifecyclePublisher<sensor_msgs::msg::JointState>> joint_pub_;
         rclcpp::Publisher<std_msgs::msg::String>::SharedPtr events_pub_;
 
 
         int periodicity_param; //Expressed in milliseconds
         double time;
-        sensor_msgs::msg::JointState joint_state_msg;
         std_msgs::msg::String event_msg;
         std::string event_postfix;
 
@@ -128,9 +123,9 @@ class etaslNode : public rclcpp_lifecycle::LifecycleNode
         boost::shared_ptr<LuaContext> LUA;
         SolverRegistry::Ptr solver_registry;
 
-        boost::shared_ptr<eTaSL_OutputHandler> oh;
-        boost::shared_ptr<eTaSL_InputHandler> ih;
-        boost::shared_ptr<std::ofstream > outpfile_ptr;
+        // boost::shared_ptr<eTaSL_OutputHandler> oh;
+        // boost::shared_ptr<eTaSL_InputHandler> ih;
+        // boost::shared_ptr<std::ofstream > outpfile_ptr;
 
         std::vector<etasl::OutputHandler::SharedPtr> outputhandlers;
         std::vector<etasl::InputHandler::SharedPtr> inputhandlers;

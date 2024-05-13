@@ -125,8 +125,8 @@ void JointStateOutputHandler::finalize()
             msg.velocity[i] = 0.0;
         }
         msg.header.stamp = node->get_clock()->now();
+        // pub->on_activate();
         pub->publish(msg);
-
         pub->on_deactivate();
     }
     msg.name.clear();

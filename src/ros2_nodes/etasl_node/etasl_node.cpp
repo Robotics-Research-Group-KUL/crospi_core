@@ -40,8 +40,7 @@ etaslNode::etaslNode(const std::string & node_name, bool intra_process_comms = f
 {
   //Used unless the ROS parameters are modified externally (e.g. through terminal or launchfile)
 
-  outpfilename = "/home/santiregui/ros2_ws/src/etasl_ros2/etasl/log_test.csv";
-  this->declare_parameter("outpfilename",  outpfilename);
+
   this->declare_parameter("task_specification_file",  rclcpp::PARAMETER_STRING);
   this->declare_parameter("jointnames",  rclcpp::PARAMETER_STRING_ARRAY);
 
@@ -194,34 +193,6 @@ bool etaslNode::readTaskSpecificationString(const std::shared_ptr<etasl_interfac
 
 }
 
-
-void etaslNode::publishJointState() {
-    // auto joint_state_msg = std::make_shared<sensor_msgs::msg::JointState>();
-
-        // RCUTILS_LOG_INFO_NAMED(get_name(), "Entering publishJointState.");
-
-
-      this->update(); // get_current_state().label() could change here, e.g. if a monitor is triggered
-
-      // TODO: Remove the default publisher
-      if(this->get_current_state().label() == "active"){
-        
-
-        joint_state_msg.header.stamp = this->now(); // Set the timestamp to the current time
-        // joint_state_msg.name = jointnames; //No need to update if defined in configuration
-        
-        for (unsigned int i=0;i<jnames_in_expr.size();++i) {
-          // Populate the joint state message according to your robot configuration
-          joint_state_msg.position[i]  = jpos_ros[i];
-          joint_state_msg.velocity[i]  = 0.0;
-          joint_state_msg.effort[i]  = 0.0;
-        } 
-
-        // Even if not checked, only if the publisher is in an active state the message transfer is
-        // enabled and the message is actually published.
-        joint_pub_->publish(joint_state_msg);
-      } 
-}
 
 void etaslNode::update_controller_output(Eigen::VectorXd const& jvalues_solver){
     for (unsigned int i=0;i<jnames_in_expr.size();++i) {
@@ -401,12 +372,6 @@ void etaslNode::initialize_feature_variables(){
   
 }
 
-void etaslNode::configure_jointstate_msg(){
-    joint_state_msg.name = jnames_in_expr;
-    joint_state_msg.position.resize(jnames_in_expr.size(),0.0); 
-    joint_state_msg.velocity.resize(jnames_in_expr.size(),0.0);
-    joint_state_msg.effort.resize(jnames_in_expr.size(),0.0);
-}
 
 void etaslNode::configure_etasl(){
   
@@ -430,16 +395,6 @@ void etaslNode::configure_etasl(){
 
     std::string message = "The task specification file used is: "+ fname;
     RCUTILS_LOG_INFO_NAMED(get_name(), message.c_str());
-
-    // TODO: DELETE oh and ih
-    // oh( ctx);     // or   std::vector<std::string> varnames =  {"q","f","dx","dy"};
-                                      //      eTaSL_OutputHandler oh( ctx, varnames); for only specific outputs
-    // create the OutputHandler:
-    oh = boost::make_shared<eTaSL_OutputHandler>(ctx);
-        // create the Inputhandler:
-    ih = boost::make_shared<eTaSL_InputHandler>(ctx,"sine_input", 0.2,0.1,0.0);
-    // ih->update(time);                                              
-    ih->update(0.0);  
 
 
     // reset all monitors:
@@ -501,12 +456,6 @@ void etaslNode::configure_etasl(){
 
     // initialize our outputhandler:
     // std::ofstream outpfile(outpfilename);
-
-    outpfilename = this->get_parameter("outpfilename").as_string();
-    outpfile_ptr = boost::make_shared<std::ofstream>(outpfilename);
-    
-    
-    oh->printHeader(*outpfile_ptr);
 
     // std::vector<std::string> hello;
     // slv->getJointNameVector(hello);
@@ -581,11 +530,7 @@ void etaslNode::update()
       update_controller_output(jpos_etasl);
         // std::cout << jpos_ros[0] << std::endl;
        
-
-        // get inputs and store them into the context ctx:
-        ih->update(time);
-        // handle outputs and display them:
-        oh->printOutput(*outpfile_ptr);            
+         
         // set states:
         slv->setTime(time);
         slv->setJointStates(jpos_etasl);
@@ -629,9 +574,7 @@ void etaslNode::reinitialize_data_structures() {
 
     solver_registry.reset();
     // registerSolverFactory_qpOases(solver_registry, "qpoases");
-    outpfile_ptr.reset();
-    ih.reset();
-    oh.reset();
+
 
     time = 0.0;
     fpos_etasl = VectorXd::Zero(0);
@@ -640,7 +583,6 @@ void etaslNode::reinitialize_data_structures() {
 
     jointnames.clear();
     jnames_in_expr.clear();
-    outpfile_ptr.reset();
 
     jindex.clear();
     name_ndx.clear();
@@ -756,15 +698,14 @@ void etaslNode::configure_node(){
     // available.
 
 
-
-
-    joint_state_msg = sensor_msgs::msg::JointState();
-
+ // This still needs to be here and cannot be moved to configure_node() function because of the routine for verifying the joints in the expression. That routine should change 
     if(!first_time_configured){
-      joint_pub_ = this->create_publisher<sensor_msgs::msg::JointState>("joint_states", 1); //queue_size 1 so that it sends the latest always
-      timer_ = this->create_wall_timer(std::chrono::milliseconds(periodicity_param), std::bind(&etaslNode::publishJointState, this));
+      timer_ = this->create_wall_timer(std::chrono::milliseconds(periodicity_param), std::bind(&etaslNode::update, this));
       jpos_init = VectorXd::Zero(6);
       jpos_init << 180.0/180.0*3.1416, -90.0/180.0*3.1416, 90.0/180.0*3.1416, -90.0/180.0*3.1416, -90.0/180.0*3.1416, 0.0/180.0*3.1416;
+      this->initialize_input_handlers();
+      this->initialize_output_handlers();
+
     }
     else{
       jpos_init = jpos_etasl;
@@ -773,21 +714,14 @@ void etaslNode::configure_node(){
   
     
     timer_->cancel();
-    
-    if(!first_time_configured){
-      this->initialize_input_handlers();
-    }
+
+
     this->configure_etasl();
-    this->configure_jointstate_msg();
 
     // std::cout << "The time is:" << std::endl;
     // auto timeee = ctx->getOutputExpression<double>("time");
     // std::cout << timeee->value() << std::endl;
 
-
-    if(!first_time_configured){
-      this->initialize_output_handlers();
-    }
 
 
     RCUTILS_LOG_INFO_NAMED(get_name(), "on_configure() is called.");
@@ -826,7 +760,6 @@ void etaslNode::configure_node(){
     RCUTILS_LOG_INFO_NAMED(get_name(), "Entering on activate.");
 
     timer_->reset();
-    joint_pub_->on_activate();
 
     RCUTILS_LOG_INFO_NAMED(get_name(), "Entering on activate for input handlers.");
 
@@ -880,7 +813,6 @@ void etaslNode::configure_node(){
     // We explicitly deactivate the lifecycle publisher.
     // Starting from this point, all messages are no longer
     // sent into the network.
-    joint_pub_->on_deactivate();
     timer_->cancel();
 
     jvel_etasl.setZero(); //Sets joint velocities to zero
@@ -928,7 +860,6 @@ void etaslNode::configure_node(){
     // timer and publisher. These entities are no longer available
     // and our node is "clean".
     timer_->cancel();
-    // joint_pub_.reset();
     this->reinitialize_data_structures();
 
     RCUTILS_LOG_INFO_NAMED(get_name(), "on cleanup is called.");

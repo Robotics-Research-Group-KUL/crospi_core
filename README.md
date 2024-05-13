@@ -149,7 +149,9 @@ Monitor{
 
 -add on_configure to all input and output handlers. Right now I use the initialize in the on_configure but this is confusing and leads to errors.
 
-- Handle proper shutdown when ctrl+c to safely stop robot execution (send zero velocities). Right now I am using the function `rclcpp::on_shutdown(std::bind( &etaslNode::safe_shutdown, my_etasl_node))` to bind my own callback.
+- Handle proper shutdown when ctrl+c to safely stop robot execution (send zero velocities). Right now I am using the function `rclcpp::on_shutdown(std::bind( &etaslNode::safe_shutdown, my_etasl_node))` to bind my own callback. The publisher doesn't publish after shutdown, even if we publish zero velocities in the jointstateoutputhandler. See discussion forum here: https://github.com/ros2/rclcpp/issues/1706
+
+- I need to change routine that checks which joints are in the task specification and then ignore the rest. I should perhaps publish all joints provided in the list, and the ones not there set as a default value. 
 
 ## To debug segmentation fault:
 

@@ -22,6 +22,10 @@
                     "topic-name": "/velcmd"
                 },
                 {
+                    "is-jointstateoutputhandler": true,
+                    "topic-name": "/joint_states"
+                },
+                {
                     "is-topicoutputhandler" : true,
                     "topic-name" : "/my_topic",
                     "variable-names" : []
