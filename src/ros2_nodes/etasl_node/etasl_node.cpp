@@ -915,20 +915,20 @@ void etaslNode::configure_node(){
   }
 
 
-    void etaslNode::safe_shutdown(){
-      // RCUTILS_LOG_INFO_NAMED(get_name(), "Program shutting down safely.");
+  void etaslNode::safe_shutdown(){
+    // RCUTILS_LOG_INFO_NAMED(get_name(), "Program shutting down safely.");
 
-      std::cout << "Program shutting down safely." << std::endl;
+    std::cout << "Program shutting down safely." << std::endl;
 
-      for (auto& h : inputhandlers) {
-          h->finalize();
-      }
-      for (auto& h : outputhandlers) {
-          h->finalize();
-      }
-
-			// rclcpp::shutdown(); 
+    for (auto& h : inputhandlers) {
+        h->finalize();
     }
+    for (auto& h : outputhandlers) {
+        h->finalize();
+    }
+
+    // rclcpp::shutdown(); 
+  }
 
 int main(int argc, char * argv[])
 {

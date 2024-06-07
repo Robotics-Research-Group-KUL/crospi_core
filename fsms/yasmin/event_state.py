@@ -1,30 +1,32 @@
 # Script created by modifying the MonitorState class found in https://github.com/uleroboticsgroup/yasmin/blob/main/yasmin_ros/yasmin_ros/monitor_state.py
 # Santiago Iregui, 2024
+# KU Leuven, Robotics Research Group (https://www.mech.kuleuven.be/en/pma/research/robotics)
 
 import time
 from typing import List, Callable, Union, Type
 
-from rclpy.qos import QoSHistoryPolicy, QoSProfile, QoSReliabilityPolicy, QoSDurabilityPolicy
 
+from rclpy.node import Node
+# from rclpy.subscription import Subscription
 
 from yasmin import State
 from yasmin import Blackboard
-from yasmin_ros.basic_outcomes import CANCEL
-from simple_node import Node
+from yasmin_ros.yasmin_node import YasminNode
+from yasmin_ros.basic_outcomes import CANCEL, TIMEOUT
+
+from rclpy.qos import QoSHistoryPolicy, QoSProfile, QoSReliabilityPolicy, QoSDurabilityPolicy
 from std_msgs.msg import String
-
-
 from colorama import Fore, Back, Style
 
 
 
-class EtaslState(State):
+class EventState(State):
 
     def __init__(
         self,
-        node: Node,
         topic_name: str,
         outcomes: List[str],
+        node: Node = None,
         entry_handler: Callable = None,
         monitor_handler: Callable=None,
         exit_handler: Callable = None,
@@ -34,7 +36,7 @@ class EtaslState(State):
     ) -> None:
 
         if not timeout is None:
-            outcomes = [CANCEL] + outcomes
+            outcomes = [CANCEL, TIMEOUT] + outcomes
         super().__init__(outcomes)
 
         if monitor_handler is  None:
@@ -49,17 +51,21 @@ class EtaslState(State):
         self.time_to_wait = 0.001
         self.monitoring = False
         self.outcomes = outcomes
-        self.node = node
         self.state_name = state_name
 
         qos_profile = QoSProfile(
             history=QoSHistoryPolicy.KEEP_LAST, #Keeps the last msgs received in case buffer is fulll
             depth=msg_queue, #Buffer size
             reliability=QoSReliabilityPolicy.RELIABLE, #Uses TCP for reliability instead of UDP
-            durability=QoSDurabilityPolicy.VOLATILE #Volatile, may use first msgs if subscribed late (will not happen in this context)
+            durability=QoSDurabilityPolicy.VOLATILE #Volatile, may not use first msgs if subscribed late (will not happen in this context)
         )
 
-        self._sub = node.create_subscription(
+        if node is None:
+            self.node = YasminNode.get_instance()
+        else:
+            self.node = node
+
+        self._sub = self.node.create_subscription(
             String, topic_name, self.__callback, qos_profile)
 
     def __callback(self, msg) -> None:
@@ -89,7 +95,7 @@ class EtaslState(State):
 
                 if elapsed_time >= self.timeout:
                     self.monitoring = False
-                    return CANCEL
+                    return TIMEOUT
 
                 elapsed_time += self.time_to_wait
 
