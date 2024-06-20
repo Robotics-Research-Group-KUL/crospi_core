@@ -52,6 +52,12 @@ namespace etasl {
             virtual void on_deactivate(Context::Ptr ctx) {};
 
             /**
+             * @brief on_cleanup
+             * Handles the cleanup of the outputhandler
+             */
+            virtual void on_cleanup(Context::Ptr ctx) {};
+
+            /**
              * Returns a name for an instance of this handler
             */
             virtual const std::string& getName() const = 0;

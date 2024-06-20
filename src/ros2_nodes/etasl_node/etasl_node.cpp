@@ -6,6 +6,7 @@
 
 // #include "etasl_task_utils/blackboard.hpp"
 #include "etasl_task_utils/etasl_error.hpp"
+#include "etasl_task_utils/flowstatus.hpp"
 
 
 
@@ -16,6 +17,8 @@
 #include <chrono>
 #include <thread>
 #include <vector>
+
+
 
 
 
@@ -41,8 +44,8 @@ etaslNode::etaslNode(const std::string & node_name, bool intra_process_comms = f
   //Used unless the ROS parameters are modified externally (e.g. through terminal or launchfile)
 
 
-  this->declare_parameter("task_specification_file",  rclcpp::PARAMETER_STRING);
-  this->declare_parameter("jointnames",  rclcpp::PARAMETER_STRING_ARRAY);
+  // this->declare_parameter("task_specification_file",  rclcpp::PARAMETER_STRING);
+  // this->declare_parameter("jointnames",  rclcpp::PARAMETER_STRING_ARRAY);
 
   // fname = "/home/santiregui/ros2_ws/src/etasl_ros2/etasl/taskspec2.lua";
   // this->declare_parameter("outpfilename",  outpfilename); //outpfilename as default val
@@ -61,12 +64,13 @@ etaslNode::etaslNode(const std::string & node_name, bool intra_process_comms = f
 
   reinitialize_data_structures();
 
-    board = boost::make_shared<etasl::BlackBoard>(1);
-    // etasl::BlackBoard board(1);
-    std::cout << " loading blackboard" << std::endl;
-    board->setSearchPath("$[etasl_ros2]/scripts/schema:$[etasl_ros2]/scripts/schema/tasks");
-    board->load_process_and_validate("$[etasl_ros2]/scripts/json/blackboard.json");
-    fmt::print("{:->80}\n", "-");
+  board = boost::make_shared<etasl::BlackBoard>(1);
+  // etasl::BlackBoard board(1);
+  std::cout << " loading blackboard" << std::endl;
+  board->setSearchPath("$[etasl_ros2]/scripts/schema:$[etasl_ros2]/scripts/schema/tasks");
+  board->load_process_and_validate("$[etasl_ros2]/scripts/json/blackboard.json");
+  fmt::print("{:->80}\n", "-");
+
 
 }
 
@@ -321,10 +325,10 @@ void etaslNode::initialize_joints(){
     update_controller_input(jpos_init);
 
     if(jnames_in_expr.size()==0){
-        RCUTILS_LOG_WARN_NAMED(get_name(), "None of the jointnames specified in ROS paramt correspond the joints defined in the eTaSL robot expression graph.");
+        RCUTILS_LOG_WARN_NAMED(get_name(), "None of the joint_names specified in the JSON configuration correspond the joints defined in the eTaSL robot expression graph.");
     }
     else if(jnames_in_expr.size() != jointnames.size()){
-      RCUTILS_LOG_WARN_NAMED(get_name(), "The number of jointnames specified in ROS param do not correspond to all the joints defined in the eTaSL robot expression graph.");
+      RCUTILS_LOG_WARN_NAMED(get_name(), "The number of joint_names specified in the JSON configuration do not correspond to all the joints defined in the eTaSL robot expression graph.");
       RCUTILS_LOG_WARN_NAMED(get_name(), "The jointnames that do not correspond are ignored and not published");
     }
 
@@ -381,8 +385,14 @@ void etaslNode::configure_etasl(){
     // fmt::print("{:->80}\n", "-");
 
     // Read configuration ROS parameters
-    fname = this->get_parameter("task_specification_file").as_string();
-    jointnames = this->get_parameter("jointnames").as_string_array();
+    // jointnames = this->get_parameter("jointnames").as_string_array();
+
+    jointnames.clear();
+    for (auto n : param["robotdriver"]["joint_names"]) {
+        jointnames.push_back(n.asString());
+    }
+
+
     // std::cout << jointnames[0] << "," << jointnames[1] <<std::endl;
  
     /**
@@ -392,9 +402,6 @@ void etaslNode::configure_etasl(){
     // Setup context for robot control problem:
     // ctx->addType("robot");
     // ctx->addType("feature");
-
-    std::string message = "The task specification file used is: "+ fname;
-    RCUTILS_LOG_INFO_NAMED(get_name(), message.c_str());
 
 
     // reset all monitors:
@@ -550,17 +557,38 @@ void etaslNode::update()
         slv->getJointVelocities(jvel_etasl);
         slv->getFeatureVelocities(fvel_etasl);
 
+        update_robot_status();
 
-        jpos_etasl += jvel_etasl*(periodicity_param/1000.0);  // or replace with reading joint positions from real robot
-        fpos_etasl += fvel_etasl*(periodicity_param/1000.0);  // you always integrate feature variables yourself
-        time += (periodicity_param/1000.0);       // idem.
 
         for (auto& h : outputhandlers) {
             // TODO: Check if jpos_ros or jpos_etasl should be used
             h->update(jnames_in_expr, jpos_ros, jvel_etasl, fnames, fpos_etasl, fvel_etasl);
         }
         // std::cout << "jointpos:" << jpos_etasl.transpose() << std::endl;
+}
 
+void etaslNode::update_robot_status(){
+
+    // jpos_etasl += jvel_etasl*(periodicity_param/1000.0);  // or replace with reading joint positions from real robot
+    fpos_etasl += fvel_etasl*(periodicity_param/1000.0);  // you always integrate feature variables yourself
+    time += (periodicity_param/1000.0);       // idem.
+
+    feedback_shared_ptr->mtx.lock();
+    setpoint_shared_ptr->mtx.lock();
+
+    assert(feedback_shared_ptr->joint.pos.data.size() == jvel_etasl.size());
+    assert(setpoint_shared_ptr->velocity.data.size() == jvel_etasl.size());
+
+    setpoint_shared_ptr->velocity.fs = etasl::NewData;
+    for (unsigned int i=0; i<jvel_etasl.size(); ++i) {
+      setpoint_shared_ptr->velocity.data[i] = jvel_etasl[i];
+      jpos_etasl[i] = feedback_shared_ptr->joint.pos.data[i];
+    // TODO: retrieve other feedback values into a structure saved locally in this thread
+    }
+
+
+    feedback_shared_ptr->mtx.unlock();
+    setpoint_shared_ptr->mtx.unlock();
 }
 
 void etaslNode::reinitialize_data_structures() {
@@ -644,29 +672,38 @@ bool etaslNode::initialize_output_handlers(){
 
 void etaslNode::configure_node(){
     
-    // The following registers each factory. If you don't declare this, the program will not be able to create objects from
-    // such factory when specified in the JSON files.
-    // etasl::registerQPOasesSolverFactory();
-    etasl::registerTopicOutputHandlerFactory(shared_from_this()); 
-    // etasl::registerFileOutputHandlerFactory();
-    etasl::registerJointStateOutputHandlerFactory(shared_from_this());
-    // etasl::registerTopicInputHandlerFactory(shared_from_this());
-    // etasl::registerTFOutputHandlerFactory(shared_from_this());
-    etasl::registerTwistInputHandlerFactory(shared_from_this());
-
 
     Json::Value param = board->getPath("/default-etasl", false);
+
+    jointnames.clear();
+    for (auto n : param["robotdriver"]["joint_names"]) {
+        jointnames.push_back(n.asString());
+    }
+
+    feedback_shared_ptr = boost::make_shared<etasl::FeedbackMsg>(jointnames.size());
+    setpoint_shared_ptr = boost::make_shared<etasl::SetpointMsg>(jointnames.size());
+
+    /****************************************************
+    * Registering factories
+    ***************************************************/
+   register_factories();
+
+    /****************************************************
+    * Adding Robot Driver
+    ***************************************************/
+    RCUTILS_LOG_INFO_NAMED(get_name(), "register_output_handler");
+    // TODO: add info about the output handler added (e.g. p[is-...] and p[topic-name])
+    robotdriver = etasl::Registry<etasl::RobotDriverFactory>::create(param["robotdriver"]);
+    
+
 
     /****************************************************
     * Adding input and output handlers from the read JSON file 
     ***************************************************/
     for (const auto& p : param["outputhandlers"]) {
-        // add_output_handler(Registry<OutputHandlerFactory>::create(p));
         RCUTILS_LOG_INFO_NAMED(get_name(), "register_output_handler");
-        // TODO: add info about the output handler added (e.g. p[is-...] and p[topic-name])
         outputhandlers.push_back(etasl::Registry<etasl::OutputHandlerFactory>::create(p));
     }
-    // create inputhandlers:
     for (const auto& p : param["inputhandlers"]) {
         RCUTILS_LOG_INFO_NAMED(get_name(), "register_input_handler");
         inputhandlers.push_back(etasl::Registry<etasl::InputHandlerFactory>::create(p));
@@ -701,8 +738,21 @@ void etaslNode::configure_node(){
  // This still needs to be here and cannot be moved to configure_node() function because of the routine for verifying the joints in the expression. That routine should change 
     if(!first_time_configured){
       timer_ = this->create_wall_timer(std::chrono::milliseconds(periodicity_param), std::bind(&etaslNode::update, this));
-      jpos_init = VectorXd::Zero(6);
-      jpos_init << 180.0/180.0*3.1416, -90.0/180.0*3.1416, 90.0/180.0*3.1416, -90.0/180.0*3.1416, -90.0/180.0*3.1416, 0.0/180.0*3.1416;
+      Json::Value param = board->getPath("/default-etasl", false);
+
+      std::vector<double> jpos_init_vec;
+      for (auto n : param["robotdriver"]["initial_joints"]) {
+          jpos_init_vec.push_back(n.asDouble());
+      }
+
+      jpos_init = VectorXd::Zero(jpos_init_vec.size());
+      for (size_t i = 0; i < jpos_init_vec.size(); ++i) {
+        jpos_init[i] = jpos_init_vec[i];
+      }
+      
+      // jpos_init << 180.0/180.0*3.1416, -90.0/180.0*3.1416, 90.0/180.0*3.1416, -90.0/180.0*3.1416, -90.0/180.0*3.1416, 0.0/180.0*3.1416;
+      
+      robotdriver->initialize();
       this->initialize_input_handlers();
       this->initialize_output_handlers();
 
@@ -761,12 +811,11 @@ void etaslNode::configure_node(){
 
     timer_->reset();
 
+    robotdriver->on_activate();
     RCUTILS_LOG_INFO_NAMED(get_name(), "Entering on activate for input handlers.");
-
     for (auto& h : inputhandlers) {
         h->on_activate(ctx, jnames_in_expr, fnames);
     }
-
     RCUTILS_LOG_INFO_NAMED(get_name(), "Entering on activate for output handlers.");
     for (auto& h : outputhandlers) {
         h->on_activate(ctx, jnames_in_expr, fnames);
@@ -817,6 +866,7 @@ void etaslNode::configure_node(){
 
     jvel_etasl.setZero(); //Sets joint velocities to zero
     fvel_etasl.setZero(); //Sets feature variables to zero
+    robotdriver->on_deactivate();
     for (auto& h : inputhandlers) {
         h->on_deactivate(ctx);
     }
@@ -859,6 +909,17 @@ void etaslNode::configure_node(){
     // In our cleanup phase, we release the shared pointers to the
     // timer and publisher. These entities are no longer available
     // and our node is "clean".
+    jvel_etasl.setZero(); //Sets joint velocities to zero
+    fvel_etasl.setZero(); //Sets feature variables to zero
+
+    robotdriver->on_cleanup();
+    for (auto& h : inputhandlers) {
+        h->on_cleanup(ctx);
+    }
+    for (auto& h : outputhandlers) {
+        h->on_cleanup(ctx);
+    }
+
     timer_->cancel();
     this->reinitialize_data_structures();
 
@@ -915,11 +976,16 @@ void etaslNode::configure_node(){
   }
 
 
+    //TODO: Consider registering the following function to a signal instead (e.g. signal(SIGINT, signalHandler); where signal function is void (*signal (int sig, void (*func)(int)))(int);)
+    //Making sure that the registration is done before ROS2 rclcpp::init(argc, argv);
+    // More info here: https://www.tutorialspoint.com/cplusplus/cpp_signal_handling.htm
+
   void etaslNode::safe_shutdown(){
     // RCUTILS_LOG_INFO_NAMED(get_name(), "Program shutting down safely.");
 
     std::cout << "Program shutting down safely." << std::endl;
 
+    robotdriver->finalize();
     for (auto& h : inputhandlers) {
         h->finalize();
     }
@@ -929,6 +995,37 @@ void etaslNode::configure_node(){
 
     // rclcpp::shutdown(); 
   }
+
+  void etaslNode::register_factories(){
+        // The following registers each factory. If you don't declare this, the program will not be able to create objects from
+    // such factory when specified in the JSON files.
+    // etasl::registerQPOasesSolverFactory();
+    etasl::registerTopicOutputHandlerFactory(shared_from_this()); 
+    // etasl::registerFileOutputHandlerFactory();
+    etasl::registerJointStateOutputHandlerFactory(shared_from_this());
+    // etasl::registerTopicInputHandlerFactory(shared_from_this());
+    // etasl::registerTFOutputHandlerFactory(shared_from_this());
+    etasl::registerTwistInputHandlerFactory(shared_from_this());
+    etasl::registerSimulationRobotDriverFactory(feedback_shared_ptr.get(), setpoint_shared_ptr.get());
+  }
+
+  boost::shared_ptr<t_manager::thread_t> etaslNode::create_thread_str(std::atomic<bool> & stopFlag){
+    
+
+    Json::Value param = board->getPath("/default-etasl", false);
+    double periodicity = param["robotdriver"]["periodicity"].asDouble();
+
+    thread_str_driver = boost::make_shared<t_manager::thread_t>();
+
+    thread_str_driver->periodicity = std::chrono::nanoseconds(static_cast<long long>(periodicity * 1E9)); //*1E9 to convert seconds to nanoseconds
+    // thread_str_driver->periodicity = std::chrono::milliseconds(10);
+    thread_str_driver->update_hook = std::bind(&etasl::RobotDriver::update, robotdriver, std::ref(stopFlag));
+    thread_str_driver->finalize_hook = std::bind(&etasl::RobotDriver::finalize, robotdriver);
+
+    return thread_str_driver;
+
+  }
+
 
 int main(int argc, char * argv[])
 {
@@ -945,7 +1042,18 @@ int main(int argc, char * argv[])
     std::shared_ptr<etaslNode> my_etasl_node = std::make_shared<etaslNode>("etasl_node");
     // auto my_etasl_node = std::make_shared<etaslNode>("etasl_node");
 
+
     my_etasl_node->configure_node();
+
+
+    std::atomic<bool> stopFlag(false); 
+
+    boost::shared_ptr<t_manager::thread_t> thread_str_driver = my_etasl_node->create_thread_str(stopFlag);
+
+    std::thread driver_thread(t_manager::do_thread_loop, thread_str_driver, std::ref(stopFlag));
+    driver_thread.detach();// Avoids the main thread to block. See spin() + stopFlag mechanism below.
+
+
     
     rclcpp::on_shutdown(std::bind( &etaslNode::safe_shutdown, my_etasl_node));
 
@@ -958,6 +1066,9 @@ int main(int argc, char * argv[])
     rclcpp::executors::SingleThreadedExecutor executor(options);
     executor.add_node(my_etasl_node->get_node_base_interface());
     executor.spin(); //This method blocks!
+
+    stopFlag.store(true); //Stops execution of driver_thread after executor is interrupted with ctr+c signal
+
     executor.remove_node(my_etasl_node->get_node_base_interface());
 
 

@@ -55,7 +55,7 @@ namespace etasl {
 
             /**
              * @brief on_activate
-             * Handles the deactivation of the outputhandler
+             * Handles the deactivation of the inputhandler
              */
             virtual void on_activate(Context::Ptr ctx,    
                             const std::vector<std::string>& jnames,
@@ -63,9 +63,16 @@ namespace etasl {
 
             /**
              * @brief on_activate
-             * Handles the deactivation of the outputhandler
+             * Handles the deactivation of the inputhandler
              */
             virtual void on_deactivate(Context::Ptr ctx) {};
+
+            /**
+             * @brief on_cleanup
+             * Handles the cleanup of the inputhandler
+             */
+            virtual void on_cleanup(Context::Ptr ctx) {};
+
 
             virtual ~InputHandler() {};
 

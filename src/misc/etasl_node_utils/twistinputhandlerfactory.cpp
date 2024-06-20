@@ -10,7 +10,7 @@
 namespace etasl {
 
 /**
- * This is a factory that can create JointStateOutputHandlers
+ * This is a factory that can create TwistInputHandlers
  * The platform specific part is given with the constructor of this factory
  * Afterwards, everything is generic and independent of the platform
  */
@@ -37,25 +37,51 @@ public:
                         "$schema": "http://json-schema.org/draft-04/schema",
                         "$id":"twistinputhandler",
                         "type":"object",
-                        "properties":{
-                            "is-twistinputhandler" : {
-                                "description":"To indicate that this describes a twist inputhandler",
-                                "type":"boolean",
-                                "default":true
-                            },
-                            "topicname":{
-                                "description":"name of the topic to subscribe to",
-                                "type":"string"
-                            },
-                            "number_of_tries" : {
-                                "description":"the number of times unsuccesfully initialize() can be called before throwing an error",
-                                "type":"number"
-                            },
-                            "depth" : {
-                                "description":"Depth of the topic queue.  In case of multiple sources for the joint values, it can be useful to set a depth larger than 1",
-                                "type":"number",
-                                "default": 1
-                            }
+                            "properties":{
+                                "is-twistinputhandler" : {
+                                    "description":"To indicate that this describes a twist inputhandler which reads from a geometry_msgs/Twist Message topic and converts it into a twist etasl expression",
+                                    "type":"boolean",
+                                    "default":true
+                                },
+                                "topic-name" : {
+                                    "description":"name of the topic to subscribe to",
+                                    "type":"string"
+                                },
+                                "number_of_tries" : {
+                                    "description":"the number of times unsuccesfully initialize() can be called before throwing an error",
+                                    "type":"number"
+                                },
+                                "depth" : {
+                                    "description":"Depth of the topic queue.  In case of multiple sources for the joint values, it can be useful to set a depth larger than 1",
+                                    "type":"number",
+                                    "default": 1
+                                },
+                                "default_twist" : { 
+                                    "description": "Default twist used in case that the topic defined in topic-name is not yet publishing",    
+                                    "$ref":"twist.json"
+                                },
+                                "when_unpublished" : {
+                                    "description": "Defines the behavior of the node when nothing has been published to the topic defined in topic-name during activation time of the node",
+                                    "enum": ["use_default", "throw_error"],
+                                    "oneOf": [
+                                        {
+                                            "type": "string", 
+                                            "const": "use_default",
+                                            "title": "Use default value",
+                                            "description": "Uses the defined default value in the default_twist field while nothing has been published to the subscribed topic defined in topic-name. An INFO message will be logged."
+                                        },
+                                        {
+                                            "type": "string", 
+                                            "const": "throw_error",
+                                            "title": "Throw error",
+                                            "description": "Throws an error if nothing has been published to the subscribed topic defined in topic-name at the time of activation of the node, preventing its activation. "
+                                        }
+                                    ] 
+                                },
+                                "varname" : {            
+                                    "description":"Name of the expression variable that was created in the task specification with createInputChannelTwist. The data coming from the topic will be available in the task specification through this variable",
+                                    "type":"string"
+                                }
                         }
                     }
                 )";

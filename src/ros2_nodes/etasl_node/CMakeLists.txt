@@ -21,7 +21,8 @@ target_link_libraries(etasl_node
         etasl::expressiongraph_context_lua 
         etasl_misc_lib 
         etasl_task_utils
-        etasl_node_utils)
+        etasl_node_utils
+        etasl_interfacing_utils)
 
 # ament_target_dependencies(etasl_node rclcpp std_msgs sensor_msgs)
 

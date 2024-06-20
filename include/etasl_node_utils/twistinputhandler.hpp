@@ -7,7 +7,9 @@
 #include <rclcpp/rclcpp.hpp>
 #include "rclcpp_lifecycle/lifecycle_node.hpp"
 #include <unordered_map>
-#include <mutex>
+
+#include "etasl_task_utils/flowstatus.hpp"
+// #include <mutex>
 
 namespace etasl {
 using namespace KDL;
@@ -16,12 +18,6 @@ class TwistInputHandler : public InputHandler {
 public:
     typedef geometry_msgs::msg::Twist MsgType;
     typedef std::shared_ptr<TwistInputHandler> SharedPtr;
-
-    enum FlowStatus 
-    {   NoData = 0, 
-        OldData = 1, 
-        NewData = 2
-    };
 
 private:
     // struct BufferElement {

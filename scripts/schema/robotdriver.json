@@ -1,0 +1,14 @@
+{
+    "$schema": "http://json-schema.org/draft-04/schema",
+    "$id": "robotdriver.json",
+    "title": "Inputhandler",
+    "description": "Robotdriver interfaces robot hardware with eTaSL and runs in a separate thread, communicating with shared memory for reduced latency",
+    "oneOf": [
+        {
+            "$ref": "simulationrobotdriver.json"
+        },
+        {
+            "$ref":"kukaiiwarobotdriver_todo.json"
+        }
+    ]
+}

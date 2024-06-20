@@ -33,3 +33,5 @@ install(TARGETS etasl_misc_lib
 
 add_subdirectory(etasl_node_utils)
 add_subdirectory(etasl_task_utils)
+add_subdirectory(robot_interfacing_utils)
+

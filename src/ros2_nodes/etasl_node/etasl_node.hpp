@@ -32,7 +32,7 @@
 #include <expressiongraph/solver_factory_qpoases.hpp>
 #include <expressiongraph/defaultobserver.hpp>
 //#include <expressiongraph/solver_factory_hqp.hpp>
-#include <string>
+
 #include <algorithm>
 #include <iomanip>
 #include <boost/chrono.hpp>
@@ -41,7 +41,6 @@
 #include "IO_handlers_deleteme.hpp"
 #include "etasl_interfaces/srv/task_specification_string.hpp" 
 #include "etasl_interfaces/srv/task_specification_file.hpp" 
-
 
 
 // #include "etasl_node_utils/rostask.hpp"
@@ -57,6 +56,16 @@
 #include "etasl_task_utils/fileoutputhandlerfactory.hpp"
 #include "etasl_node_utils/tfoutputhandlerfactory.hpp"
 #include "etasl_node_utils/twistinputhandlerfactory.hpp"
+
+
+#include "robot_interfacing_utils/robotdriverfactory.hpp"
+#include "robot_interfacing_utils/simulationrobotdriverfactory.hpp"
+#include "robot_interfacing_utils/feedback_struct.hpp"
+#include "robot_interfacing_utils/thread_manager.hpp"
+
+
+
+
 
 
 
@@ -100,6 +109,14 @@ class etaslNode : public rclcpp_lifecycle::LifecycleNode
         void initialize_feature_variables();
         void configure_node();
 
+        void register_factories();
+        void update_robot_status();
+        boost::shared_ptr<t_manager::thread_t> create_thread_str(std::atomic<bool> & stopFlag);
+        
+
+
+
+
 
         // bool srv_configure(const std::shared_ptr<lifecycle_msgs::srv::ChangeState::Request> request,
         //   std::shared_ptr<lifecycle_msgs::srv::ChangeState::Response>  response);
@@ -129,6 +146,8 @@ class etaslNode : public rclcpp_lifecycle::LifecycleNode
 
         std::vector<etasl::OutputHandler::SharedPtr> outputhandlers;
         std::vector<etasl::InputHandler::SharedPtr> inputhandlers;
+        etasl::RobotDriver::SharedPtr               robotdriver;
+
         std::vector<bool> ih_initialized;
 
         std::vector< std::string > jointnames;
@@ -136,6 +155,11 @@ class etaslNode : public rclcpp_lifecycle::LifecycleNode
         std::vector< std::string > fnames;
 
         boost::shared_ptr<etasl::BlackBoard> board;
+
+
+        boost::shared_ptr<etasl::FeedbackMsg> feedback_shared_ptr;
+        boost::shared_ptr<etasl::SetpointMsg> setpoint_shared_ptr;
+        boost::shared_ptr<t_manager::thread_t> thread_str_driver;
         
 
 

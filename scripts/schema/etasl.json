@@ -42,7 +42,15 @@
             "items" : {
                 "$ref": "inputhandler.json"
             }
+        },
+        "robotdriver": {
+            "title":"Robotdriver",
+            "description":"Robotdriver interfaces robot hardware with eTaSL and runs in a separate thread, communicating with shared memory for reduced latency",
+            "$ref": "robotdriver.json"
         }
     },
+    "required": [
+        "robotdriver"
+    ],
     "additionalProperties":false
 }
