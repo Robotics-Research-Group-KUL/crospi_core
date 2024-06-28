@@ -40,6 +40,7 @@ etaslNode::etaslNode(const std::string & node_name, bool intra_process_comms = f
 , event_msg(std_msgs::msg::String())
 , event_postfix(get_name())
 , first_time_configured(false)
+, is_configured(false)
 {
   //Used unless the ROS parameters are modified externally (e.g. through terminal or launchfile)
 
@@ -784,6 +785,7 @@ void etaslNode::configure_node(){
     // this callback, the state machine transitions to state "errorprocessing".
     
     first_time_configured = true;
+    is_configured = true;
 
     return lifecycle_return::SUCCESS;
   }
@@ -805,7 +807,10 @@ void etaslNode::configure_node(){
     // Starting from this point, all messages are no longer
     // ignored but sent into the network.
 
-    // TODO: Only allow transitions from configure, and not from deactivate
+    if (!is_configured){
+          RCUTILS_LOG_ERROR_NAMED(get_name(), "The node be activated immediatly after calling lifecycle deactivate or lifecycle cleanup. The node must be configured with lifecycle configure first.");
+          return lifecycle_return::FAILURE;
+    }
 
     RCUTILS_LOG_INFO_NAMED(get_name(), "Entering on activate.");
 
@@ -884,6 +889,8 @@ void etaslNode::configure_node(){
 
     RCUTILS_LOG_INFO_NAMED(get_name(), "on_deactivate() is called.");
 
+    is_configured = false; //To indicate that it has not being configured after deactivating node
+
     // We return a success and hence invoke the transition to the next
     // step: "inactive".
     // If we returned TRANSITION_CALLBACK_FAILURE instead, the state machine
@@ -924,6 +931,8 @@ void etaslNode::configure_node(){
     this->reinitialize_data_structures();
 
     RCUTILS_LOG_INFO_NAMED(get_name(), "on cleanup is called.");
+
+    is_configured = false; //To indicate that it has not being configured after cleanup node
 
     // We return a success and hence invoke the transition to the next
     // step: "unconfigured".

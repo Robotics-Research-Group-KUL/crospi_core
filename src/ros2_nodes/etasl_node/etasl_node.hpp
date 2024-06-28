@@ -186,6 +186,7 @@ class etaslNode : public rclcpp_lifecycle::LifecycleNode
         std::map<std::string,int>  name_ndx;
 
         bool first_time_configured;
+        bool is_configured;
 
 
         rclcpp::Service<lifecycle_msgs::srv::ChangeState>::SharedPtr test_service_;
