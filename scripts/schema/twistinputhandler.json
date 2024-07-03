@@ -17,7 +17,7 @@
             "type":"number"
         },
         "depth" : {
-            "description":"Depth of the topic queue.  In case of multiple sources for the joint values, it can be useful to set a depth larger than 1",
+            "description":"Depth of the topic queue (i.e. buffer size storing incoming messages). Check ROS2 QoS policies for more information",
             "type":"number",
             "default": 1
         },

@@ -103,6 +103,8 @@ ctx:setOutputExpression("time",time)
 ctx:setOutputExpression("x_tcp",coord_x(origin(tf)))
 ctx:setOutputExpression("y_tcp",coord_y(origin(tf)))
 ctx:setOutputExpression("z_tcp",coord_z(origin(tf)))
+ctx:setOutputExpression("tf",tf)
+
 
 
 
