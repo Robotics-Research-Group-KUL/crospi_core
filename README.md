@@ -99,7 +99,7 @@ where `param_test.yaml` contains the parameters of the node. For example this fi
 ```yaml
 etasl_node:
     ros__parameters:
-        task_specification_file: "/home/santiregui/ros2_ws/src/etasl_ros2/etasl/move_cartesianspace.lua"
+        task_specification_file: "/workspaces/colcon_ws/src/etasl_ros2/etasl/move_cartesianspace.lua"
         jointnames: ["shoulder_pan_joint","shoulder_lift_joint","elbow_joint","wrist_1_joint","wrist_2_joint","wrist_3_joint"]
 ```
 
