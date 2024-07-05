@@ -1,0 +1,24 @@
+{
+    "$schema": "http://json-schema.org/draft-04/schema",
+    "$id":"kukaiiwarobotdriver_todo.json",
+    "type":"object",
+    "properties":{
+        "is-kukaiiwarobotdriver" : {
+            "description":"To indicate that the task will be executed using a kuka iiwa robot.",
+            "type":"boolean",
+            "default":true
+        },
+        "ip_address" : {
+            "description":"IP address of the robot using Ipv4 format.",
+            "type":"string",
+            "default": "xxx.xxx.xx.xx"
+        },
+        "fri_port" : {
+            "description":"FRI port number (related to communication).",
+            "type":"integer",
+            "default": 30200
+        }
+    },
+    "required":["is-kukaiiwarobotdriver","ip_address", "fri_port"],
+    "additionalProperties": false
+}

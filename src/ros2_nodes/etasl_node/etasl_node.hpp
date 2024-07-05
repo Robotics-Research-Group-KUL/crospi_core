@@ -60,6 +60,8 @@
 
 #include "robot_interfacing_utils/robotdriverfactory.hpp"
 #include "robot_interfacing_utils/simulationrobotdriverfactory.hpp"
+#include "kuka_iiwa_driver/kukaiiwa_robotdriverfactory.hpp"
+
 #include "robot_interfacing_utils/feedback_struct.hpp"
 #include "robot_interfacing_utils/thread_manager.hpp"
 

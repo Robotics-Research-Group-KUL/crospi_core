@@ -1016,6 +1016,8 @@ void etaslNode::configure_node(){
     // etasl::registerTFOutputHandlerFactory(shared_from_this());
     etasl::registerTwistInputHandlerFactory(shared_from_this());
     etasl::registerSimulationRobotDriverFactory(feedback_shared_ptr.get(), setpoint_shared_ptr.get());
+    etasl::registerKukaIiwaRobotDriverFactory(feedback_shared_ptr.get(), setpoint_shared_ptr.get());
+
   }
 
   boost::shared_ptr<t_manager::thread_t> etaslNode::create_thread_str(std::atomic<bool> & stopFlag){
