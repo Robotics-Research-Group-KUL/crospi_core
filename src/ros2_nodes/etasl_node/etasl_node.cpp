@@ -73,6 +73,10 @@ etaslNode::etaslNode(const std::string & node_name, bool intra_process_comms = f
   fmt::print("{:->80}\n", "-");
 
 
+  this->get_node_base_interface()->get_context()->add_pre_shutdown_callback(std::bind( &etaslNode::safe_shutdown, this)); // Adds safe_shutdown as callback before shutting down, e.g. with ctrl+c. This methods returns rclcpp::OnShutdownCallbackHandle shutdown_cb_handle
+  // this->get_node_base_interface()->get_context()->add_on_shutdown_callback(std::bind( &etaslNode::safe_shutdown, this)); //Can be used to add callback during shutdown (not pre-shutdown, so publishers and others are no longer available)
+  // rclcpp::on_shutdown(std::bind( &etaslNode::safe_shutdown, my_etasl_node)); //Alternative to add_on_shutdown_callback (don't know the difference)
+
 }
 
 // bool etaslNode::srv_configure(const std::shared_ptr<lifecycle_msgs::srv::ChangeState::Request> request, std::shared_ptr<lifecycle_msgs::srv::ChangeState::Response>  response)
@@ -966,14 +970,6 @@ void etaslNode::configure_node(){
 
     RCUTILS_LOG_INFO_NAMED(get_name(), "on_shutdown() is called from state %s.", state.label().c_str());
 
-
-    // for (auto& h : inputhandlers) {
-    //     h->finalize();
-    // }
-    // for (auto& h : outputhandlers) {
-    //     h->finalize();
-    // }
-
     this->safe_shutdown();
     // We return a success and hence invoke the transition to the next
     // step: "finalized".
@@ -985,10 +981,11 @@ void etaslNode::configure_node(){
   }
 
 
-    //TODO: Consider registering the following function to a signal instead (e.g. signal(SIGINT, signalHandler); where signal function is void (*signal (int sig, void (*func)(int)))(int);)
-    //Making sure that the registration is done before ROS2 rclcpp::init(argc, argv);
-    // More info here: https://www.tutorialspoint.com/cplusplus/cpp_signal_handling.htm
-
+  /**
+   * @brief Performs a safe shutdown, mainly calling all finalize methods of IO handlers and robot drviers
+   * This function is passed as a callback function to 
+   * @return (void)
+   */
   void etaslNode::safe_shutdown(){
     // RCUTILS_LOG_INFO_NAMED(get_name(), "Program shutting down safely.");
 
@@ -1001,6 +998,8 @@ void etaslNode::configure_node(){
     for (auto& h : outputhandlers) {
         h->finalize();
     }
+
+    // std::this_thread::sleep_for(std::chrono::milliseconds(1000));
 
     // rclcpp::shutdown(); 
   }
@@ -1066,7 +1065,6 @@ int main(int argc, char * argv[])
 
 
     
-    rclcpp::on_shutdown(std::bind( &etaslNode::safe_shutdown, my_etasl_node));
 
     // executor.add_node(my_etasl_node->get_node_base_interface());
     // rclcpp::spin(my_etasl_node->get_node_base_interface());
