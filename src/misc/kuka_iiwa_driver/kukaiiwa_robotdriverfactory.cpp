@@ -7,6 +7,8 @@
 
 #include "kuka_iiwa_driver/kukaiiwa_robotdriver.hpp"
 
+#include <iostream>
+
 namespace etasl {
 
 /**
@@ -37,7 +39,7 @@ public:
         std::string schema_src = R"(
                     {
                         "$schema": "http://json-schema.org/draft-04/schema",
-                        "$id":"kukaiiwarobotdriver_todo.json",
+                        "$id":"kukaiiwarobotdriver.json",
                         "type":"object",
                         "properties":{
                             "is-kukaiiwarobotdriver" : {
@@ -70,7 +72,7 @@ public:
      */
     virtual const char* getName()
     {
-        return "kukaiiwa_robotdriver";
+        return "kukaiiwarobotdriver";
     }
 
     /**
@@ -80,7 +82,12 @@ public:
     virtual RobotDriver::SharedPtr create(const Json::Value& parameters)
     {
         std::string p_ip_address = parameters["ip_address"].asString();
+        
+        // get fri_port from parameters
         unsigned int p_fri_port = parameters["fri_port"].asUInt();
+
+        // print fri_port
+        std::cout << "------IP: " << p_ip_address << "  ,   fri_port: " << p_fri_port << " ,   type:" << parameters["fri_port"].isNull() << std::endl;
 
 
 

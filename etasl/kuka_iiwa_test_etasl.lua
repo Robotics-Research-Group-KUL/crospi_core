@@ -8,18 +8,27 @@ require("math")
 -- read robot model:
 --
 
-xmlstr = urdfreader.loadFile("/workspaces/colcon_ws/src/etasl_ros2/robot_description/urdf/ur10/use_case_setup_ur10.urdf")
+xmlstr = urdfreader.loadFile("/workspaces/colcon_ws/src/etasl_ros2/robot_description/urdf/kuka_iiwa/use_case_setup_iiwa.urdf")
 robot = urdfreader.readUrdf(xmlstr,{})
-robot:writeDot("ur10_robot.dot")
+robot:writeDot("kuka_iiwa_robot.dot")
 VL = {}
-rv = robot:getExpressions(VL,ctx,{ee={'tool0','base_link'}})
+rv = robot:getExpressions(VL,ctx,{ee={'right_tool0','world'}})
 ee = rv['ee']
-robot_joints={"shoulder_pan_joint","shoulder_lift_joint","elbow_joint","wrist_1_joint","wrist_2_joint","wrist_3_joint"}
+robot_joints={"right_joint_a1","right_joint_a2","right_joint_a3","right_joint_a4","right_joint_a5","right_joint_a6","right_joint_a7"}
 
 -- ======================================== FRAMES ========================================
 
 tf = ee
 
+last_joint   = ctx:getScalarExpr(robot_joints[7])
+
+Constraint{
+    context=ctx,
+    name="joint_trajectory",
+    expr= last_joint - sin(time) * 10*3.1416/180,
+    priority = 2,
+    K=4
+};
 
 
 ctx:setOutputExpression("time",time)

@@ -1,6 +1,6 @@
 {
     "$schema": "http://json-schema.org/draft-04/schema",
-    "$id":"kukaiiwarobotdriver_todo.json",
+    "$id":"kukaiiwarobotdriver.json",
     "type":"object",
     "properties":{
         "is-kukaiiwarobotdriver" : {
@@ -15,8 +15,15 @@
         },
         "fri_port" : {
             "description":"FRI port number (related to communication).",
-            "type":"integer",
-            "default": 30200
+            "type":"number",
+            "default": 30200,
+            "minimum": 0
+        },
+        "joint_names": {
+            "description":"Names of the joints in order from the world to the end effector. This names need to be consistent with the ones declared in the URDF file of the robot.",
+            "type":"array",
+            "items": {"type": "string"},
+            "default": ["joint1", "joint2", "joint3", "etc..."]
         }
     },
     "required":["is-kukaiiwarobotdriver","ip_address", "fri_port"],

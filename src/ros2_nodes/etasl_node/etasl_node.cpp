@@ -327,7 +327,11 @@ void etaslNode::initialize_joints(){
         name_ndx[ jnames_in_expr[i]]  =i;
     }
 
+    RCUTILS_LOG_INFO_NAMED(get_name(), "holaaaaaa hptassss");
+
     update_controller_input(jpos_init);
+        RCUTILS_LOG_INFO_NAMED(get_name(), "holaaaaaa hptassss2");
+
 
     if(jnames_in_expr.size()==0){
         RCUTILS_LOG_WARN_NAMED(get_name(), "None of the joint_names specified in the JSON configuration correspond the joints defined in the eTaSL robot expression graph.");
@@ -336,6 +340,7 @@ void etaslNode::initialize_joints(){
       RCUTILS_LOG_WARN_NAMED(get_name(), "The number of joint_names specified in the JSON configuration do not correspond to all the joints defined in the eTaSL robot expression graph.");
       RCUTILS_LOG_WARN_NAMED(get_name(), "The jointnames that do not correspond are ignored and not published");
     }
+
 
 }
 
@@ -714,6 +719,9 @@ void etaslNode::configure_node(){
         inputhandlers.push_back(etasl::Registry<etasl::InputHandlerFactory>::create(p));
         ih_initialized.push_back(false);
     }  
+
+    robotdriver->initialize();
+
 }
 
 
@@ -743,21 +751,22 @@ void etaslNode::configure_node(){
  // This still needs to be here and cannot be moved to configure_node() function because of the routine for verifying the joints in the expression. That routine should change 
     if(!first_time_configured){
       timer_ = this->create_wall_timer(std::chrono::milliseconds(periodicity_param), std::bind(&etaslNode::update, this));
-      Json::Value param = board->getPath("/default-etasl", false);
 
       std::vector<double> jpos_init_vec;
-      for (auto n : param["robotdriver"]["initial_joints"]) {
-          jpos_init_vec.push_back(n.asDouble());
+      feedback_shared_ptr->mtx.lock();
+      jpos_init_vec.resize(feedback_shared_ptr->joint.pos.data.size(),0.0);
+      for(unsigned int i = 0; i < feedback_shared_ptr->joint.pos.data.size(); ++i){
+        jpos_init_vec[i] = feedback_shared_ptr->joint.pos.data[i];
       }
+      feedback_shared_ptr->mtx.unlock();
 
       jpos_init = VectorXd::Zero(jpos_init_vec.size());
-      for (size_t i = 0; i < jpos_init_vec.size(); ++i) {
+      for (unsigned int i = 0; i < jpos_init_vec.size(); ++i) {
         jpos_init[i] = jpos_init_vec[i];
       }
       
       // jpos_init << 180.0/180.0*3.1416, -90.0/180.0*3.1416, 90.0/180.0*3.1416, -90.0/180.0*3.1416, -90.0/180.0*3.1416, 0.0/180.0*3.1416;
       
-      robotdriver->initialize();
       this->initialize_input_handlers();
       this->initialize_output_handlers();
 
@@ -871,10 +880,14 @@ void etaslNode::configure_node(){
     // We explicitly deactivate the lifecycle publisher.
     // Starting from this point, all messages are no longer
     // sent into the network.
+    
     timer_->cancel();
 
     jvel_etasl.setZero(); //Sets joint velocities to zero
     fvel_etasl.setZero(); //Sets feature variables to zero
+
+    update_robot_status(); //Updates structures that the robot thread reads from shared memory, ensuring zero velocities
+
     robotdriver->on_deactivate();
     for (auto& h : inputhandlers) {
         h->on_deactivate(ctx);
@@ -990,6 +1003,7 @@ void etaslNode::configure_node(){
     // RCUTILS_LOG_INFO_NAMED(get_name(), "Program shutting down safely.");
 
     std::cout << "Program shutting down safely." << std::endl;
+
 
     robotdriver->finalize();
     for (auto& h : inputhandlers) {
