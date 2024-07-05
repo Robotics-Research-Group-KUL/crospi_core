@@ -4,3 +4,4 @@
 *.csv
 .ilua_history
 *.dot
+*.pyc
