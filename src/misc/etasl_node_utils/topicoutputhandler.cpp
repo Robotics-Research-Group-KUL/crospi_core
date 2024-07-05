@@ -20,6 +20,8 @@ TopicOutputHandler::TopicOutputHandler(
     const std::string& _topicname)
     : node(_node)
     , topicname(_topicname)
+    , initialized(false)
+    , activated(false)
 {
     name = fmt::format("TopicOutputHandler(){}", topicname);
 }

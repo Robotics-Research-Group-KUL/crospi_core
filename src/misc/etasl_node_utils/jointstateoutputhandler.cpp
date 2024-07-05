@@ -4,6 +4,8 @@
 
 namespace etasl {
 
+using namespace std::chrono_literals;
+
 JointStateOutputHandler::JointStateOutputHandler(
     rclcpp_lifecycle::LifecycleNode::SharedPtr _node,
     const std::string& _topicname)
@@ -29,7 +31,9 @@ void JointStateOutputHandler::initialize(
 
     if(!initialized){
         // pub = node->create_publisher<MsgType>(topicname, rclcpp::SensorDataQoS());
-        pub = node->create_publisher<MsgType>(topicname, rclcpp::QoS(10));
+        // auto qos = rclcpp::SensorDataQoS().keep_last(1).lifespan(100ms).reliability(rclcpp::ReliabilityPolicy::Reliable);
+        auto qos = rclcpp::SensorDataQoS().keep_last(1).lifespan(100ms);
+        pub = node->create_publisher<MsgType>(topicname, qos);
         pub->on_deactivate();
         initialized = true;
         std::cout << "initialized JointStateOutputHandler=======================" << std::endl;
@@ -126,7 +130,10 @@ void JointStateOutputHandler::finalize()
         }
         msg.header.stamp = node->get_clock()->now();
         // pub->on_activate();
-        pub->publish(msg);
+        pub->publish(msg);        
+        // Example that uses wait_for_all_acked: https://github.com/ros2/examples/pull/316/files
+        pub->wait_for_all_acked(std::chrono::milliseconds(500)); //Blocks until all subscribers have gotten the message with a timeout
+        // pub->wait_for_all_acked(); //Waits until all subscribers have gotten the message without a timeout
         pub->on_deactivate();
     }
     msg.name.clear();
