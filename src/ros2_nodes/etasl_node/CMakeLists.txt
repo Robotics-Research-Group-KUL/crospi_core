@@ -22,7 +22,9 @@ target_link_libraries(etasl_node
         etasl_misc_lib 
         etasl_task_utils
         etasl_node_utils
-        etasl_interfacing_utils)
+        etasl_interfacing_utils
+        kuka_iiwa_driver)
+        # TODO: Find a way of removing kuka_iiwa_driver
 
 # ament_target_dependencies(etasl_node rclcpp std_msgs sensor_msgs)
 

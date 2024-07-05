@@ -8,7 +8,7 @@ require("math")
 -- read robot model:
 --
 
-xmlstr = urdfreader.loadFile("/home/santiregui/ros2_ws/src/etasl_ros2/robot_description/urdf/ur10/use_case_setup_ur10.urdf")
+xmlstr = urdfreader.loadFile("/workspaces/colcon_ws/src/etasl_ros2/robot_description/urdf/ur10/use_case_setup_ur10.urdf")
 robot = urdfreader.readUrdf(xmlstr,{})
 robot:writeDot("ur10_robot.dot")
 VL = {}

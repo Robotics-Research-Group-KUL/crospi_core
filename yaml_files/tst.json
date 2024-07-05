@@ -40,11 +40,11 @@
          "regularization_factor" : 1e-08
       }
    },
-   "etaslfile" : "/home/santiregui/ros2_ws/install/etasl_ros2/share/etasl_ros2/scripts/etasl/move_circle.lua",
+   "etaslfile" : "/workspaces/colcon_ws/install/etasl_ros2/share/etasl_ros2/scripts/etasl/move_circle.lua",
    "string" : "move-circle",
    "task" : {
       "radius" : 0.10000000000000001,
       "velocity" : 0.10000000000000001,
-      "worldmodel" : "/home/santiregui/ros2_ws/install/etasl_ros2/share/etasl_ros2/scripts/worldmodels/worldmodel.json"
+      "worldmodel" : "/workspaces/colcon_ws/install/etasl_ros2/share/etasl_ros2/scripts/worldmodels/worldmodel.json"
    }
 }

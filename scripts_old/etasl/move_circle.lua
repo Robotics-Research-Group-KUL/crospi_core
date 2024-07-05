@@ -15,7 +15,7 @@ local p = Pretty:new()
 
 radius = 0.1
 velocity = 0.1
-worldmodel = '/home/santiregui/ros2_ws/src/etasl_ros2/scripts/worldmodels/ur10_robot.json'
+worldmodel = '/workspaces/colcon_ws/src/etasl_ros2/scripts/worldmodels/ur10_robot.json'
 
 omega = velocity / radius
 

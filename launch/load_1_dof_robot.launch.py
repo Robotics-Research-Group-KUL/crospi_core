@@ -6,7 +6,7 @@ from launch_ros.actions import Node
 
 
 def generate_launch_description():
-    # urdf_file = "/home/santiregui/ros2_ws/src/etasl_ros2/robot_description/urdf/one_dof_robot.urdf.xml"  # Replace with your URDF file path
+    # urdf_file = "/workspaces/colcon_ws/src/etasl_ros2/robot_description/urdf/one_dof_robot.urdf.xml"  # Replace with your URDF file path
 
     # urdf_file_name = 'robot_description/urdf/one_dof_robot.urdf.xml'
     urdf_file_name = 'robot_description/urdf/one_dof_robot.urdf.xml'
@@ -38,6 +38,6 @@ def generate_launch_description():
             executable='rviz2',
             name='rviz2',
             output='screen',
-            arguments=['-d', '/home/santiregui/ros2_ws/src/etasl_ros2/robot_description/rviz_config.rviz']  # Replace with your RViz config file path
+            arguments=['-d', '/workspaces/colcon_ws/src/etasl_ros2/robot_description/rviz_config.rviz']  # Replace with your RViz config file path
         )
     ])

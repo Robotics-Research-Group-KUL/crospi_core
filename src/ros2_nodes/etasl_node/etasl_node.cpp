@@ -48,7 +48,7 @@ etaslNode::etaslNode(const std::string & node_name, bool intra_process_comms = f
   // this->declare_parameter("task_specification_file",  rclcpp::PARAMETER_STRING);
   // this->declare_parameter("jointnames",  rclcpp::PARAMETER_STRING_ARRAY);
 
-  // fname = "/home/santiregui/ros2_ws/src/etasl_ros2/etasl/taskspec2.lua";
+  // fname = "/workspaces/colcon_ws/src/etasl_ros2/etasl/taskspec2.lua";
   // this->declare_parameter("outpfilename",  outpfilename); //outpfilename as default val
   // this->declare_parameter("task_specification_file",  fname); //fname as default val
 
@@ -138,7 +138,7 @@ bool etaslNode::readTaskSpecificationFile(const std::shared_ptr<etasl_interfaces
 	try{
 		// Read eTaSL specification:
 		int retval = LUA->executeFile(std::string(file_path));
-		// int retval = LUA->executeFile("/home/santiregui/ros2_ws/install/etasl_ros2/share/etasl_ros2/etasl/move_cartesianspace.lua");
+		// int retval = LUA->executeFile("/workspaces/colcon_ws/install/etasl_ros2/share/etasl_ros2/etasl/move_cartesianspace.lua");
 		std::cout << "--------read lua file " <<std::endl; 
 		if (retval !=0) {
 			RCUTILS_LOG_ERROR_NAMED(get_name(), "Error executing task specification file. Please provide a valid task specification file");
@@ -177,7 +177,7 @@ bool etaslNode::readTaskSpecificationString(const std::shared_ptr<etasl_interfac
 	try{
 		// Read eTaSL specification:
 		int retval = LUA->executeString(request->str);
-		// int retval = LUA->executeFile("/home/santiregui/ros2_ws/install/etasl_ros2/share/etasl_ros2/etasl/move_cartesianspace.lua");
+		// int retval = LUA->executeFile("/workspaces/colcon_ws/install/etasl_ros2/share/etasl_ros2/etasl/move_cartesianspace.lua");
 		if (retval !=0) {
 			RCUTILS_LOG_ERROR_NAMED(get_name(), "Error executing specificed string command in LUA within the etasl_node/readTaskSpecificationString service. ");
 			response->success = false;
@@ -1015,6 +1015,8 @@ void etaslNode::configure_node(){
     // etasl::registerTFOutputHandlerFactory(shared_from_this());
     etasl::registerTwistInputHandlerFactory(shared_from_this());
     etasl::registerSimulationRobotDriverFactory(feedback_shared_ptr.get(), setpoint_shared_ptr.get());
+    etasl::registerKukaIiwaRobotDriverFactory(feedback_shared_ptr.get(), setpoint_shared_ptr.get());
+
   }
 
   boost::shared_ptr<t_manager::thread_t> etaslNode::create_thread_str(std::atomic<bool> & stopFlag){
@@ -1085,7 +1087,7 @@ int main(int argc, char * argv[])
     // executor.spin();
 
 
-    // std::string cmd_filename = "/home/santiregui/ros2_ws/src/etasl_ros2/etasl/json/test_io_handlers.json";
+    // std::string cmd_filename = "/workspaces/colcon_ws/src/etasl_ros2/etasl/json/test_io_handlers.json";
     // Json::Value cmd = etasl::loadJSONFile(cmd_filename);
     // if (!cmd) {
     //     throw etasl::etasl_error(etasl::etasl_error::FAILED_TO_LOAD, "Cannot find file '{}'", cmd_filename);
