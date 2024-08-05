@@ -6,6 +6,7 @@
 #include <boost/shared_ptr.hpp>
 
 #include "feedback_struct.hpp"
+#include <jsoncpp/json/json.h>
 
 // #include <expressiongraph/context.hpp>
 
@@ -36,6 +37,20 @@ namespace etasl {
 
         public:
             typedef std::shared_ptr<RobotDriver> SharedPtr;
+
+            /**
+             * @brief Construct the plugin. Since the constructor of a ROS2 plugin cannot have arguments, the following method is used to pass those arguments.
+             * This member function should be called right after the constructor of the super class is called.
+             * @param robot_name the name of the robot whose driver interfaces with 
+             * @param fb pointer to the feedback message structure where shared-memory communication occurs  
+             * @param sp pointer to the setpoingt message structure where shared-memory communication occurs  
+             * @param config additional configuration parameters coming from the JSON configuration
+             * @return void
+             */
+            virtual void construct(std::string robot_name, 
+                                    FeedbackMsg* fb, 
+                                    SetpointMsg* sp,
+                                    const Json::Value& config) = 0;
 
             /**
              * @brief Initialize the communication with the Robot

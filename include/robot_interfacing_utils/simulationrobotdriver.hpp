@@ -28,12 +28,12 @@ class SimulationRobotDriver : public RobotDriver {
         
 
     public:
-        SimulationRobotDriver(
-            std::string robot_name,
-            FeedbackMsg* fb,
-            SetpointMsg* sp,
-            double periodicity_val, 
-            std::vector<double> init_joints);
+        SimulationRobotDriver();
+
+        virtual void construct(std::string robot_name, 
+                        FeedbackMsg* fb, 
+                        SetpointMsg* sp,
+                        const Json::Value& config) override;
 
         /**
          * will only return true if it has received values for all the joints named in jnames.

@@ -1,4 +1,4 @@
-message("Compiling misc/etasl_interfacing_utils libraries ${CMAKE_CURRENT_SOURCE_DIR}")
+message("Compiling misc/robot_interfacing_utils libraries ${CMAKE_CURRENT_SOURCE_DIR}")
 
 
 
@@ -27,7 +27,7 @@ set(CMAKE_CXX_STANDARD 17)
 include_directories(include ${LUA_INCLUDE_DIR})
 
 
-set(src_etasl_interfacing_utils
+set(src_robot_interfacing_utils
     thread_manager.cpp
     simulationrobotdriver.cpp
     simulationrobotdriverfactory.cpp
@@ -42,14 +42,14 @@ set(dependencies
 )
 
 
-add_library(etasl_interfacing_utils ${src_etasl_interfacing_utils})
+add_library(robot_interfacing_utils ${src_robot_interfacing_utils})
 
-target_include_directories(etasl_interfacing_utils PUBLIC
-  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
-  $<INSTALL_INTERFACE:include>)
+target_include_directories(robot_interfacing_utils PUBLIC
+  $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/include/robot_interfacing_utils>
+  $<INSTALL_INTERFACE:include/robot_interfacing_utils>)
 
-ament_target_dependencies(etasl_interfacing_utils ${rosdependencies})  
-target_link_libraries(etasl_interfacing_utils ${dependencies})
+ament_target_dependencies(robot_interfacing_utils ${rosdependencies})  
+target_link_libraries(robot_interfacing_utils ${dependencies})
 
-install(TARGETS etasl_interfacing_utils
+install(TARGETS robot_interfacing_utils
   DESTINATION lib/${PROJECT_NAME})

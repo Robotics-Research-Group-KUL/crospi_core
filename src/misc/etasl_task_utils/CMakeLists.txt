@@ -67,8 +67,8 @@ set(dependencies
 add_library(etasl_task_utils ${src_etasl_task_utils})
 
 target_include_directories(etasl_task_utils PUBLIC
-  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
-  $<INSTALL_INTERFACE:include>)
+  $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/include/etasl_task_utils>
+  $<INSTALL_INTERFACE:include/etasl_task_utils>)
 ament_target_dependencies(etasl_task_utils ${rosdependencies})  
 target_link_libraries(etasl_task_utils ${dependencies})
 

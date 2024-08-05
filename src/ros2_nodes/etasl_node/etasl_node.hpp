@@ -60,7 +60,9 @@
 
 #include "robot_interfacing_utils/robotdriverfactory.hpp"
 #include "robot_interfacing_utils/simulationrobotdriverfactory.hpp"
-#include "kuka_iiwa_driver/kukaiiwa_robotdriverfactory.hpp"
+// #include "kuka_iiwa_driver/kukaiiwa_robotdriverfactory.hpp"
+#include <pluginlib/class_loader.hpp> //For plugins such as robot drivers
+
 
 #include "robot_interfacing_utils/feedback_struct.hpp"
 #include "robot_interfacing_utils/thread_manager.hpp"
@@ -150,6 +152,8 @@ class etaslNode : public rclcpp_lifecycle::LifecycleNode
         std::vector<etasl::OutputHandler::SharedPtr> outputhandlers;
         std::vector<etasl::InputHandler::SharedPtr> inputhandlers;
         etasl::RobotDriver::SharedPtr               robotdriver;
+
+        boost::shared_ptr<pluginlib::ClassLoader<etasl::RobotDriver>>  driver_loader;
 
         std::vector<bool> ih_initialized;
 

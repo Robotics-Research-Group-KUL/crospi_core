@@ -24,14 +24,23 @@ find_package(rosidl_default_generators REQUIRED)
 install(DIRECTORY launch robot_description etasl scripts
   DESTINATION share/${PROJECT_NAME})
 
+install(
+  DIRECTORY include/
+  DESTINATION include
+)
+
+ament_export_include_directories(
+  include
+)
+
 
 include_directories(
    include
 )
 
-include_directories(
-   src/misc/kuka_iiwa_driver
-) #TODO: Remove this
+# include_directories(
+#    src/misc/kuka_iiwa_driver
+# ) #TODO: Remove this
 
 # TODO: Delete the following. It is only used for debug in VSCODE:
 # include_directories("/home/santiregui/etasl-cmake/standalone-cmake/install/include")

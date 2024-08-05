@@ -92,15 +92,7 @@ with this example you should see the robot executing a single task specification
 
 An interactive LUA console can be accessed to debug. In order to do this, it is very important to execute the etasl_node by calling `ros2 run` instead of `ros2 launch`, since the terminal needs to "own" the process executed. You can do this by calling:
 ```bash
-ros2 run etasl_ros2 etasl_node --ros-args --params-file param_test.yaml
-```
-
-where `param_test.yaml` contains the parameters of the node. For example this file can contain the following:
-```yaml
-etasl_node:
-    ros__parameters:
-        task_specification_file: "/workspaces/colcon_ws/src/etasl_ros2/etasl/move_cartesianspace.lua"
-        jointnames: ["shoulder_pan_joint","shoulder_lift_joint","elbow_joint","wrist_1_joint","wrist_2_joint","wrist_3_joint"]
+ros2 run etasl_ros2 etasl_node
 ```
 
 
@@ -149,9 +141,9 @@ Monitor{
 
 -add on_configure to all input and output handlers. Right now I use the initialize in the on_configure but this is confusing and leads to errors.
 
-- Handle proper shutdown when ctrl+c to safely stop robot execution (send zero velocities). Right now I am using the function `rclcpp::on_shutdown(std::bind( &etaslNode::safe_shutdown, my_etasl_node))` to bind my own callback. The publisher doesn't publish after shutdown, even if we publish zero velocities in the jointstateoutputhandler. See discussion forum here: https://github.com/ros2/rclcpp/issues/1706
-
 - I need to change routine that checks which joints are in the task specification and then ignore the rest. I should perhaps publish all joints provided in the list, and the ones not there set as a default value. 
+
+- Implement a parameter in the eTaSL monitors to indicate if the movement should stop immediatly or if the driver should deaccelerate the movement until stopped.
 
 ## To debug segmentation fault:
 

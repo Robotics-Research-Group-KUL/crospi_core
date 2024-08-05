@@ -5,20 +5,35 @@
 namespace etasl {
 
 
-SimulationRobotDriver::SimulationRobotDriver(
-            std::string robot_name,
-            FeedbackMsg* fb,
-            SetpointMsg* sp,
-            double periodicity_val,
-            std::vector<double> init_joints)
-    : periodicity(periodicity_val)
-    , initial_joints(init_joints)
-    , joint_pos(init_joints)
+SimulationRobotDriver::SimulationRobotDriver()
+    // : periodicity(periodicity_val)
+    // , initial_joints(init_joints)
+    // , joint_pos(init_joints)
 {
+}
+
+void SimulationRobotDriver::construct(std::string robot_name, 
+                        FeedbackMsg* fb, 
+                        SetpointMsg* sp,
+                        const Json::Value& config)
+{
+
+    periodicity = config["periodicity"].asDouble();
+
+    std::vector<double> init_joints;
+    // init_joints.resize(parameters["initial_joints"].size(), 0.0);
+    for (auto n : config["initial_joints"]) {
+        init_joints.push_back(n.asDouble());
+    }
+
+    initial_joints = init_joints;
+    joint_pos = initial_joints;
+
     feedback_ptr = fb; //defined in RobotDriver super class.
     setpoint_ptr = sp; //defined in RobotDriver super class.
     name = robot_name; //defined in RobotDriver super class.
     std::cout << "Constructed object of SimulationRobotDriver class with name: " << name << std::endl;
+
 }
 
 bool SimulationRobotDriver::initialize()
@@ -100,3 +115,8 @@ SimulationRobotDriver::~SimulationRobotDriver() {
 
 
 } // namespace etasl
+
+
+// Uncomment this if want to make it a plugin:
+// #include <pluginlib/class_list_macros.hpp>
+// PLUGINLIB_EXPORT_CLASS(etasl::SimulationRobotDriver, etasl::RobotDriver)

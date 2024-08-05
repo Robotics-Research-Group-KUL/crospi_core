@@ -97,12 +97,11 @@ public:
         //     double periodicity_val,
         //     std::vector<double> init_joints)
 
-        return std::make_shared<SimulationRobotDriver>(
-        name, 
-        feedback_ptr, 
-        setpoint_ptr, 
-        periodicity, 
-        init_joints);
+       auto shared_robot_driv =  std::make_shared<SimulationRobotDriver>();
+
+        shared_robot_driv->construct(name, feedback_ptr, setpoint_ptr, parameters);
+
+        return shared_robot_driv;
     }
 
     virtual ~SimulationRobotDriverFactory() { }
