@@ -21,7 +21,7 @@ find_package(rosidl_default_generators REQUIRED)
 # find_package(<dependency> REQUIRED)
 
 
-install(DIRECTORY launch robot_description etasl scripts
+install(DIRECTORY launch scripts
   DESTINATION share/${PROJECT_NAME})
 
 install(

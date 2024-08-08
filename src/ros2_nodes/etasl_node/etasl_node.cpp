@@ -6,6 +6,7 @@
 
 #include "etasl_task_utils/etasl_error.hpp"
 #include "etasl_task_utils/flowstatus.hpp"
+#include <etasl_task_utils/string_interpolate.hpp> //To e.g. specify $[etasl_ros2]/launch/etc... and other functionalities in strings
 
 #include <jsoncpp/json/json.h>
 
@@ -85,19 +86,24 @@ bool etaslNode::readTaskSpecificationFile(const std::shared_ptr<etasl_interfaces
 		return false;
 	}
 
+  // Old method:
 	// std::stringstream file_path;
 	// file_path << "Solver and initialization properties : \n";
 	// file_path.str()).c_str()
-	std::string file_path = "";
+	// std::string file_path = "";
+	// if(request->rel_shared_dir){
+	// 	std::string shared_dir = ament_index_cpp::get_package_share_directory("etasl_ros2");
+	// 	file_path = shared_dir + "/etasl/" + request->file_path;
+	// }
+	// else{
+	// 	file_path = request->file_path;
+	// }
 
-	if(request->rel_shared_dir){
-		std::string shared_dir = ament_index_cpp::get_package_share_directory("etasl_ros2");
-		file_path = shared_dir + "/etasl/" + request->file_path;
-	}
-	else{
-		file_path = request->file_path;
-	}
-	std::cout << file_path <<std::endl; 
+  std::string file_path = etasl::string_interpolate(request->file_path);
+
+	// std::cout << "]]]]]]]]]]]]]]]]]]]]" <<std::endl; 
+	// std::cout << file_path <<std::endl; 
+	// std::cout << "]]]]]]]]]]]]]]]]]]]]" <<std::endl; 
 	// std::cout << "response:" <<request->file_path <<std::endl; 
 
 	try{

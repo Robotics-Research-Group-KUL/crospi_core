@@ -25,7 +25,6 @@ public:
     {
     }
 
-    // TODO: Change the SCHEMA (I kept the JointState schema provisionally)
     /**
      * @brief gets the schema for the parameters of this factory
      * @return JSON schema
