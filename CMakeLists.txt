@@ -29,6 +29,13 @@ install(
   DESTINATION include
 )
 
+# install(
+#   FILES hook/package_etasl_ros2_lua_configure_paths.sh
+#   DESTINATION share/${PROJECT_NAME}/hook
+# )
+
+ament_environment_hooks("${CMAKE_SOURCE_DIR}/env-hooks/package_etasl_ros2_lua_configure_paths.sh.in") 
+
 ament_export_include_directories(
   include
 )
@@ -37,6 +44,7 @@ ament_export_include_directories(
 include_directories(
    include
 )
+
 
 # include_directories(
 #    src/misc/kuka_iiwa_driver
