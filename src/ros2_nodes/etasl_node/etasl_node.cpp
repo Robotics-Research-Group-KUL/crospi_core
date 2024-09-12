@@ -150,7 +150,9 @@ bool etaslNode::readTaskSpecificationString(const std::shared_ptr<etasl_interfac
 		int retval = LUA->executeString(request->str);
 		// int retval = LUA->executeFile("/workspaces/colcon_ws/install/etasl_ros2/share/etasl_ros2/etasl/move_cartesianspace.lua");
 		if (retval !=0) {
-			RCUTILS_LOG_ERROR_NAMED(get_name(), "Error executing specificed string command in LUA within the etasl_node/readTaskSpecificationString service. ");
+			RCUTILS_LOG_ERROR_NAMED(get_name(), "Error executing the following specificed string command in LUA within the etasl_node/readTaskSpecificationString service: ");
+			RCUTILS_LOG_ERROR_NAMED(get_name(), request->str.c_str());
+
 			response->success = false;
       auto transition = this->shutdown(); //calls on_shutdown() hook.
 			return false;
@@ -278,10 +280,10 @@ void etaslNode::initialize_joints(){
         name_ndx[ jnames_in_expr[i]]  =i;
     }
 
-    RCUTILS_LOG_INFO_NAMED(get_name(), "holaaaaaa hptassss");
+    // RCUTILS_LOG_INFO_NAMED(get_name(), "holaaa");
 
     update_controller_input(jpos_init);
-        RCUTILS_LOG_INFO_NAMED(get_name(), "holaaaaaa hptassss2");
+        // RCUTILS_LOG_INFO_NAMED(get_name(), "holaaaaaaaaa");
 
 
     if(jnames_in_expr.size()==0){
@@ -408,7 +410,6 @@ void etaslNode::configure_etasl(){
         std::stringstream message2;
         message2 << "The initial state of the solver is: " << state.transpose();
         RCUTILS_LOG_INFO_NAMED(get_name(), (message2.str()).c_str());
-
     }
 
 
@@ -572,7 +573,7 @@ bool etaslNode::initialize_output_handlers(){
     return true;
 }
 
-void etaslNode::configure_node(){
+void etaslNode::construct_node(){
     
 
     Json::Value param = board->getPath("/default-etasl", false);
@@ -604,15 +605,15 @@ void etaslNode::configure_node(){
       //   robotdriver = driver_loader->createSharedInstance("etasl::TemplateDriverEtasl");
       // }
       robotdriver = driver_loader->createSharedInstance("etasl::TemplateDriverEtasl");
+      // robotdriver = driver_loader->createSharedInstance("etasl::KukaIiwaRobotDriver");
 
     }
     catch(pluginlib::PluginlibException& ex)
     {
       // printf("The plugin failed to load for some reason. Error: %s\n", ex.what());
 
-    std::string message = "The plugin failed to load. Error: \n" + std::string(ex.what());
-		RCUTILS_LOG_ERROR_NAMED(get_name(), message.c_str());
-
+      std::string message = "The plugin failed to load. Error: \n" + std::string(ex.what());
+      RCUTILS_LOG_ERROR_NAMED(get_name(), message.c_str());
 
       auto transition = this->shutdown(); //calls on_shutdown() hook.
       return;
@@ -666,7 +667,7 @@ void etaslNode::configure_node(){
     // available.
 
 
- // This still needs to be here and cannot be moved to configure_node() function because of the routine for verifying the joints in the expression. That routine should change 
+ // This still needs to be here and cannot be moved to construct_node() function because of the routine for verifying the joints in the expression. That routine should change 
     if(!first_time_configured){
       timer_ = this->create_wall_timer(std::chrono::milliseconds(periodicity_param), std::bind(&etaslNode::update, this));
 
@@ -990,7 +991,7 @@ int main(int argc, char * argv[])
     // auto my_etasl_node = std::make_shared<etaslNode>("etasl_node");
 
 
-    my_etasl_node->configure_node();
+    my_etasl_node->construct_node();
 
 
     std::atomic<bool> stopFlag(false); 

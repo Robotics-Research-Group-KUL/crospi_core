@@ -112,7 +112,7 @@ class etaslNode : public rclcpp_lifecycle::LifecycleNode
         void solver_configuration();
         void initialize_joints();
         void initialize_feature_variables();
-        void configure_node();
+        void construct_node();
 
         void register_factories();
         void update_robot_status();
