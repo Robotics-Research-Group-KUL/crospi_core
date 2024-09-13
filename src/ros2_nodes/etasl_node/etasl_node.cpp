@@ -597,32 +597,32 @@ void etaslNode::construct_node(){
     RCUTILS_LOG_INFO_NAMED(get_name(), "register_output_handler");
     // TODO: add info about the output handler added (e.g. p[is-...] and p[topic-name])
 
-    driver_loader = boost::make_shared<pluginlib::ClassLoader<etasl::RobotDriver>>("etasl_ros2", "etasl::RobotDriver");
-    try
-    {
-      // if (driver_loader->isClassAvailable("etasl::TemplateDriverEtasl"))
-      // {
-      //   robotdriver = driver_loader->createSharedInstance("etasl::TemplateDriverEtasl");
-      // }
-      robotdriver = driver_loader->createSharedInstance("etasl::TemplateDriverEtasl");
-      // robotdriver = driver_loader->createSharedInstance("etasl::KukaIiwaRobotDriver");
+    // driver_loader = boost::make_shared<pluginlib::ClassLoader<etasl::RobotDriver>>("etasl_ros2", "etasl::RobotDriver");
+    // try
+    // {
+    //   // if (driver_loader->isClassAvailable("etasl::TemplateDriverEtasl"))
+    //   // {
+    //   //   robotdriver = driver_loader->createSharedInstance("etasl::TemplateDriverEtasl");
+    //   // }
+    //   robotdriver = driver_loader->createSharedInstance("etasl::TemplateDriverEtasl");
+    //   // robotdriver = driver_loader->createSharedInstance("etasl::KukaIiwaRobotDriver");
 
-    }
-    catch(pluginlib::PluginlibException& ex)
-    {
-      // printf("The plugin failed to load for some reason. Error: %s\n", ex.what());
+    // }
+    // catch(pluginlib::PluginlibException& ex)
+    // {
+    //   // printf("The plugin failed to load for some reason. Error: %s\n", ex.what());
 
-      std::string message = "The plugin failed to load. Error: \n" + std::string(ex.what());
-      RCUTILS_LOG_ERROR_NAMED(get_name(), message.c_str());
+    //   std::string message = "The plugin failed to load. Error: \n" + std::string(ex.what());
+    //   RCUTILS_LOG_ERROR_NAMED(get_name(), message.c_str());
 
-      auto transition = this->shutdown(); //calls on_shutdown() hook.
-      return;
-    }
-    robotdriver->construct("templateetasldriver", feedback_shared_ptr.get(), setpoint_shared_ptr.get(), param["robotdriver"]);
+    //   auto transition = this->shutdown(); //calls on_shutdown() hook.
+    //   return;
+    // }
+    // robotdriver->construct("templateetasldriver", feedback_shared_ptr.get(), setpoint_shared_ptr.get(), param["robotdriver"]);
 
   
 
-    // robotdriver = etasl::Registry<etasl::RobotDriverFactory>::create(param["robotdriver"]);
+    robotdriver = etasl::Registry<etasl::RobotDriverFactory>::create(param["robotdriver"]);
     
 
 
