@@ -8,3 +8,20 @@
 
 #export LUA_PATH="$LUA_PATH;/usr/local/share/lua/5.1/?.lua;@CMAKE_CURRENT_SOURCE_DIR@/?.lua;@CMAKE_CURRENT_SOURCE_DIR@/scripts/lib/?.lua"
 #export LUA_CPATH="$LUA_CPATH;/usr/local/lib/lua/?.so"
+
+if [ "x{$LUA_PATH}x" = "xx" ]; then
+   LUA_PATH=";"
+fi
+
+
+luapath_append ()
+{
+    if echo "$LUA_PATH" | grep -Eq "(;)${1}(;|$)"
+    then
+        return 0
+    fi
+    export LUA_PATH="$LUA_PATH;${1}"
+}
+luapath_append "@CMAKE_CURRENT_SOURCE_DIR@/scripts/lib/?.lua"
+luapath_append "@CMAKE_CURRENT_SOURCE_DIR@/?.lua"
+luapath_append "/usr/local/share/lua/5.1/?.lua"
