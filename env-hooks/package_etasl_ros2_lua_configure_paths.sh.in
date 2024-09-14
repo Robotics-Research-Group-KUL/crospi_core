@@ -1,8 +1,10 @@
 #!/bin/sh
 
+# not necessary anymore, handled by etasl_wrapper
+
 # if [ "x$LUA_PATH" = "x" ]; then
 #    LUA_PATH=";"
 # fi
 
-export LUA_PATH="$LUA_PATH;/usr/local/share/lua/5.1/?.lua;@CMAKE_CURRENT_SOURCE_DIR@/?.lua;@CMAKE_CURRENT_SOURCE_DIR@/scripts/lib/?.lua"
-export LUA_CPATH="$LUA_CPATH;/usr/local/lib/lua/?.so"
+#export LUA_PATH="$LUA_PATH;/usr/local/share/lua/5.1/?.lua;@CMAKE_CURRENT_SOURCE_DIR@/?.lua;@CMAKE_CURRENT_SOURCE_DIR@/scripts/lib/?.lua"
+#export LUA_CPATH="$LUA_CPATH;/usr/local/lib/lua/?.so"
