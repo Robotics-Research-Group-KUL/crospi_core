@@ -1,0 +1,92 @@
+site_name: !ENV [VERSION_TITLE, "eTaSL ROS2"]
+site_description: How to get started with eTaSL in ROS2.
+repo_url: https://gitlab.kuleuven.be/rob-expressiongraphs/ros2/etasl_ros2
+edit_uri: edit/devel/documentation/docs/
+copyright: "Santiago Iregui, KU Leuven, 2024, <a href='https://etasl.pages.gitlab.kuleuven.be/_static/LICENSE.txt'>GNU Lesser General Public License v3</a>"
+theme:
+  name: "readthedocs"
+
+nav:
+  - 'Installation':
+    - 'installation/installation.md'
+  - 'Basic Tutorials':
+    - 'Offline configuration':
+      - 'offline_configuration/setup_configuration.md'
+      - 'offline_configuration/skills_configuration.md'
+      - 'offline_configuration/task_parameters.md'
+    - 'Execution':
+      - 'execution/execution.md'
+    - 'Online configuration':
+      - 'online_configuration/selecting_skill.md'
+    - 'Monitoring':
+      - 'monitoring/triggering_events.md' 
+  - 'Intermediate tutorials':
+    - 'Coordination':
+      - 'coordination/fsm_yasmin.md'
+      - 'coordination/action_server.md'
+      - 'coordination/behavior_tree.md' 
+    - 'Debugging':
+      - 'debugging/debugging.md'
+  - 'Advanced tutorials':
+    - 'I/O Handlers':
+      - 'io_handlers/input_handlers.md'
+      - 'io_handlers/output_handlers.md'
+    - 'Robot Drivers':
+      - 'robot_drivers/creating_robot_drivers.md'
+      - 'robot_drivers/using_ros_control.md'
+  - 'Extras':
+    - 'extras/glossary.md'
+    - 'extras/citations.md'
+    - 'extras/how_to_contribute.md'
+    # - 'intro_etasl.md'
+    # - 'python_and_notebook.md'
+    # - 'originaldoc.md'
+  # - 'Documentation':
+  #   - 'Python':
+  #     - 'pytut.md'
+  #     - 'apidoc.md'
+  #   - 'eTaSL':
+  #     - 'Quaternions': 'quaternions.md'
+
+markdown_extensions:
+  - toc:
+      permalink: 
+  - attr_list
+  - admonition
+  - def_list
+  - tables
+  - pymdownx.highlight:
+        anchor_linenums: true
+        line_spans: __span
+        use_pygments: true
+  - pymdownx.snippets
+  - pymdownx.superfences
+  - pymdownx.details
+    #- nl2br
+    ##  - mdx_gh_links:
+#      user: mkdocs
+#      repo: mkdocs
+#  - mkdocs-click
+  - pymdownx.arithmatex:
+      generic: true
+
+extra_javascript:
+  - https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS_HTML
+  - javascripts/mathjaxhelper.js
+
+
+#hooks:
+#  - docs/hooks.py
+#plugins:
+#  - search
+#  - autorefs
+#  - callouts
+#  - mkdocstrings:
+#      handlers:
+#        python:
+#          options:
+#            docstring_section_style: list
+#            members_order: source
+#            show_root_heading: true
+#            show_source: false
+#            show_signature_annotations: true
