@@ -74,3 +74,13 @@ target_link_libraries(etasl_task_utils ${dependencies})
 
 install(TARGETS etasl_task_utils
   DESTINATION lib/${PROJECT_NAME})
+
+
+
+
+  add_library(amentlua SHARED amentlua.cpp )
+  ament_target_dependencies(amentlua ${rosdependencies})
+  target_link_libraries(amentlua ${dependencies})
+  install(TARGETS amentlua
+     DESTINATION lib)
+  
