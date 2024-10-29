@@ -1,4 +1,14 @@
-## Installation
+# Regular Installation
+
+!!! abstract
+    
+    This tutorial shows how to perform a regular installation. This can be done by installing from source or by installing debian packages. The next tutorial shows how to perform the installation using a provided docker image.
+
+## Dependencies 
+
+TODO
+
+## Installing from source
 
 1. Install etasl-cmake libraries following the instructions found [here](https://rob-expressiongraphs.pages.gitlab.kuleuven.be/docker/etasl-cmake/).
 
@@ -28,3 +38,8 @@ The flag `--symlink-install` is optional, but highly recommended. Without it you
 ```
 
 Note that in ROS2 the devel folder is gone (compared to ROS1), and you need to source in the install directory.
+
+
+## Installing from debian package
+
+TODO

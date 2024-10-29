@@ -2,31 +2,42 @@ site_name: !ENV [VERSION_TITLE, "eTaSL ROS2"]
 site_description: How to get started with eTaSL in ROS2.
 repo_url: https://gitlab.kuleuven.be/rob-expressiongraphs/ros2/etasl_ros2
 edit_uri: edit/devel/documentation/docs/
-copyright: "Santiago Iregui, KU Leuven, 2024, <a href='https://etasl.pages.gitlab.kuleuven.be/_static/LICENSE.txt'>GNU Lesser General Public License v3</a>"
+copyright: "Santiago Iregui and Erwin Aertbeliën, KU Leuven, 2024, <a href='https://etasl.pages.gitlab.kuleuven.be/_static/LICENSE.txt'>GNU Lesser General Public License v3</a>"
 theme:
   name: "readthedocs"
+  # name: material
+  features: 
+    # - content.code.copy
 
 nav:
   - 'Installation':
-    - 'installation/installation.md'
+    - 'installation/regular_installation.md'
+    - 'installation/docker.md'
+  - 'Application Template':
+    - 'template/application_template.md'
   - 'Basic Tutorials':
-    - 'Offline configuration':
+    - 'Preparing your application':
       - 'offline_configuration/setup_configuration.md'
       - 'offline_configuration/skills_configuration.md'
       - 'offline_configuration/task_parameters.md'
-    - 'Execution':
+    - 'Running the eTaSL lifecycle node':
       - 'execution/execution.md'
-    - 'Online configuration':
-      - 'online_configuration/selecting_skill.md'
-    - 'Monitoring':
-      - 'monitoring/triggering_events.md' 
+    - 'Starting a task':
+      - 'online_configuration/starting_a_task.md'
+    - 'Outputting data':
+      - 'outputting_data/monitoring_of_events.md' 
+      - 'outputting_data/task_variables_to_topics.md' 
+      - 'outputting_data/task_variables_to_csv_files.md'
+    - 'Inputting data':
+      - 'inputting_data/subscribing_to_ros_topics.md' 
+      - 'inputting_data/intraprocess_communication.md' 
   - 'Intermediate tutorials':
-    - 'Coordination':
+    - 'Coordinating tasks and other nodes':
       - 'coordination/fsm_yasmin.md'
       - 'coordination/action_server.md'
       - 'coordination/behavior_tree.md' 
     - 'Debugging':
-      - 'debugging/debugging.md'
+      - 'debugging/etasl_console.md'
   - 'Advanced tutorials':
     - 'I/O Handlers':
       - 'io_handlers/input_handlers.md'
@@ -35,6 +46,7 @@ nav:
       - 'robot_drivers/creating_robot_drivers.md'
       - 'robot_drivers/using_ros_control.md'
   - 'Extras':
+    - 'extras/changelog.md'
     - 'extras/glossary.md'
     - 'extras/citations.md'
     - 'extras/how_to_contribute.md'
@@ -50,15 +62,21 @@ nav:
 
 markdown_extensions:
   - toc:
-      permalink: 
+      permalink: true
   - attr_list
   - admonition
+  - abbr
+  # - md_in_html
+  - pymdownx.details
+  - pymdownx.superfences
   - def_list
   - tables
   - pymdownx.highlight:
         anchor_linenums: true
         line_spans: __span
         use_pygments: true
+        linenums: false
+  - pymdownx.inlinehilite
   - pymdownx.snippets
   - pymdownx.superfences
   - pymdownx.details
@@ -72,7 +90,19 @@ markdown_extensions:
 
 extra_javascript:
   - https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS_HTML
-  - javascripts/mathjaxhelper.js
+  # - javascripts/mathjaxhelper.js
+  # The following libs are used to enable the copy button (since readthedocs does not come with that by default) 
+  - https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js
+  - https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.10/clipboard.min.js
+  - https://unpkg.com/@popperjs/core@2
+  - https://unpkg.com/tippy.js@6
+  - javascripts/copy-to-clipboard.js
+  
+
+# The following justifies the text:
+extra_css:
+  - css/extra.css
+  - css/copy-to-clipboard.css
 
 
 #hooks:

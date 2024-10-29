@@ -1,3 +1,0 @@
-# Triggering events
-
-TODO
