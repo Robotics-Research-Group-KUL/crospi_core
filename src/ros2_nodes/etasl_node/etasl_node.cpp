@@ -42,15 +42,16 @@ etaslNode::etaslNode(const std::string & node_name, bool intra_process_comms = f
 
   std::string dirPath = this->declare_parameter<std::string>("directory_path", "");
 
+// Checks if the path is empty. i.e. the parameter was not defined.
   if (dirPath.empty()) {
       RCLCPP_ERROR(this->get_logger(), "No directory path provided. Use the 'directory_path' ros parameter as follows: \n ros2 run etasl_ros2 etasl_node --ros-args -p directory_path:=/path/to/directory");
       rclcpp::shutdown();
       return;
   }
 
-  // std::string file_path = etasl::string_interpolate(dirPath);
 
- // Checks if the package exists when performing the string interpolation 
+ // Checks if the package exists when performing the string interpolation. It does not check if the file exists! 
+//  Necessary because BlackBoard::load called in BlackBoard::load_process_and_validate does not handle the exception thrown by string_interpolate 
   std::string file_path;
   try {
       file_path = etasl::string_interpolate(dirPath);
@@ -64,12 +65,14 @@ etaslNode::etaslNode(const std::string & node_name, bool intra_process_comms = f
 
   std::filesystem::path path(file_path);
 
-    // Check if the path is a valid directory
+    // Check if the file path exists
   if (!std::filesystem::exists(path) || !std::filesystem::is_regular_file(path)) {
       std::string message = "The directory_path:=" + file_path + " which was provided through --ros-arg is not a valid file directory.";
       RCUTILS_LOG_ERROR_NAMED(get_name(), message.c_str());
       rclcpp::shutdown();
   } 
+
+
 
   reinitialize_data_structures();
 
@@ -78,8 +81,12 @@ etaslNode::etaslNode(const std::string & node_name, bool intra_process_comms = f
   std::cout << " loading blackboard" << std::endl;
   board->setSearchPath("$[etasl_ros2]/scripts/schema:$[etasl_ros2]/scripts/schema/tasks");
   // board->load_process_and_validate("$[etasl_ros2]/scripts/json/blackboard.json");
-  board->load_process_and_validate(dirPath);
-  fmt::print("{:->80}\n", "-");
+  
+  board->load_process_and_validate(dirPath); // Also checks if it is a valid JSON file
+  // fmt::print("{:->80}\n", "-");
+
+  std::string message = "\n+++++++++++++++++++++++++++++++++++++++++++++++++\nThe following configuration file was loaded correctly:" + file_path + "\n+++++++++++++++++++++++++++++++++++++++++++++++++";
+  RCUTILS_LOG_INFO_NAMED(get_name(), message.c_str());
 
 
   this->get_node_base_interface()->get_context()->add_pre_shutdown_callback(std::bind( &etaslNode::safe_shutdown, this)); // Adds safe_shutdown as callback before shutting down, e.g. with ctrl+c. This methods returns rclcpp::OnShutdownCallbackHandle shutdown_cb_handle
