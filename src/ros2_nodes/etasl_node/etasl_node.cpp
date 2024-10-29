@@ -40,13 +40,45 @@ etaslNode::etaslNode(const std::string & node_name, bool intra_process_comms = f
 
   events_pub_ = this->create_publisher<std_msgs::msg::String>("fsm/events", 10); 
 
+  std::string dirPath = this->declare_parameter<std::string>("directory_path", "");
+
+  if (dirPath.empty()) {
+      RCLCPP_ERROR(this->get_logger(), "No directory path provided. Use the 'directory_path' ros parameter as follows: \n ros2 run etasl_ros2 etasl_node --ros-args -p directory_path:=/path/to/directory");
+      rclcpp::shutdown();
+      return;
+  }
+
+  // std::string file_path = etasl::string_interpolate(dirPath);
+
+ // Checks if the package exists when performing the string interpolation 
+  std::string file_path;
+  try {
+      file_path = etasl::string_interpolate(dirPath);
+  } catch (const std::exception& e) {
+    // Catches any other exceptions derived from std::exception
+      std::string message = "Exception caught when reading the directory_path:=" + dirPath + " provided as --ros-arg: \n Exception e.what():" + std::string(e.what());
+      RCUTILS_LOG_ERROR_NAMED(get_name(), message.c_str());
+      rclcpp::shutdown();
+      return;
+  }
+
+  std::filesystem::path path(file_path);
+
+    // Check if the path is a valid directory
+  if (!std::filesystem::exists(path) || !std::filesystem::is_regular_file(path)) {
+      std::string message = "The directory_path:=" + file_path + " which was provided through --ros-arg is not a valid file directory.";
+      RCUTILS_LOG_ERROR_NAMED(get_name(), message.c_str());
+      rclcpp::shutdown();
+  } 
+
   reinitialize_data_structures();
 
   board = boost::make_shared<etasl::BlackBoard>(1);
   // etasl::BlackBoard board(1);
   std::cout << " loading blackboard" << std::endl;
   board->setSearchPath("$[etasl_ros2]/scripts/schema:$[etasl_ros2]/scripts/schema/tasks");
-  board->load_process_and_validate("$[etasl_ros2]/scripts/json/blackboard.json");
+  // board->load_process_and_validate("$[etasl_ros2]/scripts/json/blackboard.json");
+  board->load_process_and_validate(dirPath);
   fmt::print("{:->80}\n", "-");
 
 
