@@ -5,4 +5,4 @@
 .ilua_history
 *.dot
 *.pyc
-/workspaces/colcon_ws/src/etasl_ros2/src/misc/kuka_iiwa_driver/external/*
+/documentation/venv
