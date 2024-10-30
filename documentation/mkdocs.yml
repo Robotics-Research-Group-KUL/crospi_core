@@ -68,14 +68,19 @@ markdown_extensions:
   - abbr
   # - md_in_html
   - pymdownx.details
-  - pymdownx.superfences
+  - pymdownx.superfences:
+        # custom_fences:
+        # - name: mermaid
+        #   class: mermaid
+        #   format: !!python/name:pymdownx.superfences.fence_code_format
   - def_list
   - tables
   - pymdownx.highlight:
         anchor_linenums: true
         line_spans: __span
         use_pygments: true
-        linenums: false
+        linenums_style: table
+  # - pymdownx.tabbed
   - pymdownx.inlinehilite
   - pymdownx.snippets
   - pymdownx.superfences
@@ -97,6 +102,7 @@ extra_javascript:
   - https://unpkg.com/@popperjs/core@2
   - https://unpkg.com/tippy.js@6
   - javascripts/copy-to-clipboard.js
+  # - https://unpkg.com/mermaid@10.9.3/dist/mermaid.esm.min.mjs
   
 
 # The following justifies the text:
@@ -107,8 +113,9 @@ extra_css:
 
 #hooks:
 #  - docs/hooks.py
-#plugins:
-#  - search
+# plugins:
+#   - search
+  # - mermaid2
 #  - autorefs
 #  - callouts
 #  - mkdocstrings:
