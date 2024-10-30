@@ -1,0 +1,12 @@
+{
+    "$id":"etasl-task-instance.json",
+    "title": "eTaSL Task Instance",
+    "description": "Describes an actual task with specific parameters",
+    "type": "object",
+    "required" :[ "etasl-task","parameters"],
+    "additionalProperties": false,
+    "properties": {
+        "etasl-task": { "type":"string" },
+        "parameters" : { "type":"object"}        
+    }
+}

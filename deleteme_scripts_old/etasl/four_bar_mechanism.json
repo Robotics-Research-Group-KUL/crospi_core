@@ -1,0 +1,24 @@
+{
+    "$schema": "../schema/tasks/four_bar_mechanism-schema.json",
+    "task": {
+        "amplitude": 1.0,
+        "frequency": 0.5,
+        "function_generator": true
+    },
+    "etasl": {
+        "sample_time": 0.01,
+        "use_sim_time": true,
+        "outputhandlers": [
+            {
+                "is-fileoutputhandler": true,
+                "filename": "/workspaces/data/etasl_node/fourbar2.csv",
+                "header": true,
+                "variable-names": [
+                    "time",
+                    "closure_x",
+                    "closure_y"
+                ]
+            }
+        ]
+    }
+}

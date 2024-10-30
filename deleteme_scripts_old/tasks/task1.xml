@@ -1,0 +1,53 @@
+<!-- 
+    An example task definition file.
+    A task is an action that starts an eTaSL controller. The goal of this action has
+    a string that can contain a number of parameters.  When the action is finished, a
+    number of parameters are send back as a string.
+    This e.g. allows to pass the pose from one task to another.
+    Or to allow the definition of more generic, parameterized tasks
+-->
+<Task>
+    <!-- There can be more than one etasl specification, they are loaded in the order as specified
+         in this file
+    -->
+    <etaslspecification>four_bar_mechanism.lua</etaslspecification>
+    
+    <input>
+        <parameters>
+            <parameter name="amplitude" defaultval="1.0"/>
+            <parameter name="acc" defaultval="1.0"/>
+        </parameters>
+        <initialvalues>
+            <featurevar name="q2" defaultval="0.0"/>
+            <featurevar name="q4" defaultval="0.0"/>
+        </initialvalues>
+    </input>
+    <output>
+        <topics>
+            <topic name="q1-topic" msgtype="std_msgs/msg/Float64" var="q1"></topic>
+            <topic name="q2-topic" msgtype="std_msgs/msg/Float64" var="q2"></topic>
+        </topics>
+        <csvfile name="tst" type="csv"/>
+        <parameters>
+            <parameter name="q1"/>
+            <parameter name="q2"/>
+            <parameter name="q4"/>
+            <parameter name="closure_x"/>
+            <parameter name="closure_y"/>
+        </parameters>        
+    </output>
+    <initializer>
+        <full> true </full>
+        <sample_time> 0.01 </sample_time>
+        <duration> 3 </duration>
+        <convergence_criterion> 1E-4 </convergence_criterion>
+        <weight_factor> 1E4 </weight_factor>
+    </initializer>
+    <solver>
+        <solver-implementation> qpoases </solver-implementation>
+        <nWSR> 100 </nWSR>
+        <regularization_factor> 1E-16 </regularization_factor>
+        <cputime> 1.0 </cputime>
+        <sample_time>0.001</sample_time>
+    </solver>
+</Task>

@@ -1,0 +1,14 @@
+{
+    "$id" : "vector.json",
+    "title": "position",
+    "description": "origin of frame",
+    "type": "object",
+    "properties" : {
+        "x" : { "type" : "number" },
+        "y" : { "type" : "number" },
+        "z" : { "type" : "number" }
+    },
+    "required" : [ "x","y","z"],
+    "additionalProperties" : false,
+    "transform_to" : "vector"
+}

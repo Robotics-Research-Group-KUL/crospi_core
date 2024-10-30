@@ -1,0 +1,21 @@
+{
+    "$id":"moveto.json",
+    "title": "move-to",
+    "description": "Moves to a given location in space",
+    "type": "object",
+    "required" :[ "target","maxacc"],
+    "additionalProperties": false,
+    "properties": {
+        "target": { "$ref": "frame.json" },
+        "maxvel": { 
+            "type":"number",
+            "minimum" : 0.0 ,
+            "default" : 1.0
+        },        
+        "maxacc": {
+            "type":"number",
+            "minimum" : 0.0,
+            "default" : 0.0
+        }
+    }
+}

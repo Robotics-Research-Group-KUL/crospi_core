@@ -1,5 +1,5 @@
 #include "simple_etasl_node.hpp"
-#include "IO_handlers.hpp"
+#include "IO_handlers_deleteme.hpp"
 
 // For real-time control loop
 #include <chrono>
@@ -23,12 +23,12 @@ etaslNode::etaslNode(): Node("simple_etasl_node")
 {
   //Used unless the ROS parameters are modified externally (e.g. through terminal or launchfile)
 
-  outpfilename = "/home/santiregui/ros2_ws/src/etasl_ros2/etasl/log_test.csv";
+  outpfilename = "/workspaces/colcon_ws/src/etasl_ros2/etasl/log_test.csv";
   this->declare_parameter("outpfilename",  outpfilename);
   this->declare_parameter("task_specification_file",  rclcpp::PARAMETER_STRING);
   this->declare_parameter("jointnames",  rclcpp::PARAMETER_STRING_ARRAY);
 
-  // fname = "/home/santiregui/ros2_ws/src/etasl_ros2/etasl/taskspec2.lua";
+  // fname = "/workspaces/colcon_ws/src/etasl_ros2/etasl/taskspec2.lua";
   // this->declare_parameter("outpfilename",  outpfilename); //outpfilename as default val
   // this->declare_parameter("task_specification_file",  fname); //fname as default val
 

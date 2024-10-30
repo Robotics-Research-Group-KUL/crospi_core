@@ -1,8 +1,14 @@
 #include "etasl_node.hpp"
-#include "IO_handlers.hpp"
+#include "IO_handlers_deleteme.hpp"
 #include "port_observer.hpp"
 
-# include <ament_index_cpp/get_package_share_directory.hpp> 
+#include <ament_index_cpp/get_package_share_directory.hpp> 
+
+#include "etasl_task_utils/etasl_error.hpp"
+#include "etasl_task_utils/flowstatus.hpp"
+#include <etasl_task_utils/string_interpolate.hpp> //To e.g. specify $[etasl_ros2]/launch/etc... and other functionalities in strings
+
+#include <jsoncpp/json/json.h>
 
 
 // For real-time control loop
@@ -10,14 +16,10 @@
 #include <thread>
 #include <vector>
 
+
 using namespace std::chrono_literals;
 using namespace KDL;
 using namespace Eigen;
-
-
-
-/* This example creates a subclass of Node and uses std::bind() to register a
-* member function as a callback from the timer. */
 
 
 etaslNode::etaslNode(const std::string & node_name, bool intra_process_comms = false): rclcpp_lifecycle::LifecycleNode(node_name,
@@ -27,43 +29,72 @@ etaslNode::etaslNode(const std::string & node_name, bool intra_process_comms = f
 , event_msg(std_msgs::msg::String())
 , event_postfix(get_name())
 , first_time_configured(false)
+, is_configured(false)
 {
-  //Used unless the ROS parameters are modified externally (e.g. through terminal or launchfile)
-
-  outpfilename = "/home/santiregui/ros2_ws/src/etasl_ros2/etasl/log_test.csv";
-  this->declare_parameter("outpfilename",  outpfilename);
-  this->declare_parameter("task_specification_file",  rclcpp::PARAMETER_STRING);
-  this->declare_parameter("jointnames",  rclcpp::PARAMETER_STRING_ARRAY);
-
-  // fname = "/home/santiregui/ros2_ws/src/etasl_ros2/etasl/taskspec2.lua";
-  // this->declare_parameter("outpfilename",  outpfilename); //outpfilename as default val
-  // this->declare_parameter("task_specification_file",  fname); //fname as default val
-
-  // this->create_service<lifecycle_msgs::srv::ChangeState>("configure", &srv_configure);
-  test_service_ = create_service<lifecycle_msgs::srv::ChangeState>("etasl_node/configure", std::bind(&etaslNode::srv_configure, this, std::placeholders::_1, std::placeholders::_2));
 
   srv_etasl_console_ = create_service<std_srvs::srv::Empty>("etasl_node/etasl_console", std::bind(&etaslNode::etasl_console, this, std::placeholders::_1, std::placeholders::_2));
 
-  srv_readTaskSpecificationFile_ = create_service<etasl_ros2::srv::TaskSpecificationFile>("etasl_node/readTaskSpecificationFile", std::bind(&etaslNode::readTaskSpecificationFile, this, std::placeholders::_1, std::placeholders::_2));
+  srv_readTaskSpecificationFile_ = create_service<etasl_interfaces::srv::TaskSpecificationFile>("etasl_node/readTaskSpecificationFile", std::bind(&etaslNode::readTaskSpecificationFile, this, std::placeholders::_1, std::placeholders::_2));
 
-  srv_readTaskSpecificationString_ = create_service<etasl_ros2::srv::TaskSpecificationString>("etasl_node/readTaskSpecificationString", std::bind(&etaslNode::readTaskSpecificationString, this, std::placeholders::_1, std::placeholders::_2));
+  srv_readTaskSpecificationString_ = create_service<etasl_interfaces::srv::TaskSpecificationString>("etasl_node/readTaskSpecificationString", std::bind(&etaslNode::readTaskSpecificationString, this, std::placeholders::_1, std::placeholders::_2));
 
   events_pub_ = this->create_publisher<std_msgs::msg::String>("fsm/events", 10); 
 
+  std::string dirPath = this->declare_parameter<std::string>("directory_path", "");
+
+// Checks if the path is empty. i.e. the parameter was not defined.
+  if (dirPath.empty()) {
+      RCLCPP_ERROR(this->get_logger(), "No directory path provided. Use the 'directory_path' ros parameter as follows: \n ros2 run etasl_ros2 etasl_node --ros-args -p directory_path:=/path/to/directory");
+      rclcpp::shutdown();
+      return;
+  }
+
+
+ // Checks if the package exists when performing the string interpolation. It does not check if the file exists! 
+//  Necessary because BlackBoard::load called in BlackBoard::load_process_and_validate does not handle the exception thrown by string_interpolate 
+  std::string file_path;
+  try {
+      file_path = etasl::string_interpolate(dirPath);
+  } catch (const std::exception& e) {
+    // Catches any other exceptions derived from std::exception
+      std::string message = "Exception caught when reading the directory_path:=" + dirPath + " provided as --ros-arg: \n Exception e.what():" + std::string(e.what());
+      RCUTILS_LOG_ERROR_NAMED(get_name(), message.c_str());
+      rclcpp::shutdown();
+      return;
+  }
+
+  std::filesystem::path path(file_path);
+
+    // Check if the file path exists
+  if (!std::filesystem::exists(path) || !std::filesystem::is_regular_file(path)) {
+      std::string message = "The directory_path:=" + file_path + " which was provided through --ros-arg is not a valid file directory.";
+      RCUTILS_LOG_ERROR_NAMED(get_name(), message.c_str());
+      rclcpp::shutdown();
+  } 
+
+
+
   reinitialize_data_structures();
+
+  board = boost::make_shared<etasl::BlackBoard>(1);
+  // etasl::BlackBoard board(1);
+  std::cout << " loading blackboard" << std::endl;
+  board->setSearchPath("$[etasl_ros2]/scripts/schema:$[etasl_ros2]/scripts/schema/tasks");
+  // board->load_process_and_validate("$[etasl_ros2]/scripts/json/blackboard.json");
+  
+  board->load_process_and_validate(dirPath); // Also checks if it is a valid JSON file
+  // fmt::print("{:->80}\n", "-");
+
+  std::string message = "\n+++++++++++++++++++++++++++++++++++++++++++++++++\nThe following configuration file was loaded correctly:" + file_path + "\n+++++++++++++++++++++++++++++++++++++++++++++++++";
+  RCUTILS_LOG_INFO_NAMED(get_name(), message.c_str());
+
+
+  this->get_node_base_interface()->get_context()->add_pre_shutdown_callback(std::bind( &etaslNode::safe_shutdown, this)); // Adds safe_shutdown as callback before shutting down, e.g. with ctrl+c. This methods returns rclcpp::OnShutdownCallbackHandle shutdown_cb_handle
+  // this->get_node_base_interface()->get_context()->add_on_shutdown_callback(std::bind( &etaslNode::safe_shutdown, this)); //Can be used to add callback during shutdown (not pre-shutdown, so publishers and others are no longer available)
+  // rclcpp::on_shutdown(std::bind( &etaslNode::safe_shutdown, my_etasl_node)); //Alternative to add_on_shutdown_callback (don't know the difference)
 
 }
 
-bool etaslNode::srv_configure(const std::shared_ptr<lifecycle_msgs::srv::ChangeState::Request> request, std::shared_ptr<lifecycle_msgs::srv::ChangeState::Response>  response)
-      {
-          std::cout << "Request id: "<< request->transition.id << std::endl;
-          std::cout << "Request label: "<< request->transition.label << std::endl;
-          std::this_thread::sleep_for(5s);
-          std::cout << "Finish service call: " << std::endl;
-          response->success = true;
-          return true;
-
-      }
 
 bool etaslNode::etasl_console(const std::shared_ptr<std_srvs::srv::Empty::Request> request, std::shared_ptr<std_srvs::srv::Empty::Response>  response) {
 
@@ -84,10 +115,9 @@ bool etaslNode::etasl_console(const std::shared_ptr<std_srvs::srv::Empty::Reques
     }
 
     return false;
-
 }
 
-bool etaslNode::readTaskSpecificationFile(const std::shared_ptr<etasl_ros2::srv::TaskSpecificationFile::Request> request, std::shared_ptr<etasl_ros2::srv::TaskSpecificationFile::Response>  response) {
+bool etaslNode::readTaskSpecificationFile(const std::shared_ptr<etasl_interfaces::srv::TaskSpecificationFile::Request> request, std::shared_ptr<etasl_interfaces::srv::TaskSpecificationFile::Response>  response) {
 
 	if(this->get_current_state().label() != "unconfigured"){
 		RCUTILS_LOG_ERROR_NAMED(get_name(), "Service etasl_node/readTaskSpecificationFile can only be read in unconfigured state");
@@ -95,40 +125,47 @@ bool etaslNode::readTaskSpecificationFile(const std::shared_ptr<etasl_ros2::srv:
 		return false;
 	}
 
+  // Old method:
 	// std::stringstream file_path;
 	// file_path << "Solver and initialization properties : \n";
 	// file_path.str()).c_str()
-	std::string file_path = "";
+	// std::string file_path = "";
+	// if(request->rel_shared_dir){
+	// 	std::string shared_dir = ament_index_cpp::get_package_share_directory("etasl_ros2");
+	// 	file_path = shared_dir + "/etasl/" + request->file_path;
+	// }
+	// else{
+	// 	file_path = request->file_path;
+	// }
 
-	if(request->rel_shared_dir){
-		std::string shared_dir = ament_index_cpp::get_package_share_directory("etasl_ros2");
-		file_path = shared_dir + "/etasl/" + request->file_path;
-	}
-	else{
-		file_path = request->file_path;
-	}
-	std::cout << file_path <<std::endl; 
+  std::string file_path = etasl::string_interpolate(request->file_path);
+
+	// std::cout << "]]]]]]]]]]]]]]]]]]]]" <<std::endl; 
+	// std::cout << file_path <<std::endl; 
+	// std::cout << "]]]]]]]]]]]]]]]]]]]]" <<std::endl; 
 	// std::cout << "response:" <<request->file_path <<std::endl; 
 
 	try{
 		// Read eTaSL specification:
 		int retval = LUA->executeFile(std::string(file_path));
-		// int retval = LUA->executeFile("/home/santiregui/ros2_ws/install/etasl_ros2/share/etasl_ros2/etasl/move_cartesianspace.lua");
+		// int retval = LUA->executeFile("/workspaces/colcon_ws/install/etasl_ros2/share/etasl_ros2/etasl/move_cartesianspace.lua");
 		std::cout << "--------read lua file " <<std::endl; 
 		if (retval !=0) {
-			RCUTILS_LOG_ERROR_NAMED(get_name(), "Error executing task specification file. Shuting down.");
+			RCUTILS_LOG_ERROR_NAMED(get_name(), "Error executing task specification file. Please provide a valid task specification file");
 			response->success = false;
-			rclcpp::shutdown();
+      auto transition = this->shutdown(); //calls on_shutdown() hook.
+      // this->safe_shutdown();
 			return false;
 		}
 	} catch (const char* msg) {
 		// can be thrown by file/string errors during reading
 		// by lua_bind during reading
 		// by expressiongraph during reading ( expressiongraph will not throw when evaluating)
-		std::string message = "The following error was throuwn while reading the task specification: " + std::string(msg);
+		std::string message = "The following error was thrown while reading the task specification: " + std::string(msg);
 		RCUTILS_LOG_ERROR_NAMED(get_name(), message.c_str());
 		response->success = false;
-		rclcpp::shutdown();
+    auto transition = this->shutdown(); //calls on_shutdown() hook.
+    // this->safe_shutdown();
 		return false;
 	}
 
@@ -139,7 +176,7 @@ bool etaslNode::readTaskSpecificationFile(const std::shared_ptr<etasl_ros2::srv:
 }
 
 
-bool etaslNode::readTaskSpecificationString(const std::shared_ptr<etasl_ros2::srv::TaskSpecificationString::Request> request, std::shared_ptr<etasl_ros2::srv::TaskSpecificationString::Response>  response) {
+bool etaslNode::readTaskSpecificationString(const std::shared_ptr<etasl_interfaces::srv::TaskSpecificationString::Request> request, std::shared_ptr<etasl_interfaces::srv::TaskSpecificationString::Response>  response) {
 	
 	if(this->get_current_state().label() != "unconfigured"){
 		RCUTILS_LOG_ERROR_NAMED(get_name(), "Service etasl_node/readTaskSpecificationString can only be read in unconfigured state");
@@ -150,21 +187,23 @@ bool etaslNode::readTaskSpecificationString(const std::shared_ptr<etasl_ros2::sr
 	try{
 		// Read eTaSL specification:
 		int retval = LUA->executeString(request->str);
-		// int retval = LUA->executeFile("/home/santiregui/ros2_ws/install/etasl_ros2/share/etasl_ros2/etasl/move_cartesianspace.lua");
+		// int retval = LUA->executeFile("/workspaces/colcon_ws/install/etasl_ros2/share/etasl_ros2/etasl/move_cartesianspace.lua");
 		if (retval !=0) {
-			RCUTILS_LOG_ERROR_NAMED(get_name(), "Error executing specificed string command in LUA within the etasl_node/readTaskSpecificationString service. Shuting down.");
+			RCUTILS_LOG_ERROR_NAMED(get_name(), "Error executing the following specificed string command in LUA within the etasl_node/readTaskSpecificationString service: ");
+			RCUTILS_LOG_ERROR_NAMED(get_name(), request->str.c_str());
+
 			response->success = false;
-			rclcpp::shutdown();
+      auto transition = this->shutdown(); //calls on_shutdown() hook.
 			return false;
 		}
 	} catch (const char* msg) {
 		// can be thrown by file/string errors during reading
 		// by lua_bind during reading
 		// by expressiongraph during reading ( expressiongraph will not throw when evaluating)
-		std::string message = "The following error was throuwn while reading the task specification: " + std::string(msg);
+		std::string message = "The following error was thrown while reading the task specification: " + std::string(msg);
 		RCUTILS_LOG_ERROR_NAMED(get_name(), message.c_str());
 		response->success = false;
-		rclcpp::shutdown();
+    auto transition = this->shutdown(); //calls on_shutdown() hook.
 		return false;
 	}
 
@@ -176,29 +215,7 @@ bool etaslNode::readTaskSpecificationString(const std::shared_ptr<etasl_ros2::sr
 }
 
 
-void etaslNode::publishJointState() {
-    // auto joint_state_msg = std::make_shared<sensor_msgs::msg::JointState>();
-
-      this->update(); // get_current_state().label() could change here, e.g. if a monitor is triggered
-
-      if(this->get_current_state().label() == "active"){
-
-        joint_state_msg.header.stamp = this->now(); // Set the timestamp to the current time
-        // joint_state_msg.name = jointnames; //No need to update if defined in configuration
-        
-        for (unsigned int i=0;i<jnames_in_expr.size();++i) {
-          // Populate the joint state message according to your robot configuration
-          joint_state_msg.position[i]  = jpos_ros[i];
-          joint_state_msg.velocity[i]  = 0.0;
-          joint_state_msg.effort[i]  = 0.0;
-        } 
-
-        // Even if not checked, only if the publisher is in an active state the message transfer is
-        // enabled and the message is actually published.
-        joint_pub_->publish(joint_state_msg);
-      } 
-}
-
+// inspiration found in https://etasl.pages.gitlab.kuleuven.be/etasl-api-doc/api/etasl-rtt/solver__state_8hpp_source.html
 void etaslNode::update_controller_output(Eigen::VectorXd const& jvalues_solver){
     for (unsigned int i=0;i<jnames_in_expr.size();++i) {
       std::map<std::string,int>::iterator it = name_ndx.find(jnames_in_expr[i]);
@@ -220,6 +237,8 @@ void etaslNode::update_controller_input(Eigen::VectorXd const& jvalues_meas){
 
 void etaslNode::solver_configuration(){
       // Create registry and register known solvers: 
+    Json::Value param = board->getPath("/default-etasl", false);
+
     solver_registry = boost::make_shared<SolverRegistry>();
     registerSolverFactory_qpOases(solver_registry, "qpoases");
     //registerSolverFactory_hqp(R, "hqp");
@@ -227,32 +246,37 @@ void etaslNode::solver_configuration(){
     // we can get the properties from the solver from the context and specify these properties in eTaSL or
     // create a parameter plist (instead of ctx->solver_property) :
         // parameters of the solver:
+
+        // TODO: Delete the following after handling solvers with register factory (same as with IO handlers)
+        if (!param["solver"]["is-qpoasessolver"].asBool()){
+          RCUTILS_LOG_ERROR_NAMED(get_name(), "is-qpoasessolver should be true in the JSON definition since currently only qpoases solver is supported.");
+          // this->safe_shutdown();
+          auto transition = this->shutdown(); //calls on_shutdown() hook.
+          return;
+        }
+
         std::string solver_name             = "qpoases" ;
         ParameterList plist;
-        plist["nWSR"]                  = 100;
-        plist["regularization_factor"] = 1E-5;
-        plist["cputime"] = 1.0;
+        plist["nWSR"]                  = param["solver"]["nWSR"].asDouble();
+        plist["regularization_factor"] = param["solver"]["regularization_factor"].asDouble();
+        plist["cputime"] = param["solver"]["cputime"].asDouble();
         // parameters of the initialization procedure:
-        plist["initialization_full"]                  = 1.0; // == true
-        plist["initialization_duration"]              = 3.0;
-        plist["initialization_sample_time"]           = 0.01;
-        plist["initialization_convergence_criterion"] = 1E-4;
-        plist["initialization_weightfactor"]          = 100;
-        
+        plist["initialization_full"]                  = int(param["initializer"]["full"].asBool()); // == true
+        plist["initialization_duration"]              = param["initializer"]["duration"].asDouble();
+        plist["initialization_sample_time"]           = param["initializer"]["sample_time"].asDouble();
+        plist["initialization_convergence_criterion"] = param["initializer"]["convergence_criterion"].asDouble();
+        plist["initialization_weightfactor"]          = param["initializer"]["weightfactor"].asDouble();
 
-    // std::string solver_name = ctx->getSolverStringProperty("solver", "qpoasis");  // 2nd arg is the default value if nothing is specified.
-    // int result = solver_registry->createSolver(solver_name, ctx->solver_property, true, false, slv); 
 
     int result = solver_registry->createSolver(solver_name, plist, true, false, slv); 
     if (result!=0) {
         std::string message = "Failed to create the solver " + solver_name;
         RCUTILS_LOG_ERROR_NAMED(get_name(), message.c_str());
-        rclcpp::shutdown();
+        auto transition = this->shutdown(); //calls on_shutdown() hook.
+        // this->safe_shutdown();
         return;
     }
     ctx->setSolverProperty("sample_time", periodicity_param/1000.0);
-    // double dt = ctx->getSolverProperty("sample_time", periodicity_param/1000.0);
-    // std::cout<<"sample_time:" << dt << std::endl;
 
 
     // if (ctx->getSolverProperty("verbose",0.0)>0) {
@@ -295,10 +319,17 @@ void etaslNode::initialize_joints(){
         name_ndx[ jnames_in_expr[i]]  =i;
     }
 
-    update_controller_input(jpos_init);
+    // RCUTILS_LOG_INFO_NAMED(get_name(), "holaaa");
 
-    if(jnames_in_expr.size() != jointnames.size()){
-      RCUTILS_LOG_WARN_NAMED(get_name(), "The number of jointnames specified in ROS param do not correspond to all the joints defined in the eTaSL robot expression graph.");
+    update_controller_input(jpos_init);
+        // RCUTILS_LOG_INFO_NAMED(get_name(), "holaaaaaaaaa");
+
+
+    if(jnames_in_expr.size()==0){
+        RCUTILS_LOG_WARN_NAMED(get_name(), "None of the joint_names specified in the JSON configuration correspond the joints defined in the eTaSL robot expression graph.");
+    }
+    else if(jnames_in_expr.size() != jointnames.size()){
+      RCUTILS_LOG_WARN_NAMED(get_name(), "The number of joint_names specified in the JSON configuration do not correspond to all the joints defined in the eTaSL robot expression graph.");
       RCUTILS_LOG_WARN_NAMED(get_name(), "The jointnames that do not correspond are ignored and not published");
     }
 
@@ -311,7 +342,8 @@ void etaslNode::initialize_feature_variables(){
     int retval = initializer->prepareSolver();
     if (retval!=0) {
         RCUTILS_LOG_ERROR_NAMED(get_name(), (initializer->errorMessage(retval)).c_str());
-        rclcpp::shutdown();
+        auto transition = this->shutdown(); //calls on_shutdown() hook.
+        // this->safe_shutdown();
         return;
     }
 
@@ -321,59 +353,48 @@ void etaslNode::initialize_feature_variables(){
     this->initialize_joints();
     
     fpos_etasl = VectorXd::Zero(slv->getNrOfFeatureStates()); // choose the initial feature variables for the initializer, i.e.
-
     // std::cout <<  "Before initialization\njpos = " << jpos_etasl.transpose() << "\nfpos_etasl = " << fpos_etasl.transpose() << std::endl;
     initializer->setRobotState(jpos_etasl);
     // initializer->setFeatureState(fpos_etasl); //TODO: should I leave it out? leave this out if you want to use the initial values in the task specification.
     retval = initializer->initialize_feature_variables();
     if (retval!=0) {
         RCUTILS_LOG_ERROR_NAMED(get_name(), (initializer->errorMessage(retval)).c_str());
-        rclcpp::shutdown();
+        auto transition = this->shutdown(); //calls on_shutdown() hook.
+        // this->safe_shutdown();
         return; 
     }
 
     fpos_etasl = initializer->getFeatureState();
     // std::cout <<  "After initialization\njpos = " << jpos_etasl.transpose() << "\nfpos_etasl = " << fpos_etasl.transpose() << std::endl;
     // now both jpos_etasl and fpos_etasl are properly initiallized
+    std::vector<int> fndx;
+    ctx->getScalarsOfType("feature", fndx);
+    // ctx->getScalarsOfType("robot", jndx);
+    for (size_t i = 0; i < fndx.size(); ++i) {
+        auto s = ctx->getScalarStruct(fndx[i]);
+        fnames.push_back(s->name);
+    }
   
 }
 
-void etaslNode::configure_jointstate_msg(){
-    joint_state_msg.name = jnames_in_expr;
-    joint_state_msg.position.resize(jnames_in_expr.size(),0.0); 
-    joint_state_msg.velocity.resize(jnames_in_expr.size(),0.0);
-    joint_state_msg.effort.resize(jnames_in_expr.size(),0.0);
-}
 
 void etaslNode::configure_etasl(){
+  
+    // fmt::print("blackboard/default-etasl : ");
+    Json::Value param = board->getPath("/default-etasl", false);
+    // fmt::print("After processing and validating:\n{}", param);
+    // fmt::print("{:->80}\n", "-");
 
 
-
-    // Read configuration ROS parameters
-    fname = this->get_parameter("task_specification_file").as_string();
-    jointnames = this->get_parameter("jointnames").as_string_array();
-    // std::cout << jointnames[0] << "," << jointnames[1] <<std::endl;
+    jointnames.clear();
+    for (auto n : param["robotdriver"]["joint_names"]) {
+        jointnames.push_back(n.asString());
+    }
  
     /**
      * read task specification and creation of solver and handlers for monitor, inputs, outputs
      */
 
-    // Setup context for robot control problem:
-    // ctx->addType("robot");
-    // ctx->addType("feature");
-
-    std::string message = "The task specification file used is: "+ fname;
-    RCUTILS_LOG_INFO_NAMED(get_name(), message.c_str());
-
-
-    // oh( ctx);     // or   std::vector<std::string> varnames =  {"q","f","dx","dy"};
-                                      //      eTaSL_OutputHandler oh( ctx, varnames); for only specific outputs
-    // create the OutputHandler:
-    oh = boost::make_shared<eTaSL_OutputHandler>(ctx);
-        // create the Inputhandler:
-    ih = boost::make_shared<eTaSL_InputHandler>(ctx,"sine_input", 0.2,0.1,0.0);
-    // ih->update(time);                                              
-    ih->update(0.0);    
 
     // reset all monitors:
     ctx->resetMonitors();
@@ -387,8 +408,15 @@ void etaslNode::configure_etasl(){
      * Initialization
      ***************************************************/    
     // initial input (e.g. robot joints) is used for initialization.                
-    
     this->initialize_feature_variables();
+
+      /****************************************************
+     * Update input handlers (i.e. read values for solver initialization)
+     ***************************************************/
+    for (auto h : inputhandlers) {
+        h->update(time, jnames_in_expr, jpos_ros, fnames, fpos_etasl);
+    }
+
 
     // Prepare the solver for execution, define output variables for both robot joints and feature states: 
     slv->setTime(0.0);
@@ -403,7 +431,6 @@ void etaslNode::configure_etasl(){
 
     //obs = create_default_observer(ctx,"exit",obs);
     ctx->addDefaultObserver(obs);
-    // TODO: Create debug observer, such that it logs slv related data when triggered
 
     // fvelocities.resize( fnames.size() ); 
     // fvelocities = Eigen::VectorXd::Zero( fnames.size() );
@@ -422,24 +449,8 @@ void etaslNode::configure_etasl(){
         std::stringstream message2;
         message2 << "The initial state of the solver is: " << state.transpose();
         RCUTILS_LOG_INFO_NAMED(get_name(), (message2.str()).c_str());
-
     }
 
-    // initialize our outputhandler:
-    // std::ofstream outpfile(outpfilename);
-
-    outpfilename = this->get_parameter("outpfilename").as_string();
-    outpfile_ptr = boost::make_shared<std::ofstream>(outpfilename);
-    
-    
-    oh->printHeader(*outpfile_ptr);
-
-    // std::vector<std::string> hello;
-    // slv->getJointNameVector(hello);
-    //   std::cout << "------------" << "THe jointnames are: "<< std::endl;
-    //   for (unsigned int i=0;i<hello.size();++i) {
-    //     std::cout << "------------" << hello[i] << std::endl;
-    // } 
 
 }
 
@@ -453,20 +464,14 @@ int etaslNode::get_periodicity_param()
 
 
 
-
-// TODO: use the following to map jointnames and jvalues. Found in https://etasl.pages.gitlab.kuleuven.be/etasl-api-doc/api/etasl-rtt/solver__state_8hpp_source.html
-// void etaslNode::setJointValues(const std::vector<double>& jval, const std::vector<std::string>& jvalnames) {
-//     assert( jval.size() == jvalnames.size() );
-//     for (int i=1;i<jvalnames.size();++i) {
-//         std::map< std::string, int>::iterator it=jindex.find( jvalnames[i] );
-//         if (it!=jindex.end()) {
-//             jvalues[it->second] = jval[i];
-//         } 
-//     }     
-// }
-
 void etaslNode::update()
-{
+{       
+        // gets inputs, this can includes joint values in jpos,
+        // which will be overwritten if used.
+        for (auto& h : inputhandlers) {
+            // TODO: Check if jpos_ros or jpos_etasl should be used
+            h->update(time, jnames_in_expr, jpos_ros, fnames, fpos_etasl);
+        }
 
         // check monitors:
         ctx->checkMonitors();
@@ -486,26 +491,10 @@ void etaslNode::update()
             return;
             // break;
         }
-         // integrate previous outputs:
-        //  For real robot, instead of integrating use the following function:
-        // etaslNode::update_controller_input(Eigen::VectorXd const& jvalues_meas);
 
-
-      // for (unsigned int i=0;i<jnames_in_expr.size();++i) {
-      //     std::map<std::string,int>::iterator p = jindex.find(jnames_in_expr[i]);
-      //     // std::cout << "p->second:  " << p->second << std::endl;
-      //     if (p!=jindex.end() && i<jpos_etasl.size()) {
-      //         jpos_ros[p->second] = jpos_etasl[i];
-      //     }
-      // } 
       update_controller_output(jpos_etasl);
-        // std::cout << jpos_ros[0] << std::endl;
        
-
-        // get inputs and store them into the context ctx:
-        ih->update(time);
-        // handle outputs and display them:
-        oh->printOutput(*outpfile_ptr);            
+         
         // set states:
         slv->setTime(time);
         slv->setJointStates(jpos_etasl);
@@ -516,7 +505,8 @@ void etaslNode::update()
 
             std::string message = "The solver encountered the following error : \n" + slv->errorMessage(c);
             RCUTILS_LOG_ERROR_NAMED(get_name(), message.c_str());
-            rclcpp::shutdown();
+            auto transition = this->shutdown(); //calls on_shutdown() hook.
+            // this->safe_shutdown();
             return;
             // break;
         }
@@ -524,12 +514,38 @@ void etaslNode::update()
         slv->getJointVelocities(jvel_etasl);
         slv->getFeatureVelocities(fvel_etasl);
 
-        jpos_etasl += jvel_etasl*(periodicity_param/1000.0);  // or replace with reading joint positions from real robot
-        fpos_etasl += fvel_etasl*(periodicity_param/1000.0);  // you always integrate feature variables yourself
-        time += (periodicity_param/1000.0);       // idem.
+        update_robot_status();
 
+
+        for (auto& h : outputhandlers) {
+            // TODO: Check if jpos_ros or jpos_etasl should be used
+            h->update(jnames_in_expr, jpos_ros, jvel_etasl, fnames, fpos_etasl, fvel_etasl);
+        }
         // std::cout << "jointpos:" << jpos_etasl.transpose() << std::endl;
+}
 
+void etaslNode::update_robot_status(){
+
+    // jpos_etasl += jvel_etasl*(periodicity_param/1000.0);  // or replace with reading joint positions from real robot
+    fpos_etasl += fvel_etasl*(periodicity_param/1000.0);  // you always integrate feature variables yourself
+    time += (periodicity_param/1000.0);       // idem.
+
+    feedback_shared_ptr->mtx.lock();
+    setpoint_shared_ptr->mtx.lock();
+
+    assert(feedback_shared_ptr->joint.pos.data.size() == jvel_etasl.size());
+    assert(setpoint_shared_ptr->velocity.data.size() == jvel_etasl.size());
+
+    setpoint_shared_ptr->velocity.fs = etasl::NewData;
+    for (unsigned int i=0; i<jvel_etasl.size(); ++i) {
+      setpoint_shared_ptr->velocity.data[i] = jvel_etasl[i];
+      jpos_etasl[i] = feedback_shared_ptr->joint.pos.data[i];
+    // TODO: retrieve other feedback values into a structure saved locally in this thread
+    }
+
+
+    feedback_shared_ptr->mtx.unlock();
+    setpoint_shared_ptr->mtx.unlock();
 }
 
 void etaslNode::reinitialize_data_structures() {
@@ -543,9 +559,7 @@ void etaslNode::reinitialize_data_structures() {
 
     solver_registry.reset();
     // registerSolverFactory_qpOases(solver_registry, "qpoases");
-    outpfile_ptr.reset();
-    ih.reset();
-    oh.reset();
+
 
     time = 0.0;
     fpos_etasl = VectorXd::Zero(0);
@@ -554,15 +568,119 @@ void etaslNode::reinitialize_data_structures() {
 
     jointnames.clear();
     jnames_in_expr.clear();
-    outpfile_ptr.reset();
 
     jindex.clear();
     name_ndx.clear();
+    fnames.clear();
+
+    // inputhandlers.clear();
+    // outputhandlers.clear();
+    // ih_initialized.clear();
+
     
 }
 
+bool etaslNode::initialize_input_handlers(){
+
+    RCUTILS_LOG_INFO_NAMED(get_name(), "Initializing input handlers...");
+    for (auto& h : inputhandlers) {
+        std::stringstream message;
+        message << "Initializing input handler:" <<  h->getName();
+        RCUTILS_LOG_INFO_NAMED(get_name(), (message.str()).c_str());
+
+        h->initialize(ctx, jnames_in_expr, fnames, jpos_ros, fpos_etasl);
+    }
+    RCUTILS_LOG_INFO_NAMED(get_name(), "finished initializing input handlers");
+
+    return true;
+}
 
 
+bool etaslNode::initialize_output_handlers(){
+    // initialize output-handlers
+    RCUTILS_LOG_INFO_NAMED(get_name(), "Initializing output handlers...");
+    for (auto& h : outputhandlers) {
+        std::stringstream message;
+        message << "Initializing output handler:" <<  h->getName();
+        RCUTILS_LOG_INFO_NAMED(get_name(), (message.str()).c_str());
+        RCUTILS_LOG_INFO_NAMED(get_name(), "helloo1");
+
+        h->initialize(ctx, jnames_in_expr, fnames);
+        RCUTILS_LOG_INFO_NAMED(get_name(), "helloo2");
+    }
+    RCUTILS_LOG_INFO_NAMED(get_name(), "finished initializing output handlers");
+    return true;
+}
+
+void etaslNode::construct_node(){
+    
+
+    Json::Value param = board->getPath("/default-etasl", false);
+
+    jointnames.clear();
+    for (auto n : param["robotdriver"]["joint_names"]) {
+        jointnames.push_back(n.asString());
+    }
+
+    feedback_shared_ptr = boost::make_shared<etasl::FeedbackMsg>(jointnames.size());
+    setpoint_shared_ptr = boost::make_shared<etasl::SetpointMsg>(jointnames.size());
+
+    /****************************************************
+    * Registering factories
+    ***************************************************/
+   register_factories();
+
+    /****************************************************
+    * Adding Robot Driver
+    ***************************************************/
+    RCUTILS_LOG_INFO_NAMED(get_name(), "register_output_handler");
+    // TODO: add info about the output handler added (e.g. p[is-...] and p[topic-name])
+
+    // driver_loader = boost::make_shared<pluginlib::ClassLoader<etasl::RobotDriver>>("etasl_ros2", "etasl::RobotDriver");
+    // try
+    // {
+    //   // if (driver_loader->isClassAvailable("etasl::TemplateDriverEtasl"))
+    //   // {
+    //   //   robotdriver = driver_loader->createSharedInstance("etasl::TemplateDriverEtasl");
+    //   // }
+    //   robotdriver = driver_loader->createSharedInstance("etasl::TemplateDriverEtasl");
+    //   // robotdriver = driver_loader->createSharedInstance("etasl::KukaIiwaRobotDriver");
+
+    // }
+    // catch(pluginlib::PluginlibException& ex)
+    // {
+    //   // printf("The plugin failed to load for some reason. Error: %s\n", ex.what());
+
+    //   std::string message = "The plugin failed to load. Error: \n" + std::string(ex.what());
+    //   RCUTILS_LOG_ERROR_NAMED(get_name(), message.c_str());
+
+    //   auto transition = this->shutdown(); //calls on_shutdown() hook.
+    //   return;
+    // }
+    // robotdriver->construct("templateetasldriver", feedback_shared_ptr.get(), setpoint_shared_ptr.get(), param["robotdriver"]);
+
+  
+
+    robotdriver = etasl::Registry<etasl::RobotDriverFactory>::create(param["robotdriver"]);
+    
+
+
+    /****************************************************
+    * Adding input and output handlers from the read JSON file 
+    ***************************************************/
+    for (const auto& p : param["outputhandlers"]) {
+        RCUTILS_LOG_INFO_NAMED(get_name(), "register_output_handler");
+        outputhandlers.push_back(etasl::Registry<etasl::OutputHandlerFactory>::create(p));
+    }
+    for (const auto& p : param["inputhandlers"]) {
+        RCUTILS_LOG_INFO_NAMED(get_name(), "register_input_handler");
+        inputhandlers.push_back(etasl::Registry<etasl::InputHandlerFactory>::create(p));
+        ih_initialized.push_back(false);
+    }  
+
+    robotdriver->initialize();
+
+}
 
 
  /// Transition callback for state configuring
@@ -576,7 +694,7 @@ void etaslNode::reinitialize_data_structures() {
    * TRANSITION_CALLBACK_FAILURE transitions to "unconfigured"
    * TRANSITION_CALLBACK_ERROR or any uncaught exceptions to "errorprocessing"
    */
-  lifecycle_return etaslNode::on_configure(const rclcpp_lifecycle::State &)
+  lifecycle_return etaslNode::on_configure(const rclcpp_lifecycle::State & state)
   {
     // This callback is supposed to be used for initialization and
     // configuring purposes.
@@ -588,14 +706,28 @@ void etaslNode::reinitialize_data_structures() {
     // available.
 
 
-
-
-    joint_state_msg = sensor_msgs::msg::JointState();
+ // This still needs to be here and cannot be moved to construct_node() function because of the routine for verifying the joints in the expression. That routine should change 
     if(!first_time_configured){
-      joint_pub_ = this->create_publisher<sensor_msgs::msg::JointState>("joint_states", 1); //queue_size 1 so that it sends the latest always
-      timer_ = this->create_wall_timer(std::chrono::milliseconds(periodicity_param), std::bind(&etaslNode::publishJointState, this));
-      jpos_init = VectorXd::Zero(6);
-      jpos_init << 180.0/180.0*3.1416, -90.0/180.0*3.1416, 90.0/180.0*3.1416, -90.0/180.0*3.1416, -90.0/180.0*3.1416, 0.0/180.0*3.1416;
+      timer_ = this->create_wall_timer(std::chrono::milliseconds(periodicity_param), std::bind(&etaslNode::update, this));
+
+      std::vector<double> jpos_init_vec;
+      feedback_shared_ptr->mtx.lock();
+      jpos_init_vec.resize(feedback_shared_ptr->joint.pos.data.size(),0.0);
+      for(unsigned int i = 0; i < feedback_shared_ptr->joint.pos.data.size(); ++i){
+        jpos_init_vec[i] = feedback_shared_ptr->joint.pos.data[i];
+      }
+      feedback_shared_ptr->mtx.unlock();
+
+      jpos_init = VectorXd::Zero(jpos_init_vec.size());
+      for (unsigned int i = 0; i < jpos_init_vec.size(); ++i) {
+        jpos_init[i] = jpos_init_vec[i];
+      }
+      
+      // jpos_init << 180.0/180.0*3.1416, -90.0/180.0*3.1416, 90.0/180.0*3.1416, -90.0/180.0*3.1416, -90.0/180.0*3.1416, 0.0/180.0*3.1416;
+      
+      this->initialize_input_handlers();
+      this->initialize_output_handlers();
+
     }
     else{
       jpos_init = jpos_etasl;
@@ -604,8 +736,14 @@ void etaslNode::reinitialize_data_structures() {
   
     
     timer_->cancel();
+
+
     this->configure_etasl();
-    this->configure_jointstate_msg();
+
+    // std::cout << "The time is:" << std::endl;
+    // auto timeee = ctx->getOutputExpression<double>("time");
+    // std::cout << timeee->value() << std::endl;
+
 
 
     RCUTILS_LOG_INFO_NAMED(get_name(), "on_configure() is called.");
@@ -618,6 +756,8 @@ void etaslNode::reinitialize_data_structures() {
     // this callback, the state machine transitions to state "errorprocessing".
     
     first_time_configured = true;
+    is_configured = true;
+
     return lifecycle_return::SUCCESS;
   }
 
@@ -638,11 +778,25 @@ void etaslNode::reinitialize_data_structures() {
     // Starting from this point, all messages are no longer
     // ignored but sent into the network.
 
-    // TODO: Only allow transitions from configure, and not from deactivate
+    if (!is_configured){
+          RCUTILS_LOG_ERROR_NAMED(get_name(), "The node be activated immediatly after calling lifecycle deactivate or lifecycle cleanup. The node must be configured with lifecycle configure first.");
+          return lifecycle_return::FAILURE;
+    }
 
-    // std::cout << "hello1" << std::endl;
+    RCUTILS_LOG_INFO_NAMED(get_name(), "Entering on activate.");
+
     timer_->reset();
-    joint_pub_->on_activate();
+
+    robotdriver->on_activate();
+    RCUTILS_LOG_INFO_NAMED(get_name(), "Entering on activate for input handlers.");
+    for (auto& h : inputhandlers) {
+        h->on_activate(ctx, jnames_in_expr, fnames);
+    }
+    RCUTILS_LOG_INFO_NAMED(get_name(), "Entering on activate for output handlers.");
+    for (auto& h : outputhandlers) {
+        h->on_activate(ctx, jnames_in_expr, fnames);
+    }
+
     //     std::cout << "hello2" << std::endl;
     // std::cout <<"The current state label is:" << state.label() << std::endl;
     // std::cout <<"The current state id is:" << state.id() << std::endl;
@@ -684,14 +838,33 @@ void etaslNode::reinitialize_data_structures() {
     // We explicitly deactivate the lifecycle publisher.
     // Starting from this point, all messages are no longer
     // sent into the network.
-    joint_pub_->on_deactivate();
+    
     timer_->cancel();
 
-    jvel_etasl = VectorXd::Zero(slv->getNrOfJointStates()); //Sets joint velocities to zero
-    fvel_etasl  = VectorXd::Zero(slv->getNrOfFeatureStates()); //Sets feature variables to zero
+    jvel_etasl.setZero(); //Sets joint velocities to zero
+    fvel_etasl.setZero(); //Sets feature variables to zero
+
+    update_robot_status(); //Updates structures that the robot thread reads from shared memory, ensuring zero velocities
+
+    robotdriver->on_deactivate();
+    for (auto& h : inputhandlers) {
+        h->on_deactivate(ctx);
+    }
+    for (auto& h : outputhandlers) {
+        h->on_deactivate(ctx);
+    }
+
+    // for (auto& h : inputhandlers) {
+    //     h->finalize();
+    // }
+    // for (auto& h : outputhandlers) {
+    //     h->finalize();
+    // }
 
 
     RCUTILS_LOG_INFO_NAMED(get_name(), "on_deactivate() is called.");
+
+    is_configured = false; //To indicate that it has not being configured after deactivating node
 
     // We return a success and hence invoke the transition to the next
     // step: "inactive".
@@ -713,16 +886,28 @@ void etaslNode::reinitialize_data_structures() {
    * TRANSITION_CALLBACK_FAILURE transitions to "inactive"
    * TRANSITION_CALLBACK_ERROR or any uncaught exceptions to "errorprocessing"
    */
-  lifecycle_return etaslNode::on_cleanup(const rclcpp_lifecycle::State &)
+  lifecycle_return etaslNode::on_cleanup(const rclcpp_lifecycle::State & state)
   {
     // In our cleanup phase, we release the shared pointers to the
     // timer and publisher. These entities are no longer available
     // and our node is "clean".
+    jvel_etasl.setZero(); //Sets joint velocities to zero
+    fvel_etasl.setZero(); //Sets feature variables to zero
+
+    robotdriver->on_cleanup();
+    for (auto& h : inputhandlers) {
+        h->on_cleanup(ctx);
+    }
+    for (auto& h : outputhandlers) {
+        h->on_cleanup(ctx);
+    }
+
     timer_->cancel();
-    // joint_pub_.reset();
     this->reinitialize_data_structures();
 
     RCUTILS_LOG_INFO_NAMED(get_name(), "on cleanup is called.");
+
+    is_configured = false; //To indicate that it has not being configured after cleanup node
 
     // We return a success and hence invoke the transition to the next
     // step: "unconfigured".
@@ -732,6 +917,9 @@ void etaslNode::reinitialize_data_structures() {
     // this callback, the state machine transitions to state "errorprocessing".
     return lifecycle_return::SUCCESS;
   }
+
+  // on_shutdown is only called when calling shutdown() method and not when closing program e.g. with ctrl+c.
+  // Its kind of useless...
 
   /// Transition callback for state shutting down
   /**
@@ -746,14 +934,14 @@ void etaslNode::reinitialize_data_structures() {
    */
   lifecycle_return etaslNode::on_shutdown(const rclcpp_lifecycle::State & state)
   {
+    
     // In our shutdown phase, we release the shared pointers to the
     // timer and publisher. These entities are no longer available
     // and our node is "clean".
-    timer_->cancel();
-    // joint_pub_->cancel();
 
-    RCUTILS_LOG_INFO_NAMED(get_name(), "on shutdown is called from state %s.", state.label().c_str());
+    RCUTILS_LOG_INFO_NAMED(get_name(), "on_shutdown() is called from state %s.", state.label().c_str());
 
+    this->safe_shutdown();
     // We return a success and hence invoke the transition to the next
     // step: "finalized".
     // If we returned TRANSITION_CALLBACK_FAILURE instead, the state machine
@@ -763,6 +951,67 @@ void etaslNode::reinitialize_data_structures() {
     return lifecycle_return::SUCCESS;
   }
 
+
+  /**
+   * @brief Performs a safe shutdown, mainly calling all finalize methods of IO handlers and robot drviers
+   * This function is passed as a callback function to 
+   * @return (void)
+   */
+  void etaslNode::safe_shutdown(){
+    // RCUTILS_LOG_INFO_NAMED(get_name(), "Program shutting down safely.");
+
+    std::cout << "Program shutting down safely." << std::endl;
+
+    if (robotdriver!=nullptr){
+      robotdriver->finalize();
+    }
+    for (auto& h : inputhandlers) {
+        h->finalize();
+    }
+    for (auto& h : outputhandlers) {
+        h->finalize();
+    }
+    
+
+    // std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+
+    // rclcpp::shutdown(); 
+  }
+
+  void etaslNode::register_factories(){
+        // The following registers each factory. If you don't declare this, the program will not be able to create objects from
+    // such factory when specified in the JSON files.
+    // etasl::registerQPOasesSolverFactory();
+    etasl::registerTopicOutputHandlerFactory(shared_from_this()); 
+    // etasl::registerFileOutputHandlerFactory();
+    etasl::registerJointStateOutputHandlerFactory(shared_from_this());
+    // etasl::registerTopicInputHandlerFactory(shared_from_this());
+    // etasl::registerTFOutputHandlerFactory(shared_from_this());
+    etasl::registerTwistInputHandlerFactory(shared_from_this());
+    etasl::registerSimulationRobotDriverFactory(feedback_shared_ptr.get(), setpoint_shared_ptr.get());
+    // etasl::registerKukaIiwaRobotDriverFactory(feedback_shared_ptr.get(), setpoint_shared_ptr.get());
+
+  }
+
+  boost::shared_ptr<t_manager::thread_t> etaslNode::create_thread_str(std::atomic<bool> & stopFlag){
+    
+
+    Json::Value param = board->getPath("/default-etasl", false);
+    double periodicity = param["robotdriver"]["periodicity"].asDouble();
+
+    thread_str_driver = boost::make_shared<t_manager::thread_t>();
+
+    
+      thread_str_driver->periodicity = std::chrono::nanoseconds(static_cast<long long>(periodicity * 1E9)); //*1E9 to convert seconds to nanoseconds
+      // thread_str_driver->periodicity = std::chrono::milliseconds(10);
+      thread_str_driver->update_hook = std::bind(&etasl::RobotDriver::update, robotdriver, std::ref(stopFlag));
+      thread_str_driver->finalize_hook = std::bind(&etasl::RobotDriver::finalize, robotdriver);
+    
+
+
+    return thread_str_driver;
+
+  }
 
 
 int main(int argc, char * argv[])
@@ -775,44 +1024,37 @@ int main(int argc, char * argv[])
 
     // Initialize node
     rclcpp::init(argc, argv);
-    rclcpp::executors::StaticSingleThreadedExecutor executor;
+
 
     std::shared_ptr<etaslNode> my_etasl_node = std::make_shared<etaslNode>("etasl_node");
-    
+    // auto my_etasl_node = std::make_shared<etaslNode>("etasl_node");
+
+
+    my_etasl_node->construct_node();
+
+
+    std::atomic<bool> stopFlag(false); 
+
+    boost::shared_ptr<t_manager::thread_t> thread_str_driver = my_etasl_node->create_thread_str(stopFlag);
+
+    std::thread driver_thread(t_manager::do_thread_loop, thread_str_driver, std::ref(stopFlag));
+    driver_thread.detach();// Avoids the main thread to block. See spin() + stopFlag mechanism below.
+
+
+    rclcpp::ExecutorOptions options;
+    options.context = my_etasl_node->get_node_base_interface()->get_context(); //necessary to avoid unexplainable segmentation fault from the ros rclcpp library!!!
+    rclcpp::executors::SingleThreadedExecutor executor(options);
     executor.add_node(my_etasl_node->get_node_base_interface());
+    executor.spin(); //This method blocks!
 
+    stopFlag.store(true); //Stops execution of driver_thread after executor is interrupted with ctr+c signal
 
-    // Preparation for control loop
-    // int periodicity_param = my_etasl_node->get_periodicity_param();
-    // const std::chrono::nanoseconds periodicity = std::chrono::milliseconds(periodicity_param);
-    // std::chrono::steady_clock::time_point  end_time_sleep = std::chrono::steady_clock::now() + periodicity;
+    std::this_thread::sleep_for(std::chrono::milliseconds(200)); //Needed for the robotdriver thread to stop properly before calling shutdown. Otherwise segmentation fault is observed. This is because shutdown deletes something from the robotdriver as now ros2 pluginlib is being used.
+    
+    executor.remove_node(my_etasl_node->get_node_base_interface());
 
-
-    executor.spin();
-    /****************************************************
-    * Control loop 
-    ***************************************************/
-    // while (rclcpp::ok()) {
- 
-    //     my_etasl_node->update();
-    //     // if you need to send output to a robot, do it here, using jvel_etasl or jpos_etasl
-    //     my_etasl_node->publishJointState();
-    //     // rclcpp::spin(my_etasl_node);
-    //     // rclcpp::spin_some(my_etasl_node);//TODO: change to executor::spin_some()
-    //     executor.spin_some();//TODO: change to executor::spin_some()
-
-    //     std::this_thread::sleep_until(end_time_sleep);
-    //     // TODO: The following while might not be needed. Now it never gets executed.
-    //     while ( std::chrono::steady_clock::now() < end_time_sleep || errno == EINTR ) { // In case the sleep was interrupted, continues to execute it
-    //         errno = 0;
-    //         std::this_thread::sleep_until(end_time_sleep);
-    //         std::cout << "Needed some extra time"<< std::endl; //Temporarily placed for debugging
-    //     }
-    //     end_time_sleep = std::chrono::steady_clock::now() + periodicity; //adds periodicity
-    // }
-
-    RCUTILS_LOG_INFO_NAMED(my_etasl_node->get_name(), "Program terminated correctly.");
     rclcpp::shutdown();
 
+    RCUTILS_LOG_INFO("Program terminated correctly.");
   return 0;
 }

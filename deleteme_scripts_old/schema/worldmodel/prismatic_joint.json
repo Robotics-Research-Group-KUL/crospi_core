@@ -1,0 +1,251 @@
+{
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "$id": "./prismatic_joint.json",
+    "title": "Prismatic joint",
+    "description": "Prismatic joint representation in the eTaSL worldmodel",
+    "type": "object",
+    "format": "grid-strict",
+    "id": "conid", 
+    "properties": {
+        "connectiontype": {
+            "type": "string",
+            "enum": [
+                "prismatic"
+            ],
+            "options": {
+                "hidden": true
+            }
+        },
+        "objtype": {
+            "title": "Connection",
+            "type": "string",
+            "enum": [
+                "Connection"
+            ],
+            "options": {
+                "hidden": true
+            }
+        },
+        "name" : {
+            "title" : "Name",
+            "type" : "string",
+            "options": {
+                "hidden": false,
+                "grid_columns": 4
+            }            
+        },
+        "parent" : {
+            "title" : "Parent node",
+            "type" : "string",
+            "options": {
+                "hidden": false,
+                "grid_columns": 4
+            },
+            "watch": {
+                "node": "worldmodel.nodes"
+            },
+            "enumSource": [
+                {
+                    "source": "node",
+                    "value": "{{item.name}}"
+                }
+            ]            
+        },                 
+        "child" : {
+            "title" : "Child node",
+            "type" : "string",
+            "options": {
+                "hidden": false,
+                "grid_columns": 4,
+                "grid_break": true
+            },
+            "watch": {
+                "node": "worldmodel.nodes"
+            },
+            "enumSource": [
+                {
+                    "source": "node",
+                    "value": "{{item.name}}"
+                }
+            ]            
+        },       
+        "origin-orientation" : {
+            "title":"Orientation",
+            "description" : "String representation of orientation of origin frame",
+            "type" : "string",
+            "default" : "EulerZYX(0,0,0)",
+            "options": {
+                "grid_columns": 3
+            }
+        },
+        "origin-position" : {
+            "title": "Position",
+            "description" : "String representation of position of origin frame",
+            "type" : "string",
+            "default" : "[0,0,0]",
+            "options": {
+                "grid_columns": 3
+            }
+        },
+        "origin-string" : {
+            "title" : "Array representation of origin",
+            "type" : "string",
+            "template" : "computePair",
+            "watch": {
+                "expr1": "conid.origin-orientation",
+                "expr2": "conid.origin-position"
+              },
+            "options": {
+                "grid_columns": 6,
+                "grid_break":true,
+                "hidden": false
+            }  
+        },        
+        "origin" : {
+            "title" : "Origin",
+            "type" : "array",
+            "options": {
+                "hidden": true
+            }             
+        },                
+        "axis-expr" : {
+            "title" : "Axis",
+            "description" : "Expression for the axis of the joint (w.r.t. origin frame), will be normalized",
+            "type" : "string",
+            "default" : "[0,0,1]",
+            "options": {
+                "grid_columns": 7,
+                "grid_break": true
+            }            
+        },   
+        "axis" : {
+            "title" : "Axis",
+            "type" : "array",
+            "default" : [0,0,1],
+            "options": {
+                "hidden": true
+            }             
+        },         
+
+        "vars": {
+            "title": "Variable",
+            "type": "array",
+            "$ref": "./variables.json",
+            "minItems": 1,
+            "maxItems": 1,
+            "options": {
+                "grid_columns": 12,
+                "grid_break": true,
+                "compact" : true
+            }
+        },
+        "lower_pos_lim": {
+            "title": "Lowerpos.Limit",
+            "description": "[m]",
+            "type": "number",
+            "default": -3.1416,
+            "options": {
+                "grid_columns": 2
+            }
+        },
+        "upper_pos_lim": {
+            "title": "Upperpos. Limit",
+            "description": "[m]",
+            "type": "number",
+            "default": 3.1416,
+            "options": {
+                "grid_columns": 2
+            }
+        },
+        "K_pos": {
+            "title": "K_pos",
+            "description": "Position control gain[1/s]",
+            "type": "number",
+            "default": 4,
+            "options": {
+                "grid_columns": 3
+            }
+        },
+        "weight_pos": {
+            "title": "Weight Pos.",
+            "type": "number",
+            "default": 1,
+            "options": {
+                "grid_columns": 2
+            }
+        },
+        "priority_pos": {
+            "title": "Priority Pos.",
+            "type": "number",
+            "enum": [
+                0,
+                2
+            ],
+            "default": 0,
+            "options": {
+                "grid_columns": 2,
+                "grid_break": true
+            }
+        },
+        "vel_lim": {
+            "title":"Velocity limit",
+            "description": "Velocity limit >=0, [m/s]",
+            "type": "number",
+            "default": 1,
+            "minimum": 0,
+            "options": {
+                "grid_columns": 3
+            }
+        },
+        "weight_vel": {
+            "title": "Weight vel. limit",
+            "type": "number",
+            "default": 1,
+            "options": {
+                "grid_columns": 3
+            }
+        },
+        "priority_vel": {
+            "title": "Priority vel. limit",
+            "type": "number",
+            "default": 0,
+            "enum": [
+                0,
+                2
+            ],
+            "options": {
+                "grid_columns": 3,
+                "grid_break": true
+            }
+        }
+
+    },
+    "required": [
+        "connectiontype",
+        "objtype",
+        "name",
+        "parent",
+        "child",
+        "origin-orientation" ,
+        "origin-position", 
+        "origin",
+        "origin-string",
+        "axis-expr",
+        "axis",
+        "lower_pos_lim" ,
+        "upper_pos_lim",
+        "K_pos", 
+        "weight_pos",
+        "priority_pos",
+        "vel_lim",
+        "weight_vel",
+        "priority_vel",
+        "vars" 
+    ],
+    "additionalProperties": false,
+    "options": {
+        "disable_collapse": true,
+        "disable_edit_json": true,
+        "disable_properties": true
+    }
+}

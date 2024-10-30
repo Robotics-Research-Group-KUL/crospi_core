@@ -1,0 +1,31 @@
+{
+    "$id": "orientation-rpy.json",
+    "title": "Normalized orientation",
+    "description": "orientation of frame given by roll, pitch, yaw angles",
+    "type": "object",
+    "properties": {
+        "is-rpy" : {
+            "type":"boolean",
+            "default": true
+        },
+        "roll": {
+            "type": "number",
+            "default":0
+        },
+        "pitch": {
+            "type": "number",
+            "default":0
+        },
+        "yaw": {
+            "type": "number",
+            "default":0
+        }
+    },
+    "required": [
+        "roll",
+        "pitch",
+        "yaw"
+    ],
+    "additionalProperties": false,
+    "transform_to": "rpy"
+}

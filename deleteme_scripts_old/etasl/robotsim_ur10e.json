@@ -1,0 +1,18 @@
+{
+    "$schema": "../schema/robot.json",
+    "is-robotsimulator": true,
+    "name": "Simulator_UR10e",
+    "description": "Simple simulator consisting of a pure integrator",
+    "initial_values": {
+        "shoulder_pan_joint": 0,
+        "shoulder_lift_joint": -1.570796326794896619231321691639752,
+        "elbow_joint": 1.570796326794896619231321691639752,
+        "wrist_1_joint": -1.570796326794896619231321691639752,
+        "wrist_2_joint": -1.570796326794896619231321691639752,
+        "wrist_3_joint": 0
+    },
+    "ignore-non-existing-variables": false,
+    "sample_time": 0.005,
+    "input_topicname": "/robsim/input",
+    "output_topicname": "/robsim/output"
+}

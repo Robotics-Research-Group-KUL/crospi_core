@@ -1,0 +1,53 @@
+{
+    "$schema": "http://json-schema.org/draft-04/schema",
+    "$id": "move-circle.json",
+    "title": "Circular trajectory",
+    "description": "Move a robot on a circular trajectory.",
+    "type": "object",
+    "properties": {
+        "$schema": {
+            "type": "string"
+        },
+        "string":{
+            "type":"string",
+            "default":"move-circle"
+        },
+        "task": {
+            "type": "object",
+            "properties": {
+                "radius": {
+                    "description": "radius of the circular trajectory in [m]",
+                    "type": "number"
+                },
+                "velocity": {
+                    "description":"velocity along the circular trajectory in [m/s]",
+                    "type": "number"
+                },
+                "worldmodel": {
+                    "description":"JSON worldmodel describing the robot and its environment",
+                    "type":"string",
+                    "interpolate": true,
+                    "default":"$[etasl_ros2]/scripts/worldmodels/ur10_robot.json"
+                }
+            },
+            "additionalProperties": false,
+            "required": [
+                "radius",
+                "velocity",
+                "worldmodel"
+            ]
+        },
+        "etaslfile": {
+            "description": "etaslfile, you normally leave this to the default",
+            "type": "string",
+            "default": "$[etasl_ros2]/scripts/etasl/move_circle.lua",
+            "interpolate": true
+        },
+        "etasl": {
+            "title": "eTaSL",
+            "description": "optional parameters to tune eTaSL",
+            "$ref": "../etasl.json"
+        }
+    },
+    "additionalProperties": false
+}

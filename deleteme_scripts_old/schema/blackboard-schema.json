@@ -1,0 +1,40 @@
+{
+    "$schema": "http://json-schema.org/schema",
+    "$id": "blackboard-schema.json",
+    "title": "Blackboard",
+    "type": "object",
+    "description": "A blackboard is a place to store in a hierarchical way default values and values that have to be used by more than 1 module",
+    "properties": {
+        "blackboard": {
+            "type": "object",
+            "properties": {
+                "default-etasl": {
+                    "$ref": "../schema/etasl.json"
+                },
+                "default": {
+                    "type": "object",
+                    "properties": {
+                        "maxvel": {
+                            "type": "number"
+                        },
+                        "maxacc": {
+                            "type": "number"
+                        }
+                    },
+                    "additionalProperties":true
+                },
+                "robot-configuration": {
+                    "$ref" : "../schema/robot-configuration.json"
+                }
+            },
+            "required": [
+                "default-etasl",
+                "robot-configuration"
+            ]
+        }
+    },
+    "required": [
+        "blackboard"
+    ],
+    "additionalProperties": true
+}

@@ -1,0 +1,17 @@
+{
+    "$schema": "http://json-schema.org/draft-04/schema",
+    "$id": "inputhandler.json",
+    "title": "Inputhandler",
+    "description": "An inputhandler get information from the outside world and put it into eTaSL",
+    "oneOf": [
+        {
+            "$ref": "topicinputhandler.json"
+        },
+        {
+            "$ref":"jointstateinputhandler.json"
+        },
+        {
+            "$ref":"twistinputhandler.json"
+        }
+    ]
+}

@@ -1,0 +1,75 @@
+{
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "$id": "./sensor.json",
+    "title": "Sensor",
+    "type" : "object",
+    "format" : "grid-strict",
+    "oneOf": [
+        {
+            "title" : "None",
+            "type": "object",
+            "properties": {
+                "sensortype": {
+                    "type": "string",
+                    "enum": [
+                        "None"
+                    ],
+                    "options" : {"hidden":true}
+                }
+            },
+            "required" : [
+                "sensortype"
+            ],
+            "options": {
+                "disable_collapse": true,
+                "disable_edit_json": true
+            },
+            "additionalProperties":false            
+        },
+        {
+            "title" : "Force/Torque",
+            "type": "object",
+            "properties": {
+                "sensortype": {
+                    "type": "string",
+                    "enum": [
+                        "forcetorque"
+                    ],
+                    "options" : {"hidden":true}
+                },
+                "variables" : {
+                    "type" : "array",
+                    "$ref" : "./variables.json",
+                    "minItems" : 6,
+                    "maxItems" : 6,
+                    "default": [
+                        {"name":"Fx","vartype":"input","specification":"Fx"},
+                        {"name":"Fy","vartype":"input","specification":"Fy"},
+                        {"name":"Fz","vartype":"input","specification":"Fz"},
+                        {"name":"Tx","vartype":"input","specification":"Tx"},
+                        {"name":"Ty","vartype":"input","specification":"Ty"},
+                        {"name":"Tz","vartype":"input","specification":"Tz"}
+                    ],
+                    "options": {
+                        "grid_columns":12
+                    }
+                }
+            },
+            "required" : [
+                "sensortype",
+                "variables"
+            ],
+            "options": {
+                "disable_collapse": true,
+                "disable_edit_json": true
+            },
+            "additionalProperties":false
+        }
+    ],
+
+    "options": {
+        "disable_edit_json": true,
+        "disable_collapse": true,
+        "disable_properties":true
+    }
+}

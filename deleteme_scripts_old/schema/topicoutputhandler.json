@@ -1,0 +1,26 @@
+{
+    "$schema":"http://json-schema.org/draft-04/schema",
+    "$id": "topicoutputhandler.json",
+    "type" : "object",
+    "title":"TopicOutputHandler",
+    "description" : "An outputhandler that outputs to a topic",
+    "properties" : {
+        "is-topicoutputhandler" : {
+            "description":"A key to indicate that this describes a TopicOUtputHandler",
+            "type":"boolean"
+        },                            
+        "topic-name" : {
+            "description":"Name of the ROS topic that will serve as output",
+            "type":"string"
+        },
+        "variable-names": {
+            "description":"list of names of output expressions to output",
+            "type":"array",
+            "items": {
+                "type":"string"
+            }
+        }
+    },
+    "required": ["is-topicoutputhandler","topic-name","variable-names"],
+    "additionalProperties" : false
+}

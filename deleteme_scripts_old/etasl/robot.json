@@ -1,0 +1,17 @@
+{
+    "$schema": "../schema/robot-configuration.json",
+    "name": "UR10e",
+    "description" :"UR10 robot",
+    "real_world_time": true,
+    "sample_time": 0.01,
+    "simulation": true,
+    "outputhandlers" : [
+        {
+            "is-topicoutputhandler": true,
+            "topic-name": "ur10",
+            "variable-names": []
+        }
+    ],
+    "inputhandlers": [],
+    "initial_values": {}
+}

@@ -1,0 +1,11 @@
+{
+    "$id":"twist.json",
+    "type":"object",
+    "required": ["linear","angular"],
+    "additionalProperties" : false,
+    "properties" :{
+        "linear" : { "$ref":"screw_linear.json"},
+        "angular" : {"$ref":"screw_angular.json"}
+    },
+    "transform_to" : "twist"
+}

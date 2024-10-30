@@ -1,0 +1,60 @@
+{
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "$id": "./node.json",
+    "type": "object",
+    "format":"grid-strict",
+    "properties": {
+        "name" : {
+            "type":"string",
+            "options" : {
+                "grid_columns" : 4
+            }
+        },    
+        "description": {
+            "type": "string",
+            "options" : {
+                "grid_columns": 8,
+                "grid_break" : true
+            }
+        },
+        "cog-string" : {
+            "title" : "COG",
+            "description" : "string representation of the center of gravity",
+            "type" : "string",
+            "default" : "[0,0,0]",
+            "options" : {
+                "grid_columns" : 6
+            }
+        },
+        "cog" : {
+            "title" : "COG",
+            "type" : "array",
+            "options": {
+                "hidden": true
+            }             
+        }, 
+        "mass" : {
+            "title" : "Mass",
+            "description" : "Mass of the rigid body attached to this node [kg]. For a force/torque sensor, this mass will be on the child side of the force measurement, i.e. the sensor will still be influenced by this mass",
+            "type" : "number",
+            "options" : {
+                "grid_columns" : 6,
+                "grid_break" : true
+            }
+        },
+        "sensor": {
+            "type" : "string",
+            "description" : "Can be nothing or ForceTorque.  The the force/torque sensor measures the forces acting ON the sensor by the children of this node and are expressed in the origin frame.",
+            "$ref" : "./sensor.json",
+            "options" : {
+                "grid_columns" : 12,
+                "grid_break" : true
+            }
+        }        
+    },
+    "options": {
+        "disable_collapse": true,
+        "disable_edit_json": true,
+        "disable_properties": true
+    }
+}

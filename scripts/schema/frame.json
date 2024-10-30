@@ -1,0 +1,11 @@
+{
+    "$id":"frame.json",
+    "type":"object",
+    "required": ["origin","orientation"],
+    "additionalProperties" : false,
+    "properties" :{
+        "origin" : { "$ref":"vector.json"},
+        "orientation" : {"$ref":"orientation.json"}
+    },
+    "transform_to" : "frame"
+}

@@ -1,0 +1,6 @@
+{
+    "$schema": "../schema/default-task.json",
+    "task": {
+        "worldmodel": "$[etasl_ros2]/scripts/worldmodels/ur10_robot.json"
+    }
+}

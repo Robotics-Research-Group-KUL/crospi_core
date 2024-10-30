@@ -1,0 +1,73 @@
+{
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "$id": "./single_variable.json",
+    "title": "Single variable",
+    "description": "DEPRECATED: Single variable controlling the joint",
+    "type": "object",
+    "format": "grid-strict",
+    "properties": {
+        "q": {
+            "title" : "Variable",
+            "type": "object",
+            "format" : "grid-strict",
+            "properties" : {
+                "description" :{
+                    "title":"Description",
+                    "description": "Description (or name of input channel, or expression)",
+                    "type" : "string",
+                    "options": {
+                        "grid_columns": 3
+                    }                    
+                },
+                "objtype" :{
+                    "type":"string",
+                    "enum": [
+                        "VariableDescription"
+                    ],
+                    "options": {
+                        "hidden": true
+                    }                    
+                },
+                "value" :{
+                    "title" : "Value",
+                    "description" : "Initial value for the joint (if not determined by other factors)",
+                    "type" : "number",
+                    "default" : 0,
+                    "options": {
+                        "grid_columns" :3
+                    }                  
+                },
+                "vartype" :{
+                    "title":"Type" ,
+                    "description" : "Type of the variable (robot, feature, or an eTaSL expression",
+                    "type" : "string",
+                    "enum" : ["robot","feature","expression","input"],
+                    "default" : "robot",
+                    "options": {
+                        "grid_columns" :3
+                    }                                      
+                }
+            },
+            "required": [
+                "objtype",
+                "value",
+                "vartype"
+            ],
+            "options": {
+                "disable_collapse": true,
+                "disable_edit_json": true,
+                "disable_properties": true
+            }
+        }
+    },
+    "required": [
+        "q"
+    ],
+    "additionalProperties": false,
+    "options": {
+        "disable_collapse": true,
+        "disable_edit_json": true,
+        "disable_properties": true
+    }
+}
+

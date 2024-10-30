@@ -1,0 +1,51 @@
+{
+    "$schema": "http://json-schema.org/draft-04/schema",
+    "$id": "robotsimulator.json",
+    "title": "Robot Simulator",
+    "description": "Simulator class for a robot",
+    "type": "object",
+    "properties": {
+        "$schema": {
+            "description": "Allows us to indicate the schema in a json data file. Allows editors to support the schema",
+            "type": "string"
+        },
+        "is-robotsimulator": {
+            "description": "A key to indicate that this describes a Robot Simulator",
+            "type": "boolean",
+            "default" : true
+        },
+        "name": {
+            "description": "A name used to describe this robot simulator to the user",
+            "type": "string"
+        },
+        "description": {
+            "description": "Optional description of the robot class",
+            "type" : "string",
+            "default" : ""
+        },
+        "ignore-non-existing-variables": {
+            "description": "If true, non-existing variables will be ignored. If false, an exception will be thrown",
+            "type": "boolean",
+            "default": false
+        },
+        "sample_time": {
+            "description":"Sample frequency of the robot simulator component",
+            "type":"number"
+        },
+        "initial_values": {
+            "title": "Initial values",
+            "description": "Defines both the names of the joint variables and their initial value",
+            "type": "object",
+            "additionalProperties": {
+                "type": "number"
+            }
+        }
+    },
+    "additionalProperties": false,
+    "required": [
+        "is-robotsimulator",
+        "name",
+        "initial_values",
+        "ignore-non-existing-variables"
+    ]
+}
