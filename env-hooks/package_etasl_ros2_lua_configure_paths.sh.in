@@ -1,18 +1,13 @@
 #!/bin/sh
+#
 
-# not necessary anymore, handled by etasl_wrapper
-
-# if [ "x$LUA_PATH" = "x" ]; then
-#    LUA_PATH=";"
-# fi
-
-#export LUA_PATH="$LUA_PATH;/usr/local/share/lua/5.1/?.lua;@CMAKE_CURRENT_SOURCE_DIR@/?.lua;@CMAKE_CURRENT_SOURCE_DIR@/scripts/lib/?.lua"
-#export LUA_CPATH="$LUA_CPATH;/usr/local/lib/lua/?.so"
-
-# ----------- Configuration of LUA_PATH --------------
 if [ "x{$LUA_PATH}x" = "xx" ]; then
    LUA_PATH=";"
 fi
+if [ "x{$LUA_CPATH}x" = "xx" ]; then
+   LUA_CPATH=";"
+fi
+
 
 
 luapath_append ()
@@ -23,24 +18,22 @@ luapath_append ()
     fi
     export LUA_PATH="$LUA_PATH;${1}"
 }
+
+
+luacpath_append ()
+{
+    if echo "$LUA_CPATH" | grep -Eq "(;)${1}(;|$)"
+    then
+        return 0
+    fi
+    export LUA_CPATH="$LUA_CPATH;${1}"
+}
+
+
+
 luapath_append "@CMAKE_CURRENT_SOURCE_DIR@/scripts/lib/?.lua"
 luapath_append "@CMAKE_CURRENT_SOURCE_DIR@/?.lua"
 luapath_append "/usr/local/share/lua/5.1/?.lua"
 
 
-# # ----------- Configuration of LUA_CPATH --------------
-
-# if [ "x{$LUA_CPATH}x" = "xx" ]; then
-#    LUA_CPATH=";"
-# fi
-
-# luaCpath_append ()
-# {
-#     if echo "$LUA_PATH" | grep -Eq "(;)${1}(;|$)"
-#     then
-#         return 0
-#     fi
-#     export LUA_PATH="$LUA_PATH;${1}"
-# }
-
-# luaCpath_append "/usr/local/share/lua/5.1/?.lua"
+luacpath_append "@CMAKE_INSTALL_PREFIX@/lib/?.so"
