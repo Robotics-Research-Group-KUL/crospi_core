@@ -5,23 +5,29 @@
     "properties":{
         "is-jointstateinputhandler" : {
             "description":"To indicate that this describes a jointstate inputhandler",
-            "type":"boolean",
-            "default":true
-        },
-        "topic-name":{
-            "description":"name of the topic to subscribe to",
-            "type":"string"
-        },
-        "number_of_tries" : {
-            "description":"the number of times unsuccesfully initialize() can be called before throwing an error",
-            "type":"number"
-        },
-        "depth" : {
-            "description":"Depth of the topic queue.  In case of multiple sources for the joint values, it can be useful to set a depth larger than 1",
-            "type":"number",
-            "default": 1
+            "enum":[true]
         }
     },
-    "required":["is-jointstateinputhandler","topic-name","number_of_tries","depth"],
-    "additionalProperties": false
+    "required":["is-jointstateinputhandler"],
+    "additionalProperties": true,
+    "dependencies":{
+        "is-jointstateinputhandler":{
+          "required":["topic-name","number_of_tries","depth"],
+          "properties":{
+            "topic-name":{
+                "description":"name of the topic to subscribe to",
+                "type":"string"
+            },
+            "number_of_tries" : {
+                "description":"the number of times unsuccesfully initialize() can be called before throwing an error",
+                "type":"number"
+            },
+            "depth" : {
+                "description":"Depth of the topic queue.  In case of multiple sources for the joint values, it can be useful to set a depth larger than 1",
+                "type":"number",
+                "default": 1
+            }
+          }
+        }
+      }
 }

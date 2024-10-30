@@ -25,10 +25,6 @@
             "outputhandlers": [
                 {
                     "is-jointstateoutputhandler": true,
-                    "topic-name": "/velcmd"
-                },
-                {
-                    "is-jointstateoutputhandler": true,
                     "topic-name": "/joint_states"
                 },
                 {

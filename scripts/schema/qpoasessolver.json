@@ -6,24 +6,31 @@
     "properties" : {
         "is-qpoasessolver" : {
             "description":"key to indicate the QPOases solver will be used (boolean, but value is of no importance)",
-            "type":"boolean"
-        },
-        "nWSR" : {
-            "description":"maximum number of working set recalcuations to be performed during initial homiotopy",
-            "type":"number",
-            "default":100
-        },
-        "regularization_factor": {
-            "description":"regularization factor used in the transcription to a numeric problem.  A higher value lowers joint velocities in the neighbourhoud of singularities, but decreases the adherence to the soft constraints",
-            "type":"number",
-            "default":1E-4
-        },
-        "cputime" : {
-            "description":"maximum allowed CPU time in seconds for the initialisation of QPOases",
-            "type" : "number",
-            "default":100.0
+            "enum":[true]
         }
     },
-    "required": ["nWSR","regularization_factor","cputime"],
-    "additionalProperties" : false
+    "required": ["is-qpoasessolver"],
+    "additionalProperties" : true,
+    "dependencies":{
+        "is-qpoasessolver":{
+          "required":["nWSR","regularization_factor","cputime"],
+          "properties":{
+                "nWSR" : {
+                    "description":"maximum number of working set recalcuations to be performed during initial homiotopy",
+                    "type":"number",
+                    "default":100
+                },
+                "regularization_factor": {
+                    "description":"regularization factor used in the transcription to a numeric problem.  A higher value lowers joint velocities in the neighbourhoud of singularities, but decreases the adherence to the soft constraints",
+                    "type":"number",
+                    "default":1E-4
+                },
+                "cputime" : {
+                    "description":"maximum allowed CPU time in seconds for the initialisation of QPOases",
+                    "type" : "number",
+                    "default":100.0
+                }
+          }
+        }
+      }
 }

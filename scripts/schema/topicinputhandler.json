@@ -6,13 +6,20 @@
     "properties" : {
         "is-topicinputhandler" : {
             "description":"A key to indicate that this describes a TopicInputHandler",
-            "type":"boolean"
-        },                            
-        "topic-name" : {
-            "description":"Name of the ROS topic that will serve as input",
-            "type":"string"
+            "enum":[true]
         }
     },
-    "required": ["is-topicinputhandler","topic-name"],
-    "additionalProperties" : false
+    "required": ["is-topicinputhandler"],
+    "additionalProperties" : true,
+    "dependencies":{
+        "is-topicinputhandler":{
+          "required":["topic-name"],
+          "properties":{
+            "topic-name" : {
+                "description":"Name of the ROS topic that will serve as input",
+                "type":"string"
+            }
+          }
+        }
+      }
 }
