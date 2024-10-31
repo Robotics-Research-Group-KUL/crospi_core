@@ -56,11 +56,12 @@
 #include "etasl_task_utils/fileoutputhandlerfactory.hpp"
 #include "etasl_node_utils/tfoutputhandlerfactory.hpp"
 #include "etasl_node_utils/twistinputhandlerfactory.hpp"
+#include "etasl_node_utils/wrenchinputhandlerfactory.hpp"
 
 
 #include "robot_interfacing_utils/robotdriverfactory.hpp"
 #include "robot_interfacing_utils/simulationrobotdriverfactory.hpp"
-// #include "kuka_iiwa_driver/kukaiiwa_robotdriverfactory.hpp"
+#include "kuka_iiwa_driver/kukaiiwa_robotdriverfactory.hpp"
 #include <pluginlib/class_loader.hpp> //For plugins such as robot drivers
 
 
