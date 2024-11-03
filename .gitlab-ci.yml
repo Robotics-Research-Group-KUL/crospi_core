@@ -1,7 +1,7 @@
 image: python:3.8-buster
 
 before_script:
-  - pip install -r documentation/requirements.txt
+  - pip install -r documentation/docs/readthedocs_custom/requirements.txt
 
 test:
   stage: test

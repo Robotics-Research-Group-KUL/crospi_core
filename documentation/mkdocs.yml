@@ -5,7 +5,7 @@ edit_uri: edit/devel/documentation/docs/
 copyright: "Santiago Iregui and Erwin Aertbeliën, KU Leuven, 2024, <a href='https://etasl.pages.gitlab.kuleuven.be/_static/LICENSE.txt'>GNU Lesser General Public License v3</a>"
 theme:
   name: "readthedocs"
-  custom_dir: 'docs/overrides'
+  custom_dir: 'docs/readthedocs_custom/overrides'
   # name: material
   features: 
     # - content.code.copy
@@ -93,14 +93,15 @@ extra_javascript:
   - https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.10/clipboard.min.js
   - https://unpkg.com/@popperjs/core@2
   - https://unpkg.com/tippy.js@6
-  - javascripts/copy-to-clipboard.js
+  - readthedocs_custom/javascripts/copy-to-clipboard.js
   # - https://unpkg.com/mermaid@10.9.3/dist/mermaid.esm.min.mjs
 
 # The following some style aspects:
 extra_css:
-  - css/extra.css
-  - css/copy-to-clipboard.css
-  - css/navbar.css
+  - readthedocs_custom/css/extra.css
+  - readthedocs_custom/css/copy-to-clipboard.css
+  - readthedocs_custom/css/navbar.css
+  - particularities/css/button_pressed.css #this file should be in each repository that make usage of the buttons
 
 
 #hooks:

@@ -16,7 +16,7 @@ BASE=$(realpath --physical $(dirname "$0"))
 if ! test -d "$BASE/venv"; then
     echo "creating virtual environment..."
     python3 -m venv "$BASE/venv"
-    "$BASE/venv/bin/pip" install -r requirements.txt
+    "$BASE/venv/bin/pip" install -r docs/readthedocs_custom/requirements.txt
 else
     echo "reusing existing virtual environment"
 fi

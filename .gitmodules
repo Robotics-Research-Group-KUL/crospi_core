@@ -1,0 +1,3 @@
+[submodule "documentation/docs/readthedocs_custom"]
+	path = documentation/docs/readthedocs_custom
+	url = git@gitlab.kuleuven.be:rob-expressiongraphs/ros2/readthedocs_custom.git

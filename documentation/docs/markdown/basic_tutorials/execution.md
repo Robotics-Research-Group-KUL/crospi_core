@@ -5,7 +5,6 @@
     This tutorial shows how to execute the etasl_node which is part of the etasl_ros2 package. This node is a [lifecycle node](https://design.ros2.org/articles/node_lifecycle.html), which means that the node is not always active but its state needs to be changed after the node is launched. This tutorial only shows how to properly launch the node in an unconfigured state, and how to change its state is left for the [starting a task](/online_configuration/starting_a_task/#starting-a-task) tutorial.
 
 
-
 In every terminal that you open first run the `ros2_source` command (alias created above) and then source the workspace (`source install/setup.bash`)
 
 !!! note

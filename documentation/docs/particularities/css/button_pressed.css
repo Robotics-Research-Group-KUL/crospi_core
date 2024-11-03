@@ -1,0 +1,8 @@
+.custom-menu .etasl-ros2 {
+    background: #676666; ;
+    /* background: #146397; */
+    -webkit-box-shadow: inset 2px 1px 5px #050505;
+    -moz-box-shadow: inset 2px 1px 5px #050505;
+    box-shadow: inset 2px 1px 5px #050505;
+    outline: none;
+}
