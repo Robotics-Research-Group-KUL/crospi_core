@@ -3,6 +3,10 @@ image: python:3.8-buster
 before_script:
   - pip install -r documentation/docs/readthedocs_custom/requirements.txt
 
+variables:
+  GIT_SUBMODULE_STRATEGY: recursive
+  GIT_SUBMODULE_FORCE_HTTPS: "true"
+
 test:
   stage: test
   script:
