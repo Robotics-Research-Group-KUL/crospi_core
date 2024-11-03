@@ -5,60 +5,52 @@ edit_uri: edit/devel/documentation/docs/
 copyright: "Santiago Iregui and Erwin Aertbeliën, KU Leuven, 2024, <a href='https://etasl.pages.gitlab.kuleuven.be/_static/LICENSE.txt'>GNU Lesser General Public License v3</a>"
 theme:
   name: "readthedocs"
+  custom_dir: 'docs/overrides'
   # name: material
   features: 
     # - content.code.copy
 
 nav:
   - 'Installation':
-    - 'installation/regular_installation.md'
-    - 'installation/docker.md'
+    - 'markdown/installation/regular_installation.md'
+    - 'markdown/installation/docker.md'
   - 'Application Template':
-    - 'template/application_template.md'
+    - 'markdown/template/application_template.md'
   - 'Basic Tutorials':
     - 'Preparing your application':
-      - 'offline_configuration/setup_configuration.md'
-      - 'offline_configuration/skills_configuration.md'
-      - 'offline_configuration/task_parameters.md'
+      - 'markdown/basic_tutorials/setup_configuration.md'
+      - 'markdown/basic_tutorials/skills_configuration.md'
+      - 'markdown/basic_tutorials/task_parameters.md'
     - 'Running the eTaSL lifecycle node':
-      - 'execution/execution.md'
+      - 'markdown/basic_tutorials/execution.md'
     - 'Starting a task':
-      - 'online_configuration/starting_a_task.md'
+      - 'markdown/basic_tutorials/starting_a_task.md'
     - 'Outputting data':
-      - 'outputting_data/monitoring_of_events.md' 
-      - 'outputting_data/task_variables_to_topics.md' 
-      - 'outputting_data/task_variables_to_csv_files.md'
+      - 'markdown/basic_tutorials/monitoring_of_events.md' 
+      - 'markdown/basic_tutorials/task_variables_to_topics.md' 
+      - 'markdown/basic_tutorials/task_variables_to_csv_files.md'
     - 'Inputting data':
-      - 'inputting_data/subscribing_to_ros_topics.md' 
-      - 'inputting_data/intraprocess_communication.md' 
+      - 'markdown/basic_tutorials/subscribing_to_ros_topics.md' 
+      - 'markdown/basic_tutorials/intraprocess_communication.md' 
   - 'Intermediate tutorials':
     - 'Coordinating tasks and other nodes':
-      - 'coordination/fsm_yasmin.md'
-      - 'coordination/action_server.md'
-      - 'coordination/behavior_tree.md' 
+      - 'markdown/intermediate_tutorials/fsm_yasmin.md'
+      - 'markdown/intermediate_tutorials/action_server.md'
+      - 'markdown/intermediate_tutorials/behavior_tree.md' 
     - 'Debugging':
-      - 'debugging/etasl_console.md'
+      - 'markdown/intermediate_tutorials/etasl_console.md'
   - 'Advanced tutorials':
     - 'I/O Handlers':
-      - 'io_handlers/input_handlers.md'
-      - 'io_handlers/output_handlers.md'
+      - 'markdown/advanced_tutorials/input_handlers.md'
+      - 'markdown/advanced_tutorials/output_handlers.md'
     - 'Robot Drivers':
-      - 'robot_drivers/creating_robot_drivers.md'
-      - 'robot_drivers/using_ros_control.md'
+      - 'markdown/advanced_tutorials/creating_robot_drivers.md'
+      - 'markdown/advanced_tutorials/using_ros_control.md'
   - 'Extras':
-    - 'extras/changelog.md'
-    - 'extras/glossary.md'
-    - 'extras/citations.md'
-    - 'extras/how_to_contribute.md'
-    # - 'intro_etasl.md'
-    # - 'python_and_notebook.md'
-    # - 'originaldoc.md'
-  # - 'Documentation':
-  #   - 'Python':
-  #     - 'pytut.md'
-  #     - 'apidoc.md'
-  #   - 'eTaSL':
-  #     - 'Quaternions': 'quaternions.md'
+    - 'markdown/extras/changelog.md'
+    - 'markdown/extras/glossary.md'
+    - 'markdown/extras/citations.md'
+    - 'markdown/extras/how_to_contribute.md'
 
 markdown_extensions:
   - toc:
@@ -83,7 +75,7 @@ markdown_extensions:
   # - pymdownx.tabbed
   - pymdownx.inlinehilite
   - pymdownx.snippets
-  - pymdownx.superfences
+  # - pymdownx.superfences
   - pymdownx.details
     #- nl2br
     ##  - mdx_gh_links:
@@ -103,12 +95,12 @@ extra_javascript:
   - https://unpkg.com/tippy.js@6
   - javascripts/copy-to-clipboard.js
   # - https://unpkg.com/mermaid@10.9.3/dist/mermaid.esm.min.mjs
-  
 
-# The following justifies the text:
+# The following some style aspects:
 extra_css:
   - css/extra.css
   - css/copy-to-clipboard.css
+  - css/navbar.css
 
 
 #hooks:
@@ -127,3 +119,6 @@ extra_css:
 #            show_root_heading: true
 #            show_source: false
 #            show_signature_annotations: true
+
+# watch:
+#   - overrides

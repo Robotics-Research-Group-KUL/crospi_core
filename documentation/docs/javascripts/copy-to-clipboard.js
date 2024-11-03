@@ -1,6 +1,11 @@
 $(document).ready(function() {
     // https://clipboardjs.com/
     var selectors = document.querySelectorAll('pre code');
+    var navbar = document.querySelectorAll('pre wy-nav-content');
+    // var navbarcontent = '<div class="custom-menu"><a href="index.html">Home</a><a href="about.html">About</a><a href="contact.html">Contact</a></div>';
+    // navbar.insertAdjacentHTML('afterbegin', navbarcontent);
+
+
     var copyButton = '<div class="clipboard"><span class="btn btn-neutral btn-clipboard" title="Copy to clipboard">Copy</span></div>';
     Array.prototype.forEach.call(selectors, function(selector){
       selector.insertAdjacentHTML('beforebegin', copyButton);
@@ -26,3 +31,6 @@ $(document).ready(function() {
       setTimeout(function() { tippyInstance.hide(); }, 1000);
     });
   });
+
+
+  
