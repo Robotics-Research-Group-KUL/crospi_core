@@ -1,0 +1,27 @@
+{
+    "$schema": "http://json-schema.org/draft-04/schema",
+    "$id": "lua_robotspecification.json",
+    "type":"object",
+    "additionalProperties": true,
+    "required":["is-lua_robotspecification"],
+    "properties":{
+        "is-lua_robotspecification" : {
+            "description":"To indicate that the robot specification will be declared in a lua file, which enables flexibility for more advanced applications.",
+            "enum":[true]        
+        }
+    },
+    "dependencies":{
+        "is-lua_robotspecification":{
+            "required":["file_path"],
+            "properties":{
+                "file_path" : {
+                    "description":"Path of the LUA file containing the robot specification. Start with $[colcon_package] to make the path relative to a colcon_package, or start with / to make it an absolute path.",
+                    "type":"string",
+                    "pattern": ".*\\.lua$",
+                    "default": "$[etasl_ros2_application_template]/etasl/robot_specifications/ur10.etasl.lua"
+                }
+            }
+        }
+      }
+}
+

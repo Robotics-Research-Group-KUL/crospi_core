@@ -4,18 +4,10 @@
     "title":"eTaSL Parameters",
     "type":"object",
     "description":"Parameters needed to run eTaSL",
+    "required": ["sample_time", "robotspecification","robotdriver"],
     "properties": {
         "$schema" : {
             "type":"string"
-        },
-        "initializer":{
-            "description": "determines how the feature variables are initialized during initialization of an eTaSL execution",
-            "$ref":"initializer.json"
-        },
-        "solver":{
-            "oneOf" : [
-                {"$ref":"qpoasessolver.json"}
-            ]
         },
         "sample_time":{
             "description":"At each sample_time, eTaSL computes new robot joint velocities",
@@ -26,6 +18,25 @@
             "description":"Interval in seconds to report the timing statistics to the console",
             "type" : "number",
             "default": 3
+        },
+        "initializer":{
+            "description": "determines how the feature variables are initialized during initialization of an eTaSL execution",
+            "$ref":"initializer.json"
+        },
+        "solver":{
+            "oneOf" : [
+                {"$ref":"qpoasessolver.json"}
+            ]
+        },
+        "robotdriver": {
+            "title":"Robotdriver",
+            "description":"Robotdriver interfaces robot hardware with eTaSL and runs in a separate thread, communicating with shared memory for reduced latency",
+            "$ref": "robotdriver.json"
+        },
+        "robotspecification": {
+            "title":"robotspecification",
+            "description":"Robot specification that describes the kinematics, jointnames, relevant frames and others",
+            "$ref": "robotspecification.json"
         },
         "outputhandlers": {
             "title":"Outputhandlers",
@@ -42,15 +53,7 @@
             "items" : {
                 "$ref": "inputhandler.json"
             }
-        },
-        "robotdriver": {
-            "title":"Robotdriver",
-            "description":"Robotdriver interfaces robot hardware with eTaSL and runs in a separate thread, communicating with shared memory for reduced latency",
-            "$ref": "robotdriver.json"
         }
     },
-    "required": [
-        "robotdriver"
-    ],
     "additionalProperties":false
 }
