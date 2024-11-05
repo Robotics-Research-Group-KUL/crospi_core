@@ -7,7 +7,8 @@
     "properties":{
         "is-inline_robotspecification" : {
             "description":"To indicate that the robot specification will be declared inline within the JSON configuration file (and not e.g., in an external file).",
-            "enum":[true]        
+            "type":"boolean",
+            "const": true
         }
     },
     "dependencies":{

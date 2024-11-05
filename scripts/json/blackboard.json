@@ -2,7 +2,10 @@
     "$schema": "../schema/blackboard-schema.json",
     "blackboard": {
         "default-etasl": {
-            "sample_time": 0.01,
+            "general": {
+                "event_topic": "etasl/events",
+                "sample_time": 0.01
+            },
             "initializer": {
                 "full": true,
                 "sample_time": 0.01,

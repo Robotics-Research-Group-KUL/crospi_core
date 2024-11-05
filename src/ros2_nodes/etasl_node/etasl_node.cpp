@@ -24,7 +24,6 @@ using namespace Eigen;
 
 etaslNode::etaslNode(const std::string & node_name, bool intra_process_comms = false): rclcpp_lifecycle::LifecycleNode(node_name,
       rclcpp::NodeOptions().use_intra_process_comms(intra_process_comms))
-, periodicity_param(10) //Expressed in milliseconds
 , time(0.0)
 , event_msg(std_msgs::msg::String())
 , event_postfix(get_name())
@@ -37,8 +36,6 @@ etaslNode::etaslNode(const std::string & node_name, bool intra_process_comms = f
   srv_readTaskSpecificationFile_ = create_service<etasl_interfaces::srv::TaskSpecificationFile>("etasl_node/readTaskSpecificationFile", std::bind(&etaslNode::readTaskSpecificationFile, this, std::placeholders::_1, std::placeholders::_2));
 
   srv_readTaskSpecificationString_ = create_service<etasl_interfaces::srv::TaskSpecificationString>("etasl_node/readTaskSpecificationString", std::bind(&etaslNode::readTaskSpecificationString, this, std::placeholders::_1, std::placeholders::_2));
-
-  events_pub_ = this->create_publisher<std_msgs::msg::String>("fsm/events", 10); 
 
   std::string dirPath = this->declare_parameter<std::string>("directory_path", "");
 
@@ -84,6 +81,16 @@ etaslNode::etaslNode(const std::string & node_name, bool intra_process_comms = f
   
   board->load_process_and_validate(dirPath); // Also checks if it is a valid JSON file
   // fmt::print("{:->80}\n", "-");
+
+
+  Json::Value param = board->getPath("/default-etasl", false);
+  periodicity_ms = 1000*param["general"]["sample_time"].asDouble(); //Expressed in milliseconds
+  // periodicity_ms = 10; //Expressed in milliseconds
+
+  // TODO: change the quality of service to transient local and reliable:
+  events_pub_ = this->create_publisher<std_msgs::msg::String>(param["general"]["event_topic"].asString(), 10); 
+  // events_pub_ = this->create_publisher<std_msgs::msg::String>("fsm/events", 10); 
+
 
   std::string message = "\n+++++++++++++++++++++++++++++++++++++++++++++++++\nThe following configuration file was loaded correctly:" + file_path + "\n+++++++++++++++++++++++++++++++++++++++++++++++++";
   RCUTILS_LOG_INFO_NAMED(get_name(), message.c_str());
@@ -276,7 +283,7 @@ void etaslNode::solver_configuration(){
         // this->safe_shutdown();
         return;
     }
-    ctx->setSolverProperty("sample_time", periodicity_param/1000.0);
+    ctx->setSolverProperty("sample_time", periodicity_ms/1000.0);
 
 
     // if (ctx->getSolverProperty("verbose",0.0)>0) {
@@ -458,7 +465,7 @@ void etaslNode::configure_etasl(){
 
 int etaslNode::get_periodicity_param()
 {
-  return periodicity_param;
+  return periodicity_ms;
 }
 
 
@@ -526,9 +533,9 @@ void etaslNode::update()
 
 void etaslNode::update_robot_status(){
 
-    // jpos_etasl += jvel_etasl*(periodicity_param/1000.0);  // or replace with reading joint positions from real robot
-    fpos_etasl += fvel_etasl*(periodicity_param/1000.0);  // you always integrate feature variables yourself
-    time += (periodicity_param/1000.0);       // idem.
+    // jpos_etasl += jvel_etasl*(periodicity_ms/1000.0);  // or replace with reading joint positions from real robot
+    fpos_etasl += fvel_etasl*(periodicity_ms/1000.0);  // you always integrate feature variables yourself
+    time += (periodicity_ms/1000.0);       // idem.
 
     feedback_shared_ptr->mtx.lock();
     setpoint_shared_ptr->mtx.lock();
@@ -708,7 +715,7 @@ void etaslNode::construct_node(){
 
  // This still needs to be here and cannot be moved to construct_node() function because of the routine for verifying the joints in the expression. That routine should change 
     if(!first_time_configured){
-      timer_ = this->create_wall_timer(std::chrono::milliseconds(periodicity_param), std::bind(&etaslNode::update, this));
+      timer_ = this->create_wall_timer(std::chrono::milliseconds(periodicity_ms), std::bind(&etaslNode::update, this));
 
       std::vector<double> jpos_init_vec;
       feedback_shared_ptr->mtx.lock();

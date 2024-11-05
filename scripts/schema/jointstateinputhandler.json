@@ -5,7 +5,8 @@
     "properties":{
         "is-jointstateinputhandler" : {
             "description":"To indicate that this describes a jointstate inputhandler",
-            "enum":[true]
+            "type":"boolean",
+            "const": true
         }
     },
     "required":["is-jointstateinputhandler"],

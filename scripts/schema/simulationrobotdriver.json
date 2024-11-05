@@ -5,7 +5,9 @@
     "properties":{
         "is-simulationrobotdriver" : {
             "description":"To indicate that the task will be executed in simulation, with a virtual robot that integrates joint velocities and gives back joint positions to eTaSL.",
-            "enum":[true]        }
+            "type":"boolean",
+            "const": true
+          }
     },
     "required":["is-simulationrobotdriver"],
     "additionalProperties": true,

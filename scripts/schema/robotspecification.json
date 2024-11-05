@@ -14,7 +14,8 @@
             "properties":{
                 "is-emptyrobotspecification" : {
                     "description":"To indicate no robot specification will be loaded before each task specification. Therefore, the robot definition should be loaded at runtime (only at unconfigured states) by the user. Use this option e.g., if different robot specifications are required for different tasks.",
-                    "enum":[true]        
+                    "type":"boolean",
+                    "const": true        
                 }
             },
             "required":["is-emptyrobotspecification"],

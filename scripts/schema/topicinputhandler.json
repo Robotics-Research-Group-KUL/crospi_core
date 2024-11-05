@@ -6,7 +6,8 @@
     "properties" : {
         "is-topicinputhandler" : {
             "description":"A key to indicate that this describes a TopicInputHandler",
-            "enum":[true]
+            "type":"boolean",
+            "const": true
         }
     },
     "required": ["is-topicinputhandler"],

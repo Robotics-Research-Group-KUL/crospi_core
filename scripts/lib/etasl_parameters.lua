@@ -159,7 +159,7 @@ function write_json_schema(lua_filepath)
     end
     
     local def_properties = {
-        ["is-"..filename_no_ext] = {description="Set to true to indicate that the task specification is defined in: " .. filename_lua .. ". " .. task_description, enum={true}},
+        ["is-"..filename_no_ext] = {description="Set to true to indicate that the task specification is defined in: " .. filename_lua .. ". " .. task_description, type="boolean", const=true},
         -- ["full_path_of-"..filename_no_ext] = {description="Full path of the corresponding task specification", enum={lua_filepath}, default=lua_filepath},
         -- ["dependent-parameters"] = {
         --                             ["description"]="List of parameters that need to be defined at runtime (once) depending on e.g. the outcome of a previous action or the outcome of another module (e.g. in a script). Parameters not included in this list are meant to be defined once before startup (e.g. in a JSON file)",

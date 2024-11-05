@@ -5,7 +5,8 @@
     "properties":{
         "is-twistinputhandler" : {
             "description":"To indicate that this describes a twist inputhandler which reads from a geometry_msgs/Twist Message topic and converts it into a twist etasl expression",
-            "enum":[true]
+            "type":"boolean",
+            "const": true
         }
     },
     "required":["is-twistinputhandler"],

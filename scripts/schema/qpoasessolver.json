@@ -6,7 +6,8 @@
     "properties" : {
         "is-qpoasessolver" : {
             "description":"key to indicate the QPOases solver will be used (boolean, but value is of no importance)",
-            "enum":[true]
+            "type":"boolean",
+            "const": true
         }
     },
     "required": ["is-qpoasessolver"],

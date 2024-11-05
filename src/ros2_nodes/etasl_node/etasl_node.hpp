@@ -135,7 +135,7 @@ class etaslNode : public rclcpp_lifecycle::LifecycleNode
         rclcpp::Publisher<std_msgs::msg::String>::SharedPtr events_pub_;
 
 
-        int periodicity_param; //Expressed in milliseconds
+        int periodicity_ms; //Expressed in milliseconds
         double time;
         std_msgs::msg::String event_msg;
         std::string event_postfix;
