@@ -1,4 +1,4 @@
-site_name: !ENV [VERSION_TITLE, "eTaSL ROS2"]
+site_name: !ENV [VERSION_TITLE, "eTaSL in ROS2"]
 site_description: How to get started with eTaSL in ROS2.
 repo_url: https://gitlab.kuleuven.be/rob-expressiongraphs/ros2/etasl_ros2
 edit_uri: edit/devel/documentation/docs/
