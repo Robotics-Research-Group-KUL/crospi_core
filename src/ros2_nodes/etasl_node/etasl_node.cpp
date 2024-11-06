@@ -31,6 +31,14 @@ etaslNode::etaslNode(const std::string & node_name, bool intra_process_comms = f
 , is_configured(false)
 {
 
+  // Lambda function to handle errors when reading a JSON element from the configuration file
+  std::function<void(const std::string&)> error_callback = [&](const std::string& error_msg) {
+    RCUTILS_LOG_ERROR_NAMED(get_name(), error_msg.c_str());
+    rclcpp::shutdown(); 
+    exit(1); //1 indicates It indicates abnormal termination of a program as a result a minor problem.
+  };
+  jsonchecker = boost::make_shared<etasl::JsonChecker>(error_callback);
+
   srv_etasl_console_ = create_service<std_srvs::srv::Empty>("etasl_node/etasl_console", std::bind(&etaslNode::etasl_console, this, std::placeholders::_1, std::placeholders::_2));
 
   srv_readTaskSpecificationFile_ = create_service<etasl_interfaces::srv::TaskSpecificationFile>("etasl_node/readTaskSpecificationFile", std::bind(&etaslNode::readTaskSpecificationFile, this, std::placeholders::_1, std::placeholders::_2));
@@ -84,7 +92,8 @@ etaslNode::etaslNode(const std::string & node_name, bool intra_process_comms = f
 
 
   Json::Value param = board->getPath("/default-etasl", false);
-  periodicity_ms = 1000*param["general"]["sample_time"].asDouble(); //Expressed in milliseconds
+  // periodicity_ms = 1000*param["general"]["sample_time"].asDouble(); //Expressed in milliseconds
+  periodicity_ms = 1000*jsonchecker->asDouble(param, "general/sample_time"); //Expressed in milliseconds
   // periodicity_ms = 10; //Expressed in milliseconds
 
   // TODO: change the quality of service to transient local and reliable:
@@ -99,6 +108,8 @@ etaslNode::etaslNode(const std::string & node_name, bool intra_process_comms = f
   this->get_node_base_interface()->get_context()->add_pre_shutdown_callback(std::bind( &etaslNode::safe_shutdown, this)); // Adds safe_shutdown as callback before shutting down, e.g. with ctrl+c. This methods returns rclcpp::OnShutdownCallbackHandle shutdown_cb_handle
   // this->get_node_base_interface()->get_context()->add_on_shutdown_callback(std::bind( &etaslNode::safe_shutdown, this)); //Can be used to add callback during shutdown (not pre-shutdown, so publishers and others are no longer available)
   // rclcpp::on_shutdown(std::bind( &etaslNode::safe_shutdown, my_etasl_node)); //Alternative to add_on_shutdown_callback (don't know the difference)
+    
+
 
 }
 
@@ -264,15 +275,22 @@ void etaslNode::solver_configuration(){
 
         std::string solver_name             = "qpoases" ;
         ParameterList plist;
-        plist["nWSR"]                  = param["solver"]["nWSR"].asDouble();
-        plist["regularization_factor"] = param["solver"]["regularization_factor"].asDouble();
-        plist["cputime"] = param["solver"]["cputime"].asDouble();
+        plist["nWSR"]                  = jsonchecker->asDouble(param, "solver/nWSR");
+        // plist["nWSR"]                  = param["solver"]["nWSR"].asDouble();
+        plist["regularization_factor"] = jsonchecker->asDouble(param, "solver/regularization_factor");
+        // plist["regularization_factor"] = param["solver"]["regularization_factor"].asDouble();
+        plist["cputime"] = jsonchecker->asDouble(param, "solver/cputime");
+        // plist["cputime"] = param["solver"]["cputime"].asDouble();
         // parameters of the initialization procedure:
         plist["initialization_full"]                  = int(param["initializer"]["full"].asBool()); // == true
-        plist["initialization_duration"]              = param["initializer"]["duration"].asDouble();
-        plist["initialization_sample_time"]           = param["initializer"]["sample_time"].asDouble();
-        plist["initialization_convergence_criterion"] = param["initializer"]["convergence_criterion"].asDouble();
-        plist["initialization_weightfactor"]          = param["initializer"]["weightfactor"].asDouble();
+        plist["initialization_duration"]              = jsonchecker->asDouble(param, "initializer/duration");
+        // plist["initialization_duration"]              = param["initializer"]["duration"].asDouble();
+        plist["initialization_sample_time"]           = jsonchecker->asDouble(param, "initializer/sample_time");
+        // plist["initialization_sample_time"]           = param["initializer"]["sample_time"].asDouble();
+        plist["initialization_convergence_criterion"] = jsonchecker->asDouble(param, "initializer/convergence_criterion");
+        // plist["initialization_convergence_criterion"] = param["initializer"]["convergence_criterion"].asDouble();
+        plist["initialization_weightfactor"]          = jsonchecker->asDouble(param, "initializer/weightfactor");
+        // plist["initialization_weightfactor"]          = param["initializer"]["weightfactor"].asDouble();
 
 
     int result = solver_registry->createSolver(solver_name, plist, true, false, slv); 
@@ -395,7 +413,8 @@ void etaslNode::configure_etasl(){
 
     jointnames.clear();
     for (auto n : param["robotdriver"]["joint_names"]) {
-        jointnames.push_back(n.asString());
+        // jointnames.push_back(n.asString());
+        jointnames.push_back(jsonchecker->asString(n, ""));
     }
  
     /**
@@ -1004,13 +1023,13 @@ void etaslNode::construct_node(){
     
 
     Json::Value param = board->getPath("/default-etasl", false);
-    double periodicity = param["robotdriver"]["periodicity"].asDouble();
+
+    double periodicity = jsonchecker->asDouble(param, "robotdriver/periodicity");
 
     thread_str_driver = boost::make_shared<t_manager::thread_t>();
 
     
       thread_str_driver->periodicity = std::chrono::nanoseconds(static_cast<long long>(periodicity * 1E9)); //*1E9 to convert seconds to nanoseconds
-      // thread_str_driver->periodicity = std::chrono::milliseconds(10);
       thread_str_driver->update_hook = std::bind(&etasl::RobotDriver::update, robotdriver, std::ref(stopFlag));
       thread_str_driver->finalize_hook = std::bind(&etasl::RobotDriver::finalize, robotdriver);
     
@@ -1019,6 +1038,13 @@ void etaslNode::construct_node(){
     return thread_str_driver;
 
   }
+
+  // bool etaslNode::load_robot_specification(Json::Value const& param ){
+  //   double periodicity = jsonchecker->asDouble(param, "robotdriver/periodicity");
+
+  //   return true;
+  //   // TODO 
+  // }
 
 
 int main(int argc, char * argv[])

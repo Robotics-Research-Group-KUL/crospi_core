@@ -39,6 +39,7 @@ set(src_etasl_task_utils
     qpoasessolverfactory.cpp
     fileoutputhandler.cpp
     fileoutputhandlerfactory.cpp
+    json_checker.cpp
 )
 
 set(rosdependencies 
