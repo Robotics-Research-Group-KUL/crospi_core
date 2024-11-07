@@ -72,14 +72,14 @@ public:
      * @brief create the solver with the given parameters
      *
      */
-    virtual FileOutputHandler::SharedPtr create(const Json::Value& parameters)
+    virtual FileOutputHandler::SharedPtr create(const Json::Value& parameters, boost::shared_ptr<etasl::JsonChecker> jsonchecker)
     {
-        std::string filename = parameters["filename"].asString();
-        bool header = parameters["header"].asDouble();
-        size_t maxlines = parameters["maxlines"].asUInt64();
+        std::string filename = jsonchecker->asString(parameters, "filename");
+        bool header = jsonchecker->asBool(parameters, "header");
+        size_t maxlines = jsonchecker->asUInt64(parameters, "maxlines");
         std::vector<std::string> varnames;
-        for (auto n : parameters["variable-names"]) {
-            varnames.push_back(n.asString());
+        for (auto n : jsonchecker->asArray(parameters, "variable-names")) {
+            varnames.push_back(jsonchecker->asString(n, ""));
         }
         return std::make_shared<FileOutputHandler>(
             filename,

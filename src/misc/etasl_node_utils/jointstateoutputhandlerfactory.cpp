@@ -65,9 +65,9 @@ public:
      * @brief create the solver with the given parameters
      *
      */
-    virtual JointStateOutputHandler::SharedPtr create(const Json::Value& parameters)
+    virtual JointStateOutputHandler::SharedPtr create(const Json::Value& parameters, boost::shared_ptr<etasl::JsonChecker> jsonchecker)
     {
-        std::string topic_name = parameters["topic-name"].asString();
+        std::string topic_name = jsonchecker->asString(parameters, "topic-name");
         return std::make_shared<JointStateOutputHandler>(
             node,
             topic_name);

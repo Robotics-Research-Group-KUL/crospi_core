@@ -76,11 +76,11 @@ public:
      * @brief create the solver with the given parameters
      *
      */
-    virtual KDL::solver::Ptr create(const Json::Value& parameters)
+    virtual KDL::solver::Ptr create(const Json::Value& parameters, boost::shared_ptr<etasl::JsonChecker> jsonchecker)
     {
-        int nWSR = parameters["nWSR"].asInt();
-        double regularization_factor = parameters["regularization_factor"].asDouble();
-        double cputime = parameters["cputime"].asDouble();
+        int nWSR =  jsonchecker->asInt(parameters, "nWSR");
+        double regularization_factor =  jsonchecker->asDouble(parameters, "regularization_factor");;
+        double cputime =  jsonchecker->asDouble(parameters, "cputime");
         return boost::make_shared<KDL::qpOASESSolver>(nWSR, cputime, regularization_factor);
     }
 

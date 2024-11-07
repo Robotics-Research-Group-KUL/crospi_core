@@ -30,7 +30,7 @@ include_directories(include ${LUA_INCLUDE_DIR})
 set(src_etasl_task_utils
     featurevariableinitializer.cpp
     outputhandler.cpp
-    task.cpp
+    # task.cpp
     blackboard.cpp
     printobserver.cpp
     string_interpolate.cpp
