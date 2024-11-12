@@ -5,7 +5,8 @@
     "properties":{
         "is-wrenchinputhandler" : {
             "description":"To indicate that this describes a wrench inputhandler which reads from a geometry_msgs/Wrench Message topic and converts it into a wrench etasl expression",
-            "enum":[true]
+            "type":"boolean",
+            "const": true
         }
     },
     "required":["is-wrenchinputhandler"],

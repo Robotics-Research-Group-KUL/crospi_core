@@ -79,7 +79,7 @@ public:
      * @brief create the solver with the given parameters
      *
      */
-    virtual RobotDriver::SharedPtr create(const Json::Value& parameters)
+    virtual RobotDriver::SharedPtr create(const Json::Value& parameters, boost::shared_ptr<JsonChecker> jsonchecker)
     {
         std::string p_ip_address = parameters["ip_address"].asString();
         
@@ -110,7 +110,7 @@ public:
         //     std::vector<double> init_joints)
 
         auto shared_robot_driv =  std::make_shared<KukaIiwaRobotDriver>();
-        shared_robot_driv->construct(name, feedback_ptr, setpoint_ptr, parameters);
+        shared_robot_driv->construct(name, feedback_ptr, setpoint_ptr, parameters, jsonchecker);
 
         return shared_robot_driv;
     }

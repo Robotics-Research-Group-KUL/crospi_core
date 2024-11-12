@@ -102,28 +102,25 @@ public:
      * @brief create the solver with the given parameters
      *
      */
-    virtual InputHandler::SharedPtr create(const Json::Value& parameters)
+    virtual InputHandler::SharedPtr create(const Json::Value& parameters, boost::shared_ptr<etasl::JsonChecker> jsonchecker)
     {
-        std::string topic_name = parameters["topic-name"].asString();
-        int depth = parameters["depth"].asInt();
-        int nroftries = parameters["number_of_tries"].asInt();
+         std::string topic_name = jsonchecker->asString(parameters, "topic-name");
+        
+        int depth = jsonchecker->asInt(parameters, "depth");
+        int nroftries = jsonchecker->asInt(parameters, "number_of_tries");
 
-        std::string when_unpublished = parameters["when_unpublished"].asString();
+        std::string when_unpublished = jsonchecker->asString(parameters, "when_unpublished");
 
-        std::string varname = parameters["varname"].asString();
+        std::string varname = jsonchecker->asString(parameters, "varname");
 
 
         geometry_msgs::msg::Wrench def_msg;
-        def_msg.force.x = parameters["default_wrench"]["force"]["x"].asDouble();
-        def_msg.force.y = parameters["default_wrench"]["force"]["y"].asDouble();
-        def_msg.force.z = parameters["default_wrench"]["force"]["z"].asDouble();
-        def_msg.torque.x = parameters["default_wrench"]["torque"]["x"].asDouble();
-        def_msg.torque.y = parameters["default_wrench"]["torque"]["y"].asDouble();
-        def_msg.torque.z = parameters["default_wrench"]["torque"]["z"].asDouble();
-
-        // for (auto n : parameters["variable-names"]) {
-        //     varnames.push_back(n.asString());
-        // }
+        def_msg.force.x = jsonchecker->asDouble(parameters, "default_wrench/force/x");
+        def_msg.force.y = jsonchecker->asDouble(parameters, "default_wrench/force/y");
+        def_msg.force.z = jsonchecker->asDouble(parameters, "default_wrench/force/z");
+        def_msg.torque.x = jsonchecker->asDouble(parameters, "default_wrench/torque/x");
+        def_msg.torque.y = jsonchecker->asDouble(parameters, "default_wrench/torque/y");
+        def_msg.torque.z = jsonchecker->asDouble(parameters, "default_wrench/torque/z");
 
         return std::make_shared<WrenchInputHandler>(
             node,
