@@ -17,9 +17,9 @@
                 "cputime": 10
             },
             "robotdriver":{
-                "is-kukaiiwarobotdriver": true,           
-                "fri_port": 30200,
-                "ip_address": "192.170.10.2",
+                "is-simulationrobotdriver": true,
+                "periodicity": 0.01,
+                "initial_joints": [0.5410, 1.2566, -0.4363, -1.344, -0.4363, 0.8726,  0.61],
                 "joint_names": ["right_joint_a1","right_joint_a2","right_joint_a3","right_joint_a4","right_joint_a5","right_joint_a6","right_joint_a7"]
             },
             "outputhandlers": [
