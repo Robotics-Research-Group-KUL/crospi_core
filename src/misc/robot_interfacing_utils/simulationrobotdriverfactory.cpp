@@ -75,15 +75,16 @@ public:
      * @brief create the solver with the given parameters
      *
      */
-    virtual RobotDriver::SharedPtr create(const Json::Value& parameters)
+    virtual RobotDriver::SharedPtr create(const Json::Value& parameters, boost::shared_ptr<etasl::JsonChecker> jsonchecker)
     {
-        double periodicity = parameters["periodicity"].asDouble();
+        double periodicity = jsonchecker->asDouble(parameters, "periodicity");
 
         std::vector<double> init_joints;
         // init_joints.resize(parameters["initial_joints"].size(), 0.0);
-        for (auto n : parameters["initial_joints"]) {
-            init_joints.push_back(n.asDouble());
+        for (auto n : jsonchecker->asArray(parameters, "initial_joints")) {
+            init_joints.push_back(jsonchecker->asDouble(n, ""));
         }
+ 
         std::string name = getName();
 
         // for (auto n : parameters["variable-names"]) {
@@ -99,7 +100,7 @@ public:
 
        auto shared_robot_driv =  std::make_shared<SimulationRobotDriver>();
 
-        shared_robot_driv->construct(name, feedback_ptr, setpoint_ptr, parameters);
+        shared_robot_driv->construct(name, feedback_ptr, setpoint_ptr, parameters, jsonchecker);
 
         return shared_robot_driv;
     }

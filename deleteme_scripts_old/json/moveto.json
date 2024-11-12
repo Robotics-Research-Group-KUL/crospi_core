@@ -1,7 +1,0 @@
-{
-    "$schema":"../schema/moveto-schema.json",
-    "target": {
-        "origin": {"x": 0.1, "y": 0.3,"z": 0.1},
-        "orientation": {"roll":0, "pitch":0,"yaw": 0}
-    }
-}

@@ -6,7 +6,8 @@
     "properties" : {
         "is-jointstateoutputhandler" : {
             "description":"A key value to flag that this describes a JointStateOutputHandler",
-            "enum":[true]
+            "type":"boolean",
+            "const": true
         }
     },
     "required": ["is-jointstateoutputhandler"],

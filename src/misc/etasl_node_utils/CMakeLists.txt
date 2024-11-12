@@ -31,7 +31,7 @@ include_directories(include ${LUA_INCLUDE_DIR})
 
 set( src_etasl_node_utils
     rosloghandler.cpp
-    rostask.cpp
+    # rostask.cpp
 
     topicoutputhandler.cpp
     jointstateoutputhandler.cpp

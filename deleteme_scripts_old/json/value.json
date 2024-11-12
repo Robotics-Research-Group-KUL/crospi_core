@@ -1,6 +1,0 @@
-{
-    "pos" : [0,0,0],
-    "orientation" : [1.0, 0.0, 0.0,0],
-    "solver" : "hqsolver",
-    "topics" : ["/out1","/out2"]
-}

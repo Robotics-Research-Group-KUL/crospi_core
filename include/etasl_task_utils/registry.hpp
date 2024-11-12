@@ -6,6 +6,9 @@
 #include <memory>
 #include <unordered_map>
 #include <sstream>
+#include <boost/shared_ptr.hpp>
+#include "etasl_task_utils/json_checker.hpp"
+
 
 namespace etasl {
 
@@ -68,9 +71,10 @@ public:
      * @param parameters Json::Value parameters. One of the parameters has key "is-<name>" where
      * name corresponds to a name stored in the registry.  The registry uses this to ask the appropriate 
      * factory class to create an instance of the underlying object.
+     * @param jsonchecker Pointer to json checker class which checks and returns json parameters, and handles errors
      * @return
      */
-    static typename Factory::ProductSharedPtr create(const Json::Value& parameters)
+    static typename Factory::ProductSharedPtr create(const Json::Value& parameters, boost::shared_ptr<etasl::JsonChecker> jsonchecker)
     {
         Registry<Factory>& reg = Registry<Factory>::instance();
         for (auto p : parameters.getMemberNames()) {
@@ -85,7 +89,7 @@ public:
                     }
                     throw etasl_error(etasl_error::NOT_REGISTERED, fmt::format("name '{}' whasasa is not registered\n{}", name,ss.str()));
                 }
-                return r->second->create(parameters);
+                return r->second->create(parameters, jsonchecker);
             }
         }
         throw etasl_error(etasl_error::NOT_REGISTERED, "do not know what to create because a key starting with 'is-' is missing");

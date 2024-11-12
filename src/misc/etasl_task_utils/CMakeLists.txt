@@ -30,7 +30,7 @@ include_directories(include ${LUA_INCLUDE_DIR})
 set(src_etasl_task_utils
     featurevariableinitializer.cpp
     outputhandler.cpp
-    task.cpp
+    # task.cpp
     blackboard.cpp
     printobserver.cpp
     string_interpolate.cpp
@@ -39,6 +39,7 @@ set(src_etasl_task_utils
     qpoasessolverfactory.cpp
     fileoutputhandler.cpp
     fileoutputhandlerfactory.cpp
+    json_checker.cpp
 )
 
 set(rosdependencies 

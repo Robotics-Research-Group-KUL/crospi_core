@@ -1,0 +1,21 @@
+{
+    "$id":"general.json",
+    "title":"General parameters",
+    "type":"object",
+    "description" : "General parameters to be used to configure the ROS node.",
+    "properties" : {
+        "sample_time":{
+            "description":"At each sample_time in seconds, eTaSL computes new robot joint velocities",
+            "type":"number",
+            "default":0.01
+        },
+        "event_topic": {
+            "description":"Name of the topic in which string events are going to be published (e.g. when a task finishes)",
+            "type" : "string",
+            "pattern": "^[a-zA-Z0-9_]+(\\/([a-zA-Z0-9_]+))*$",
+            "default": "etasl/events"
+        }
+    },
+    "required": ["sample_time","event_topic"],
+    "additionalProperties" : false
+}

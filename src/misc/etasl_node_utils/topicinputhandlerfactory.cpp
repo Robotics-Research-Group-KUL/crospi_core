@@ -68,12 +68,13 @@ public:
     }
 
     /**
-     * @brief create the solver with the given parameters
+     * @brief create the topic with the given parameters
      *
      */
-    virtual InputHandler::SharedPtr create(const Json::Value& parameters)
+    virtual InputHandler::SharedPtr create(const Json::Value& parameters, boost::shared_ptr<etasl::JsonChecker> jsonchecker)
     {
-        std::string topic_name = parameters["topic-name"].asString();
+        std::string topic_name = jsonchecker->asString(parameters, "topic-name");
+
         return std::make_shared<TopicInputHandler>(
             node,
             topic_name);

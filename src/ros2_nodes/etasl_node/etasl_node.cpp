@@ -24,7 +24,6 @@ using namespace Eigen;
 
 etaslNode::etaslNode(const std::string & node_name, bool intra_process_comms = false): rclcpp_lifecycle::LifecycleNode(node_name,
       rclcpp::NodeOptions().use_intra_process_comms(intra_process_comms))
-, periodicity_param(10) //Expressed in milliseconds
 , time(0.0)
 , event_msg(std_msgs::msg::String())
 , event_postfix(get_name())
@@ -32,13 +31,19 @@ etaslNode::etaslNode(const std::string & node_name, bool intra_process_comms = f
 , is_configured(false)
 {
 
+  // Lambda function to handle errors when reading a JSON element from the configuration file
+  std::function<void(const std::string&)> error_callback = [&](const std::string& error_msg) {
+    RCUTILS_LOG_ERROR_NAMED(get_name(), error_msg.c_str());
+    rclcpp::shutdown(); 
+    exit(1); //1 indicates It indicates abnormal termination of a program as a result a minor problem.
+  };
+  jsonchecker = boost::make_shared<etasl::JsonChecker>(error_callback);
+
   srv_etasl_console_ = create_service<std_srvs::srv::Empty>("etasl_node/etasl_console", std::bind(&etaslNode::etasl_console, this, std::placeholders::_1, std::placeholders::_2));
 
   srv_readTaskSpecificationFile_ = create_service<etasl_interfaces::srv::TaskSpecificationFile>("etasl_node/readTaskSpecificationFile", std::bind(&etaslNode::readTaskSpecificationFile, this, std::placeholders::_1, std::placeholders::_2));
 
   srv_readTaskSpecificationString_ = create_service<etasl_interfaces::srv::TaskSpecificationString>("etasl_node/readTaskSpecificationString", std::bind(&etaslNode::readTaskSpecificationString, this, std::placeholders::_1, std::placeholders::_2));
-
-  events_pub_ = this->create_publisher<std_msgs::msg::String>("fsm/events", 10); 
 
   std::string dirPath = this->declare_parameter<std::string>("directory_path", "");
 
@@ -84,6 +89,13 @@ etaslNode::etaslNode(const std::string & node_name, bool intra_process_comms = f
   
   board->load_process_and_validate(dirPath); // Also checks if it is a valid JSON file
   // fmt::print("{:->80}\n", "-");
+
+
+  Json::Value param = board->getPath("/default-etasl", false);
+  periodicity_ms = 1000*jsonchecker->asDouble(param, "general/sample_time"); //Expressed in milliseconds
+
+  // TODO: change the quality of service to transient local and reliable:
+  events_pub_ = this->create_publisher<std_msgs::msg::String>(jsonchecker->asString(param, "general/event_topic"), 10); 
 
   std::string message = "\n+++++++++++++++++++++++++++++++++++++++++++++++++\nThe following configuration file was loaded correctly:" + file_path + "\n+++++++++++++++++++++++++++++++++++++++++++++++++";
   RCUTILS_LOG_INFO_NAMED(get_name(), message.c_str());
@@ -248,7 +260,7 @@ void etaslNode::solver_configuration(){
         // parameters of the solver:
 
         // TODO: Delete the following after handling solvers with register factory (same as with IO handlers)
-        if (!param["solver"]["is-qpoasessolver"].asBool()){
+        if (!jsonchecker->asBool(param, "solver/is-qpoasessolver")){
           RCUTILS_LOG_ERROR_NAMED(get_name(), "is-qpoasessolver should be true in the JSON definition since currently only qpoases solver is supported.");
           // this->safe_shutdown();
           auto transition = this->shutdown(); //calls on_shutdown() hook.
@@ -257,15 +269,15 @@ void etaslNode::solver_configuration(){
 
         std::string solver_name             = "qpoases" ;
         ParameterList plist;
-        plist["nWSR"]                  = param["solver"]["nWSR"].asDouble();
-        plist["regularization_factor"] = param["solver"]["regularization_factor"].asDouble();
-        plist["cputime"] = param["solver"]["cputime"].asDouble();
+        plist["nWSR"]                  = jsonchecker->asDouble(param, "solver/nWSR");
+        plist["regularization_factor"] = jsonchecker->asDouble(param, "solver/regularization_factor");
+        plist["cputime"] = jsonchecker->asDouble(param, "solver/cputime");
         // parameters of the initialization procedure:
-        plist["initialization_full"]                  = int(param["initializer"]["full"].asBool()); // == true
-        plist["initialization_duration"]              = param["initializer"]["duration"].asDouble();
-        plist["initialization_sample_time"]           = param["initializer"]["sample_time"].asDouble();
-        plist["initialization_convergence_criterion"] = param["initializer"]["convergence_criterion"].asDouble();
-        plist["initialization_weightfactor"]          = param["initializer"]["weightfactor"].asDouble();
+        plist["initialization_full"]                  = int(jsonchecker->asBool(param, "initializer/full")); // == true
+        plist["initialization_duration"]              = jsonchecker->asDouble(param, "initializer/duration");
+        plist["initialization_sample_time"]           = jsonchecker->asDouble(param, "initializer/sample_time");
+        plist["initialization_convergence_criterion"] = jsonchecker->asDouble(param, "initializer/convergence_criterion");
+        plist["initialization_weightfactor"]          = jsonchecker->asDouble(param, "initializer/weightfactor");
 
 
     int result = solver_registry->createSolver(solver_name, plist, true, false, slv); 
@@ -276,7 +288,7 @@ void etaslNode::solver_configuration(){
         // this->safe_shutdown();
         return;
     }
-    ctx->setSolverProperty("sample_time", periodicity_param/1000.0);
+    ctx->setSolverProperty("sample_time", periodicity_ms/1000.0);
 
 
     // if (ctx->getSolverProperty("verbose",0.0)>0) {
@@ -385,10 +397,9 @@ void etaslNode::configure_etasl(){
     // fmt::print("After processing and validating:\n{}", param);
     // fmt::print("{:->80}\n", "-");
 
-
     jointnames.clear();
-    for (auto n : param["robotdriver"]["joint_names"]) {
-        jointnames.push_back(n.asString());
+    for (auto n : jsonchecker->asArray(param, "robotdriver/joint_names")) {
+        jointnames.push_back(jsonchecker->asString(n, ""));
     }
  
     /**
@@ -458,7 +469,7 @@ void etaslNode::configure_etasl(){
 
 int etaslNode::get_periodicity_param()
 {
-  return periodicity_param;
+  return periodicity_ms;
 }
 
 
@@ -526,9 +537,9 @@ void etaslNode::update()
 
 void etaslNode::update_robot_status(){
 
-    // jpos_etasl += jvel_etasl*(periodicity_param/1000.0);  // or replace with reading joint positions from real robot
-    fpos_etasl += fvel_etasl*(periodicity_param/1000.0);  // you always integrate feature variables yourself
-    time += (periodicity_param/1000.0);       // idem.
+    // jpos_etasl += jvel_etasl*(periodicity_ms/1000.0);  // or replace with reading joint positions from real robot
+    fpos_etasl += fvel_etasl*(periodicity_ms/1000.0);  // you always integrate feature variables yourself
+    time += (periodicity_ms/1000.0);       // idem.
 
     feedback_shared_ptr->mtx.lock();
     setpoint_shared_ptr->mtx.lock();
@@ -617,9 +628,14 @@ void etaslNode::construct_node(){
 
     Json::Value param = board->getPath("/default-etasl", false);
 
+    // jointnames.clear();
+    // for (auto n : param["robotdriver"]["joint_names"]) {
+    //     jointnames.push_back(n.asString());
+    // }
+
     jointnames.clear();
-    for (auto n : param["robotdriver"]["joint_names"]) {
-        jointnames.push_back(n.asString());
+    for (auto n : jsonchecker->asArray(param, "robotdriver/joint_names")) {
+        jointnames.push_back(jsonchecker->asString(n, ""));
     }
 
     feedback_shared_ptr = boost::make_shared<etasl::FeedbackMsg>(jointnames.size());
@@ -657,11 +673,11 @@ void etaslNode::construct_node(){
     //   auto transition = this->shutdown(); //calls on_shutdown() hook.
     //   return;
     // }
-    // robotdriver->construct("templateetasldriver", feedback_shared_ptr.get(), setpoint_shared_ptr.get(), param["robotdriver"]);
+    // robotdriver->construct("templateetasldriver", feedback_shared_ptr.get(), setpoint_shared_ptr.get(), param["robotdriver"],jsonchecker);
 
   
 
-    robotdriver = etasl::Registry<etasl::RobotDriverFactory>::create(param["robotdriver"]);
+    robotdriver = etasl::Registry<etasl::RobotDriverFactory>::create(param["robotdriver"],jsonchecker);
     
 
 
@@ -670,11 +686,11 @@ void etaslNode::construct_node(){
     ***************************************************/
     for (const auto& p : param["outputhandlers"]) {
         RCUTILS_LOG_INFO_NAMED(get_name(), "register_output_handler");
-        outputhandlers.push_back(etasl::Registry<etasl::OutputHandlerFactory>::create(p));
+        outputhandlers.push_back(etasl::Registry<etasl::OutputHandlerFactory>::create(p, jsonchecker));
     }
     for (const auto& p : param["inputhandlers"]) {
         RCUTILS_LOG_INFO_NAMED(get_name(), "register_input_handler");
-        inputhandlers.push_back(etasl::Registry<etasl::InputHandlerFactory>::create(p));
+        inputhandlers.push_back(etasl::Registry<etasl::InputHandlerFactory>::create(p, jsonchecker));
         ih_initialized.push_back(false);
     }  
 
@@ -708,7 +724,7 @@ void etaslNode::construct_node(){
 
  // This still needs to be here and cannot be moved to construct_node() function because of the routine for verifying the joints in the expression. That routine should change 
     if(!first_time_configured){
-      timer_ = this->create_wall_timer(std::chrono::milliseconds(periodicity_param), std::bind(&etaslNode::update, this));
+      timer_ = this->create_wall_timer(std::chrono::milliseconds(periodicity_ms), std::bind(&etaslNode::update, this));
 
       std::vector<double> jpos_init_vec;
       feedback_shared_ptr->mtx.lock();
@@ -998,13 +1014,13 @@ void etaslNode::construct_node(){
     
 
     Json::Value param = board->getPath("/default-etasl", false);
-    double periodicity = param["robotdriver"]["periodicity"].asDouble();
+
+    double periodicity = jsonchecker->asDouble(param, "robotdriver/periodicity");
 
     thread_str_driver = boost::make_shared<t_manager::thread_t>();
 
     
       thread_str_driver->periodicity = std::chrono::nanoseconds(static_cast<long long>(periodicity * 1E9)); //*1E9 to convert seconds to nanoseconds
-      // thread_str_driver->periodicity = std::chrono::milliseconds(10);
       thread_str_driver->update_hook = std::bind(&etasl::RobotDriver::update, robotdriver, std::ref(stopFlag));
       thread_str_driver->finalize_hook = std::bind(&etasl::RobotDriver::finalize, robotdriver);
     
@@ -1013,6 +1029,13 @@ void etaslNode::construct_node(){
     return thread_str_driver;
 
   }
+
+  // bool etaslNode::load_robot_specification(Json::Value const& param ){
+  //   double periodicity = jsonchecker->asDouble(param, "robotdriver/periodicity");
+
+  //   return true;
+  //   // TODO 
+  // }
 
 
 int main(int argc, char * argv[])
