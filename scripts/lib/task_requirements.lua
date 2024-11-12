@@ -284,9 +284,11 @@ end
 --  - `type` (string): String specifying the type of enum. The allowed types are number, integer and string. Required.
 --  - `minimum` (number): Minimum value allowed. Optional.
 --  - `maximum` (number): Maximum value allowed. Optional.
+--  - `minItems` (integer): Minimum number of items allowed. Optional.
+--  - `maxItems` (integer): Maximum number of items allowed. Optional.
 --- @return param_schema table A table containing a JSON schema defining the parameter
 local function param_array(spec)
-    local allowed_specs = {"name","description","default","required", "type","minimum", "maximum"}
+    local allowed_specs = {"name","description","default","required", "type","minimum", "maximum", "minItems", "maxItems",}
     validate_allowed_specs(allowed_specs, spec, "array")
 
     local param_schema = param_generic(spec) --pre-fills generic data necessary by all types
@@ -313,7 +315,7 @@ local function param_array(spec)
 
     if spec.minimum~=nil then
         if type(spec.minimum) == "number" then
-            tab_fields.minItems = spec.minimum
+            tab_fields.items.minimum = spec.minimum
         else
             error("The minimum value specified for parameter " .. spec.name .. " should be a number.")
         end
@@ -321,9 +323,25 @@ local function param_array(spec)
     
     if spec.maximum~=nil then
         if type(spec.maximum) == "number" then
-            tab_fields.maxItems = spec.maximum
+            tab_fields.items.maximum = spec.maximum
         else
             error("The maximum value specified for parameter " .. spec.name .. " should be a number.")
+        end
+    end
+
+    if spec.minItems~=nil then
+        if type(spec.minItems) == "number" and spec.minItems>0 and spec.minItems % 1 == 0 then
+            tab_fields.minItems = spec.minItems
+        else
+            error("The minItems value specified for parameter " .. spec.name .. " should be a positive integer number.")
+        end
+    end
+    
+    if spec.maxItems~=nil then
+        if type(spec.maxItems) == "number" and spec.maxItems>0 and spec.maxItems % 1 == 0 then
+            tab_fields.maxItems = spec.maxItems
+        else
+            error("The maxItems value specified for parameter " .. spec.name .. " should be a positive integer number.")
         end
     end
 
@@ -340,6 +358,13 @@ local function param_array(spec)
             if spec.minimum and value < spec.minimum then
                 error("One of the speicified default elements of the array parameter " .. spec.name .. " is below the specified minimum value")
             end
+        end
+
+        if spec.maxItems and #spec.default > spec.maxItems then
+            error("The number of elements (i.e. length) of the specified default array " .. spec.name .. " is above the specified maximum value (maxItems)")
+        end
+        if spec.minItems and #spec.default < spec.minItems then
+            error("The number of elements (i.e. length) of the specified default array " .. spec.name .. " is below the specified minimum value (minItems)")
         end
     end
 
@@ -363,13 +388,13 @@ local function parameters(task_description, param_tab)
     -- end
 
     -- The following obtains the filename where this function is called, such that we can generate the JSON Schema using the naming convention
+
     local info = debug.getinfo(2, "S")  -- Level 2, "S" for source info
     local filename_lua = info.source:sub(2) -- Extract the source filename (info.source returns the path prefixed with "@")
+    filename_lua = filename_lua:match("^.+/(.+)$") or filename_lua --Deletes path, if there is any
     local filename_json = filename_lua:gsub("%.lua$", "") ..".json" --removes the .lua extension and adds the .json for the generated schema
     local filename_no_ext = filename_json:gsub("%.json$", ""):gsub("%.etasl$", "")--removes extensions .etasl and .json
     local unique_identifier = "is-" .. filename_no_ext
-    print("Called from:", filename_lua)
-
 
     --- Generates a JSON Schema file based on the parameters defined.
     --- It's meant to be used locally, i.e. it is not exposed to the user
@@ -421,7 +446,7 @@ local function parameters(task_description, param_tab)
         table.insert(schema.dependencies["is-"..filename_no_ext].required, "file_path")
 
         if _LUA_FILEPATH_TO_GENERATE_JSON_SCHEMA then 
-            local file = assert(io.open(filename_json, "w"))
+            local file = assert(io.open(_LUA_FILEPATH_TO_GENERATE_JSON_SCHEMA .. filename_json, "w"))
             local dkjson = require("dkjson") -- Ensure you have a JSON library like json, dkjson or cjson. In this case dkjson is used
             file:write(dkjson.encode(schema, { indent = true }))
             file:close()
@@ -436,7 +461,9 @@ local function parameters(task_description, param_tab)
 
     local parameter_schema = write_json_schema(task_description, param_tab)
 
-
+    --- Gets a parameter that was previously defined with parameters function and loaded.
+    --- @param var_name (string) A string containing the name of the requested parameter.
+    --- @return value (any) The value of the parameter with the corresponding type 
     local function get(var_name)
         if not _TABLE_CONTAINING_ETASL_PARAMS then
             error("No parameters have been loaded. Please call one of the load_json methods available in this module")
@@ -445,28 +472,28 @@ local function parameters(task_description, param_tab)
         if des_var ~= nil then
             print(var_name .. " value: " .. tostring(des_var))
             return des_var
-        else --Due to the jsonschema validator, this case will never occur since the missing non-required parameters are automatically filled as the default value
-            print("variable ".. var_name .. " was nil")
-            -- Search if the variable is required:
-            local is_required = false
-            for _, req_param in pairs(required_parameters) do
-                if req_param == var_name then
-                    is_required = true
-                    break
-                end
-            end
+        -- else --Due to the jsonschema validator, this case will never occur since the missing non-required parameters are automatically filled as the default value
+        --     print("variable ".. var_name .. " was nil")
+        --     -- Search if the variable is required:
+        --     local is_required = false
+        --     for _, req_param in pairs(required_parameters) do
+        --         if req_param == var_name then
+        --             is_required = true
+        --             break
+        --         end
+        --     end
             
-            if is_required then
-                print("Warning: " .. var_name .. " does not exist and thus the default value is used. If this code was executed during generation of JSON Schemas, please ignore this warning.")
-                local default_val = nil
-                for k, _ in ipairs(param_tab) do
-                    local key_name = next(param_tab[k])
-                    default_val = param_tab[k][key_name]["default"]
-                end
-                return default_val
-            else
-                return nil
-            end
+        --     if is_required then
+        --         print("Warning: " .. var_name .. " does not exist and thus the default value is used. If this code was executed during generation of JSON Schemas, please ignore this warning.")
+        --         local default_val = nil
+        --         for k, _ in ipairs(param_tab) do
+        --             local key_name = next(param_tab[k])
+        --             default_val = param_tab[k][key_name]["default"]
+        --         end
+        --         return default_val
+        --     else
+        --         return nil
+        --     end
         end
     end
 
