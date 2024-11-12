@@ -88,7 +88,7 @@ end
 ---
 function createEnumeratedParameter(var_name, values, default_val, description_val,optional)
     if not description_val then
-        description_val="The description was not defined. Please provide it when defining the input in the task specification lua file with the createScalarParameter function."
+        description_val="The description was not defined. Please provide it when defining the input in the task specification lua file with the createEnumeratedParameter function."
     end
 
     if optional==nil then
@@ -152,7 +152,7 @@ function write_json_schema(lua_filepath)
    
     local filepath_lua =  "$[etasl_ros2_application_template]/etasl/task_specifications/" .. filename_lua
 
-    local dkjson = require("dkjson") -- Ensure you have a JSON library like json, dkjson or cjson. In this case just json is used
+    local dkjson = require("dkjson") -- Ensure you have a JSON library like json, dkjson or cjson. In this case dkjson is used
     descript = "Parameters needed to the corresponding task specification in eTaSL"
     if next(var_names_tab) == nil then --Checks if table is empty
         descript = "Parameters needed to the corresponding task specification in eTaSL. In this case no parameters were specified and hence the properties field is empty"
@@ -192,11 +192,11 @@ function write_json_schema(lua_filepath)
     }
 
     -- ["full_path_of-"..filename_no_ext] = {description="Full path of the corresponding task specification", enum={lua_filepath}, default=lua_filepath},
-    schema.dependencies["is-"..filename_no_ext].properties["file_path"] = {description="File path of the corresponding task specification", enum={filepath_lua}}
+    schema.dependencies["is-"..filename_no_ext].properties["file_path"] = {description="File path of the corresponding task specification", type="string", const=filepath_lua}
     table.insert(schema.dependencies["is-"..filename_no_ext].required, "file_path")
 
     for _, key_name in pairs(var_names_tab) do
-        -- print(inspect.inspect(vars_info_tab))
+        -- print(inspect.inspect(vars_info_tab))schema
         schema.dependencies["is-"..filename_no_ext].properties[key_name] = vars_info_tab[key_name]
         if  (var_optional_tab[key_name]~=nil) and not var_optional_tab[key_name] then
             table.insert(schema.dependencies["is-"..filename_no_ext].required, key_name)

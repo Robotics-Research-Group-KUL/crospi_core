@@ -4,6 +4,9 @@
 -- Code for defining etasl properties and automatically generating JSON schemas
 -- KU Leuven 2024
 -- ==============================================================================
+local JSON = require("JSON")
+local jsonschema = require 'jsonschema'
+
 local M = {}
 M.params = {}
 M.robot = {}
@@ -211,6 +214,7 @@ local function param_bool(spec)
         error("The default value specified for parameter " .. spec.name .. " should be a boolean.")
     end    
     param_schema[spec.name].oneOf = {{ type= "boolean" }, { enum= {"external"}}}
+
     return param_schema
 end
 
@@ -345,63 +349,12 @@ local function param_array(spec)
     return param_schema
 end
 
---- Generates a JSON Schema file based on the parameters defined.
---- It's meant to be used locally, i.e. it is not exposed to the user
---- @param task_description (string) A string containing a description of the task specification.
---- @param param_tab (table) A table containing the JSON Schema specification of all individual parameters.
---- @return nil
-local function write_json_schema(task_description, param_tab)
 
-    local filename_lua = LUA_FILEPATH_TO_GENERATE_JSON_SCHEMA:match("^.+/(.+)$") --obtains the filename from a full path
-    local filename_json = filename_lua:gsub("%.lua$", "") ..".json" --removes the .lua extension and adds the .json for the generated schema
-    local filename_no_ext = filename_json:gsub("%.json$", ""):gsub("%.etasl$", "")--removes extensions .etasl and .lua
-
-    local descript = "Parameters needed to the corresponding task specification in eTaSL"
-    if next(param_tab) == nil then --Checks if table is empty
-        descript = "Parameters needed to the corresponding task specification in eTaSL. In this case no parameters were specified and hence the properties field is empty"
-    end
-    
-    local def_properties = {
-        ["is-"..filename_no_ext] = {description="Set to true to indicate that the task specification is defined in: " .. filename_lua .. ". " .. task_description, type="boolean", const=true},
-    }
-
-    local schema = {
-        ["$schema"]= "http://json-schema.org/draft-04/schema#",
-        ["$id"]= filename_no_ext, 
-        title= "Task Specification Configuration",
-        description = descript,
-        type = "object",
-        properties = def_properties,
-        dependencies = {["is-"..filename_no_ext] ={
-            ["properties"]={},
-            ["required"]={}
-        }},
-        required = {"is-"..filename_no_ext},
-        additionalProperties= true, --needed to be true for using dependencies
-    }
-
-    local filepath_lua =  "$[etasl_ros2_application_template]/etasl/task_specifications/" .. filename_lua
-    schema.dependencies["is-"..filename_no_ext].properties["file_path"] = {description="File path of the corresponding task specification", type="string", const=filepath_lua}
-
-    for k, _ in ipairs(param_tab) do
-        local key_name = next(param_tab[k])
-        schema.dependencies["is-"..filename_no_ext].properties[key_name] = param_tab[k][key_name]
-    end
-    schema.dependencies["is-"..filename_no_ext].required = required_parameters
-    table.insert(schema.dependencies["is-"..filename_no_ext].required, "file_path")
-
-
-    -- Save the JSON Schema in a pretty format
-    local file = assert(io.open(filename_json, "w"))
-    local dkjson = require("dkjson") -- Ensure you have a JSON library like json, dkjson or cjson. In this case dkjson is used
-    file:write(dkjson.encode(schema, { indent = true }))
-    file:close()
-end
 
 --- Generates a JSON Schema file based on the parameters defined.
 --- @param task_description (string) A string containing a description of the task specification.
 --- @param param_tab (table) A table containing the JSON Schema specification of all individual parameters.
---- @return nil
+--- @return function_tab (table) A table containing important functions to load and get the defined parameters
 local function parameters(task_description, param_tab)
     -- for k, _ in ipairs(param_tab) do
     --     local key_name = next(param_tab[k])
@@ -409,10 +362,187 @@ local function parameters(task_description, param_tab)
     --     print("-----------------------------")
     -- end
 
-    if LUA_FILEPATH_TO_GENERATE_JSON_SCHEMA then --this variable should be defined only during generation of JSON Schema
-        write_json_schema(task_description, param_tab)
+    -- The following obtains the filename where this function is called, such that we can generate the JSON Schema using the naming convention
+    local info = debug.getinfo(2, "S")  -- Level 2, "S" for source info
+    local filename_lua = info.source:sub(2) -- Extract the source filename (info.source returns the path prefixed with "@")
+    local filename_json = filename_lua:gsub("%.lua$", "") ..".json" --removes the .lua extension and adds the .json for the generated schema
+    local filename_no_ext = filename_json:gsub("%.json$", ""):gsub("%.etasl$", "")--removes extensions .etasl and .json
+    local unique_identifier = "is-" .. filename_no_ext
+    print("Called from:", filename_lua)
+
+
+    --- Generates a JSON Schema file based on the parameters defined.
+    --- It's meant to be used locally, i.e. it is not exposed to the user
+    --- @param task_description (string) A string containing a description of the task specification.
+    --- @param param_tab (table) A table containing a partial JSON Schema specification of all individual parameters.
+    --- @return schema (table) A table containing the full generated JSON Schema
+    local function write_json_schema(task_description, param_tab)
+
+        -- local filename_lua = "dummy_name.etasl.lua"
+        -- if _LUA_FILEPATH_TO_GENERATE_JSON_SCHEMA then
+        --     filename_lua = _LUA_FILEPATH_TO_GENERATE_JSON_SCHEMA:match("^.+/(.+)$") --obtains the filename from a full path
+        -- end
+
+        -- local filename_json = filename_lua:gsub("%.lua$", "") ..".json" --removes the .lua extension and adds the .json for the generated schema
+        -- local filename_no_ext = filename_json:gsub("%.json$", ""):gsub("%.etasl$", "")--removes extensions .etasl and .json
+
+        local descript = "Parameters needed to the corresponding task specification in eTaSL"
+        if next(param_tab) == nil then --Checks if table is empty
+            descript = "Parameters needed to the corresponding task specification in eTaSL. In this case no parameters were specified and hence the properties field is empty"
+        end
+        
+        local def_properties = {
+            ["is-"..filename_no_ext] = {description="Set to true to indicate that the task specification is defined in: " .. filename_lua .. ". \n" .. task_description, type="boolean", const=true},
+        }
+
+        local schema = {
+            ["$schema"]= "http://json-schema.org/draft-04/schema#",
+            ["$id"]= filename_no_ext, 
+            title= "Task Specification Configuration",
+            description = descript,
+            type = "object",
+            properties = def_properties,
+            dependencies = {["is-"..filename_no_ext] ={
+                ["properties"]={},
+                ["required"]={}
+            }},
+            required = {"is-"..filename_no_ext},
+            additionalProperties= true, --needed to be true for using dependencies
+        }
+
+        local filepath_lua =  "$[etasl_ros2_application_template]/etasl/task_specifications/" .. filename_lua
+        schema.dependencies["is-"..filename_no_ext].properties["file_path"] = {description="File path of the corresponding task specification", type="string", const=filepath_lua}
+
+        for k, _ in ipairs(param_tab) do
+            local key_name = next(param_tab[k])
+            schema.dependencies["is-"..filename_no_ext].properties[key_name] = param_tab[k][key_name]
+        end
+        schema.dependencies["is-"..filename_no_ext].required = required_parameters
+        table.insert(schema.dependencies["is-"..filename_no_ext].required, "file_path")
+
+        if _LUA_FILEPATH_TO_GENERATE_JSON_SCHEMA then 
+            local file = assert(io.open(filename_json, "w"))
+            local dkjson = require("dkjson") -- Ensure you have a JSON library like json, dkjson or cjson. In this case dkjson is used
+            file:write(dkjson.encode(schema, { indent = true }))
+            file:close()
+            print("Code was exited after generating the JSON Schema file, since this should not be done during execution but only in the generation phase.")
+            os.exit(0)
+        end
+
+        return schema
+        -- Save the JSON Schema in a pretty format
     end
+
+
+    local parameter_schema = write_json_schema(task_description, param_tab)
+
+
+    local function get(var_name)
+        if not _TABLE_CONTAINING_ETASL_PARAMS then
+            error("No parameters have been loaded. Please call one of the load_json methods available in this module")
+        end
+        local des_var = _TABLE_CONTAINING_ETASL_PARAMS[var_name]
+        if des_var ~= nil then
+            print(var_name .. " value: " .. tostring(des_var))
+            return des_var
+        else --Due to the jsonschema validator, this case will never occur since the missing non-required parameters are automatically filled as the default value
+            print("variable ".. var_name .. " was nil")
+            -- Search if the variable is required:
+            local is_required = false
+            for _, req_param in pairs(required_parameters) do
+                if req_param == var_name then
+                    is_required = true
+                    break
+                end
+            end
+            
+            if is_required then
+                print("Warning: " .. var_name .. " does not exist and thus the default value is used. If this code was executed during generation of JSON Schemas, please ignore this warning.")
+                local default_val = nil
+                for k, _ in ipairs(param_tab) do
+                    local key_name = next(param_tab[k])
+                    default_val = param_tab[k][key_name]["default"]
+                end
+                return default_val
+            else
+                return nil
+            end
+        end
+    end
+
+    local function load_json_table(json_table)
+
+        parameter_schema["$id"] = nil --Removes the id value, since the jsonschema library complains
+        json_table["$schema"] = nil --Removes the id value, since the jsonschema library complains
+
+        -- inspect = require("inspect")
+        -- print(inspect(json_table))
+
+        -- =================== The following block of code makes sure that there are no additional parameters in the json_table, apart from the ones defined in the SCHEMA
+        -- =================== this is needed because the additionalProperties=true in the schema is needed to include the dependencies. However, defining properties that are not in the schema can lead to unexpected bugs for the user
+        for key_param, _ in pairs(json_table) do
+            local is_valid = false
+            for k, _ in ipairs(param_tab) do
+                local key_name = next(param_tab[k])            
+
+                if key_name == key_param or unique_identifier == key_param or "file_path" == key_param then
+                    is_valid = true
+                    break
+                end
+            end
+            if not is_valid then
+                error("Parameter " .. key_param .. " cannot be defined in the provided JSON since it is not part of the JSON SCHEMA. Please include such parameter when calling function parameters of this module, such that the parameter is included in the generated schema.")
+            end
+        end
+
+
+
+
+        local myvalidator = jsonschema.generate_validator(parameter_schema)
+
+        local is_valid, error_msg = myvalidator(json_table)
+
+        if not is_valid then
+            error(error_msg)
+        end
+
+        -- print(inspect(json_table))
+
+        _TABLE_CONTAINING_ETASL_PARAMS ={}
+        for key_param, val_param in pairs(json_table) do
+            _TABLE_CONTAINING_ETASL_PARAMS[key_param] = val_param
+        end
+        
+    end
+
+    local function load_json_string(json_string)
+        local json_table,_,err = JSON:decode(json_string)
+        if err then
+            error(err);
+        end
+
+        load_json_table(json_table)
+    
+    end
+
+    local function load_json_file(file_path)
+        local f = io.open(file_path, "rb")
+        local json_string = f:read("*all")
+        f:close()
+        load_json_string(json_string)
+    end
+
+    local function_tab = {}
+
+    function_tab.get = get
+    function_tab.load_json_table = load_json_table
+    function_tab.load_json_string = load_json_string
+    function_tab.load_json_file = load_json_file
+
+    return function_tab
 end
+
+
 
 
 
