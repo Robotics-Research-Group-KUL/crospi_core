@@ -24,7 +24,7 @@ target_link_libraries(etasl_node
         etasl_task_utils
         etasl_node_utils
         robot_interfacing_utils
-        # kuka_iiwa_driver
+        kuka_iiwa_driver
         )
         # TODO: Find a way of removing kuka_iiwa_driver
 

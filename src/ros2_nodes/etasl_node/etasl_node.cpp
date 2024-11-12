@@ -988,8 +988,9 @@ void etaslNode::construct_node(){
     // etasl::registerTopicInputHandlerFactory(shared_from_this());
     // etasl::registerTFOutputHandlerFactory(shared_from_this());
     etasl::registerTwistInputHandlerFactory(shared_from_this());
+    etasl::registerWrenchInputHandlerFactory(shared_from_this());
     etasl::registerSimulationRobotDriverFactory(feedback_shared_ptr.get(), setpoint_shared_ptr.get());
-    // etasl::registerKukaIiwaRobotDriverFactory(feedback_shared_ptr.get(), setpoint_shared_ptr.get());
+    etasl::registerKukaIiwaRobotDriverFactory(feedback_shared_ptr.get(), setpoint_shared_ptr.get());
 
   }
 

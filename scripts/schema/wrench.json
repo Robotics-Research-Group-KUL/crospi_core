@@ -1,0 +1,11 @@
+{
+    "$id":"wrench.json",
+    "type":"object",
+    "required": ["force","torque"],
+    "additionalProperties" : false,
+    "properties" :{
+        "force" : { "$ref":"screw_linear.json"},
+        "torque" : {"$ref":"screw_angular.json"}
+    },
+    "transform_to" : "wrench"
+}
