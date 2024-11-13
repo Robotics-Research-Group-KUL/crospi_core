@@ -394,7 +394,7 @@ local function parameters(task_description, param_tab)
     filename_lua = filename_lua:match("^.+/(.+)$") or filename_lua --Deletes path, if there is any
     local filename_json = filename_lua:gsub("%.lua$", "") ..".json" --removes the .lua extension and adds the .json for the generated schema
     local filename_no_ext = filename_json:gsub("%.json$", ""):gsub("%.etasl$", "")--removes extensions .etasl and .json
-    local unique_identifier = "is-" .. filename_no_ext
+    -- local unique_identifier = "is-" .. filename_no_ext
 
     --- Generates a JSON Schema file based on the parameters defined.
     --- It's meant to be used locally, i.e. it is not exposed to the user
@@ -429,7 +429,7 @@ local function parameters(task_description, param_tab)
             properties = def_properties,
             dependencies = {["is-"..filename_no_ext] ={
                 ["properties"]={},
-                ["required"]={}
+                ["required"]={"file_path","parameters"}
             }},
             required = {"is-"..filename_no_ext},
             additionalProperties= true, --needed to be true for using dependencies
@@ -437,13 +437,15 @@ local function parameters(task_description, param_tab)
 
         local filepath_lua =  "$[etasl_ros2_application_template]/etasl/task_specifications/" .. filename_lua
         schema.dependencies["is-"..filename_no_ext].properties["file_path"] = {description="File path of the corresponding task specification", type="string", const=filepath_lua}
+        schema.dependencies["is-"..filename_no_ext].properties["parameters"] = {type="object", description= "List of parameters needed to define an instance of the task specification",required=required_parameters,additionalProperties=false, properties={}}
 
         for k, _ in ipairs(param_tab) do
             local key_name = next(param_tab[k])
-            schema.dependencies["is-"..filename_no_ext].properties[key_name] = param_tab[k][key_name]
+            schema.dependencies["is-"..filename_no_ext].properties.parameters.properties[key_name] = param_tab[k][key_name]
         end
-        schema.dependencies["is-"..filename_no_ext].required = required_parameters
-        table.insert(schema.dependencies["is-"..filename_no_ext].required, "file_path")
+        -- schema.dependencies["is-"..filename_no_ext].required = required_parameters
+        -- table.insert(schema.dependencies["is-"..filename_no_ext].required, "file_path")
+
 
         if _LUA_FILEPATH_TO_GENERATE_JSON_SCHEMA then 
             local file = assert(io.open(_LUA_FILEPATH_TO_GENERATE_JSON_SCHEMA .. filename_json, "w"))
@@ -457,11 +459,11 @@ local function parameters(task_description, param_tab)
         return schema
         -- Save the JSON Schema in a pretty format
     end
-
+    
 
     local parameter_schema = write_json_schema(task_description, param_tab)
 
-    --- Gets a parameter that was previously defined with parameters function and loaded.
+        --- Gets a parameter that was previously defined with parameters function and loaded.
     --- @param var_name (string) A string containing the name of the requested parameter.
     --- @return value (any) The value of the parameter with the corresponding type 
     local function get(var_name)
@@ -499,7 +501,7 @@ local function parameters(task_description, param_tab)
 
     local function load_json_table(json_table)
 
-        parameter_schema["$id"] = nil --Removes the id value, since the jsonschema library complains
+        -- parameter_schema["$id"] = nil --Removes the id value, since the jsonschema library complains
         json_table["$schema"] = nil --Removes the id value, since the jsonschema library complains
 
         -- inspect = require("inspect")
@@ -507,12 +509,13 @@ local function parameters(task_description, param_tab)
 
         -- =================== The following block of code makes sure that there are no additional parameters in the json_table, apart from the ones defined in the SCHEMA
         -- =================== this is needed because the additionalProperties=true in the schema is needed to include the dependencies. However, defining properties that are not in the schema can lead to unexpected bugs for the user
-        for key_param, _ in pairs(json_table) do
+        for key_param, value in pairs(json_table) do
             local is_valid = false
             for k, _ in ipairs(param_tab) do
                 local key_name = next(param_tab[k])            
 
-                if key_name == key_param or unique_identifier == key_param or "file_path" == key_param then
+                -- if key_name == key_param or unique_identifier == key_param or "file_path" == key_param then
+                if key_name == key_param then
                     is_valid = true
                     break
                 end
@@ -520,12 +523,14 @@ local function parameters(task_description, param_tab)
             if not is_valid then
                 error("Parameter " .. key_param .. " cannot be defined in the provided JSON since it is not part of the JSON SCHEMA. Please include such parameter when calling function parameters of this module, such that the parameter is included in the generated schema.")
             end
+            if value == "external" then
+                error("Parameter " .. key_param .. " cannot have a value of external when executing the skill. This parameter was probably set as external in the JSON file, and has to be changed to a proper value before the task specification execution.")
+            end
         end
 
 
 
-
-        local myvalidator = jsonschema.generate_validator(parameter_schema)
+        local myvalidator = jsonschema.generate_validator(parameter_schema["parameters"])
 
         local is_valid, error_msg = myvalidator(json_table)
 
@@ -558,6 +563,13 @@ local function parameters(task_description, param_tab)
         f:close()
         load_json_string(json_string)
     end
+
+    if _JSON_TASK_SPECIFICATION_PARAMETERS_STRING then
+        print(_JSON_TASK_SPECIFICATION_PARAMETERS_STRING)
+        load_json_string(_JSON_TASK_SPECIFICATION_PARAMETERS_STRING)
+    end
+
+
 
     local function_tab = {}
 
