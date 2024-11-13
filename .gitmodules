@@ -1,3 +1,7 @@
 [submodule "documentation/docs/readthedocs_custom"]
 	path = documentation/docs/readthedocs_custom
 	url = git@gitlab.kuleuven.be:rob-expressiongraphs/ros2/readthedocs_custom.git
+
+[submodule "src/misc/kuka_iiwa_driver/external/kuka_fri_sdk"] 
+	path = src/misc/kuka_iiwa_driver/external/kuka_fri_sdk
+	url = git@gitlab.kuleuven.be:rob/rob-hardware/kuka_fri_sdk.git
