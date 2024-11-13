@@ -44,6 +44,8 @@ etaslNode::etaslNode(const std::string & node_name, bool intra_process_comms = f
   srv_readTaskSpecificationFile_ = create_service<etasl_interfaces::srv::TaskSpecificationFile>("etasl_node/readTaskSpecificationFile", std::bind(&etaslNode::readTaskSpecificationFile, this, std::placeholders::_1, std::placeholders::_2));
 
   srv_readTaskSpecificationString_ = create_service<etasl_interfaces::srv::TaskSpecificationString>("etasl_node/readTaskSpecificationString", std::bind(&etaslNode::readTaskSpecificationString, this, std::placeholders::_1, std::placeholders::_2));
+  
+  srv_readTaskParameters_ = create_service<etasl_interfaces::srv::TaskSpecificationString>("etasl_node/readTaskParameters", std::bind(&etaslNode::readTaskParameters, this, std::placeholders::_1, std::placeholders::_2));
 
   std::string dirPath = this->declare_parameter<std::string>("directory_path", "");
 
@@ -202,6 +204,45 @@ bool etaslNode::readTaskSpecificationString(const std::shared_ptr<etasl_interfac
 		// int retval = LUA->executeFile("/workspaces/colcon_ws/install/etasl_ros2/share/etasl_ros2/etasl/move_cartesianspace.lua");
 		if (retval !=0) {
 			RCUTILS_LOG_ERROR_NAMED(get_name(), "Error executing the following specificed string command in LUA within the etasl_node/readTaskSpecificationString service: ");
+			RCUTILS_LOG_ERROR_NAMED(get_name(), request->str.c_str());
+
+			response->success = false;
+      auto transition = this->shutdown(); //calls on_shutdown() hook.
+			return false;
+		}
+	} catch (const char* msg) {
+		// can be thrown by file/string errors during reading
+		// by lua_bind during reading
+		// by expressiongraph during reading ( expressiongraph will not throw when evaluating)
+		std::string message = "The following error was thrown while reading the task specification string: " + std::string(msg);
+		RCUTILS_LOG_ERROR_NAMED(get_name(), message.c_str());
+		response->success = false;
+    auto transition = this->shutdown(); //calls on_shutdown() hook.
+		return false;
+	}
+
+
+	response->success = true;
+
+	return true;
+
+}
+
+bool etaslNode::readTaskParameters(const std::shared_ptr<etasl_interfaces::srv::TaskSpecificationString::Request> request, std::shared_ptr<etasl_interfaces::srv::TaskSpecificationString::Response>  response) {
+	
+	if(this->get_current_state().label() != "unconfigured"){
+		RCUTILS_LOG_ERROR_NAMED(get_name(), "Service etasl_node/readTaskParameters can only be read in unconfigured state");
+		response->success = false;
+		return false;
+	}
+
+	try{
+		// Read eTaSL specification:
+    std::string param_request = "_JSON_TASK_SPECIFICATION_PARAMETERS_STRING='" + request->str + "'"; 
+		int retval = LUA->executeString(param_request);
+		// int retval = LUA->executeFile("/workspaces/colcon_ws/install/etasl_ros2/share/etasl_ros2/etasl/move_cartesianspace.lua");
+		if (retval !=0) {
+			RCUTILS_LOG_ERROR_NAMED(get_name(), "Error interpreting the following string as a JSON string in LUA after calling the etasl_node/readTaskParameters service: ");
 			RCUTILS_LOG_ERROR_NAMED(get_name(), request->str.c_str());
 
 			response->success = false;
