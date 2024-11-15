@@ -35,7 +35,7 @@ public:
     {
         std::string schema_src = R"(
                     {
-                        "$schema": "http://json-schema.org/draft-04/schema",
+                        "$schema": "http://json-schema.org/draft-06/schema",
                         "$id":"simulationrobotdriver",
                         "type":"object",
                         "properties":{

@@ -50,15 +50,15 @@ local function param_generic(spec)
 
     local param_schema = {}
 
-    if (not spec.name) or spec.name == "" then
+    if (spec.name == nil) or spec.name == "" then
         error("The defined parameter requires a non-empty name")
     end
 
-    if (not spec.description) or spec.description == "" then
+    if (spec.description == nil) or spec.description == "" then
         error("The defined parameter requires a non-empty description")
     end
 
-    if not spec.default then
+    if spec.default == nil then
         error("The defined parameter requires a default value")
     end
 
@@ -71,7 +71,7 @@ local function param_generic(spec)
     }
     
     -- If default value is specified, it is added to the schema
-    if spec.default then
+    if spec.default ~= nil then
         -- table.insert(param_schema[spec.name], "default")
         param_schema[spec.name].default = spec.default
     end
@@ -210,10 +210,43 @@ local function param_bool(spec)
     validate_allowed_specs(allowed_specs, spec, "boolean")
 
     local param_schema = param_generic(spec) --pre-fills generic data necessary by all types
-    if spec.default and type(param_schema[spec.name].default) ~= "boolean" then
+    if spec.default ~=nil and type(param_schema[spec.name].default) ~= "boolean" then
         error("The default value specified for parameter " .. spec.name .. " should be a boolean.")
     end    
     param_schema[spec.name].oneOf = {{ type= "boolean" }, { enum= {"external"}}}
+
+    return param_schema
+end
+
+--- Defines a string parameter.
+--- @param spec (table) A table containing the specification of the parameter with specific keys and values:
+--  - `name` (string): The name of the specified parameter. Required.
+--  - `description` (string): The description of the specified parameter, which serves for documentation. Required.
+--  - `default` (number): The default value of the specified parameter. Required.
+--  - `required` (boolean): Indicates if the parameter is required. Set as true if not specified. Optional.
+--  - `pattern` (string): Indicates if the string should follow a regular expression (regex) pattern. Optional.
+--- @return param_schema table A table containing a JSON schema defining the parameter
+local function param_string(spec)
+    local allowed_specs = {"name","description","default","required", "pattern"}
+    validate_allowed_specs(allowed_specs, spec, "string")
+
+    local param_schema = param_generic(spec) --pre-fills generic data necessary by all types
+    if spec.default ~=nil and type(param_schema[spec.name].default) ~= "string" then
+        error("The default value specified for parameter `" .. spec.name .. "` should be a string.")
+    end
+
+    print("===================================____________________")
+    print(spec.pattern)
+
+    if (spec.pattern ~= nil and type(spec.pattern) == "string") then
+        local success, _ = pcall(function() string.match("", spec.pattern) end)
+        if not success then
+            error("The provided pattern for parameter `" .. spec.name .. "` is not a valid regex pattern.")
+        end
+        param_schema[spec.name].oneOf = {{ type= "string", pattern = spec.pattern }, { enum= {"external"}}}
+    else
+        param_schema[spec.name].oneOf = {{ type= "string" }, { enum= {"external"}}}
+    end
 
     return param_schema
 end
@@ -375,7 +408,6 @@ local function param_array(spec)
 end
 
 
-
 --- Generates a JSON Schema file based on the parameters defined.
 --- @param task_description (string) A string containing a description of the task specification.
 --- @param param_tab (table) A table containing the JSON Schema specification of all individual parameters.
@@ -421,7 +453,7 @@ local function parameters(task_description, param_tab)
         }
 
         local schema = {
-            ["$schema"]= "http://json-schema.org/draft-04/schema#",
+            ["$schema"]= "http://json-schema.org/draft-06/schema#",
             ["$id"]= filename_no_ext, 
             title= "Task Specification Configuration",
             description = descript,
@@ -474,28 +506,31 @@ local function parameters(task_description, param_tab)
         if des_var ~= nil then
             print(var_name .. " value: " .. tostring(des_var))
             return des_var
-        -- else --Due to the jsonschema validator, this case will never occur since the missing non-required parameters are automatically filled as the default value
-        --     print("variable ".. var_name .. " was nil")
-        --     -- Search if the variable is required:
-        --     local is_required = false
-        --     for _, req_param in pairs(required_parameters) do
-        --         if req_param == var_name then
-        --             is_required = true
-        --             break
-        --         end
-        --     end
+        else --Due to the jsonschema validator, this case will never occur since the missing non-required parameters are automatically filled as the default value
+            -- print("variable ".. var_name .. " was nil")
+            -- Search if the variable is required:
+            local is_required = false
+            for _, req_param in pairs(required_parameters) do
+                if req_param == var_name then
+                    is_required = true
+                    break
+                end
+            end
             
-        --     if is_required then
-        --         print("Warning: " .. var_name .. " does not exist and thus the default value is used. If this code was executed during generation of JSON Schemas, please ignore this warning.")
-        --         local default_val = nil
-        --         for k, _ in ipairs(param_tab) do
-        --             local key_name = next(param_tab[k])
-        --             default_val = param_tab[k][key_name]["default"]
-        --         end
-        --         return default_val
-        --     else
-        --         return nil
-        --     end
+            if not is_required then
+                -- print("Warning: " .. var_name .. " does not exist and thus the default value is used. If this code was executed during generation of JSON Schemas, please ignore this warning.")
+                local default_val = nil
+                for k, _ in ipairs(param_tab) do
+                    local key_name = next(param_tab[k])
+                    if var_name == key_name then
+                        default_val = param_tab[k][key_name]["default"]
+                    end
+                end
+                print(var_name .. " was set to default value: " .. tostring(default_val))
+                return default_val
+            else
+                error("Parameter `" .. var_name .. "` was set as required but was not found in the JSON file.")
+            end
         end
     end
 
@@ -543,6 +578,7 @@ local function parameters(task_description, param_tab)
         _TABLE_CONTAINING_ETASL_PARAMS ={}
         for key_param, val_param in pairs(json_table) do
             _TABLE_CONTAINING_ETASL_PARAMS[key_param] = val_param
+            print("Value of parameter `".. tostring(key_param) .. "` is: " .. tostring(val_param))
         end
         
     end
@@ -569,8 +605,6 @@ local function parameters(task_description, param_tab)
         load_json_string(_JSON_TASK_SPECIFICATION_PARAMETERS_STRING)
     end
 
-
-
     local function_tab = {}
 
     function_tab.get = get
@@ -581,7 +615,92 @@ local function parameters(task_description, param_tab)
     return function_tab
 end
 
+local function load_robot(required_frames)
 
+    if _JSON_ROBOT_SPECIFICATION then
+        
+        -- require("context")
+        -- require("geometric")
+        local urdfreader=require("urdfreader")
+
+
+        -- local f = io.open("/home/santiregui/ros2_ws/src/etasl_ros2_application_template/config_files/config_ur10_simulation.json", "rb")
+        -- local json_string = f:read("*all")
+        -- f:close()
+        local json_robot_tab = JSON:decode(_JSON_ROBOT_SPECIFICATION)
+
+        local urdf_path_formatted = json_robot_tab["urdf_path"]
+        local package_name, rest_of_path = urdf_path_formatted:match("%$%[(.-)%]/(.*)")
+        
+        local urdf_file =""
+        if package_name then
+            ament = require("libamentlua")
+            package_dir = ament.get_package_share_directory("etasl_ros2_application_template")
+            urdf_file = package_dir .."/".. rest_of_path
+        else
+            urdf_file = urdf_path_formatted
+        end
+        -- print(urdf_file)
+        -- print("lllllllllllllllllllll")
+        local xmlstr = urdfreader.loadFile(urdf_file)
+        local robot_worldmodel = urdfreader.readUrdf(xmlstr,{})
+
+        -- Load all frames (tcp_frame and additional_frames)
+        local VL = {}
+        local expr_tab = {tcp_frame={json_robot_tab["tcp_frame"].child_link,json_robot_tab["tcp_frame"].parent_link}}
+        for _, value in ipairs(json_robot_tab["additional_frames"]) do
+            for _, req_frame in ipairs(required_frames) do
+                if req_frame == value.name then
+                    expr_tab[value.name] = {value.child_link,value.parent_link}
+                end
+            end
+            -- expr_tab[value.name] = {value.child_link,value.parent_link}
+        end
+        local frames= robot_worldmodel:getExpressions(VL, ctx, expr_tab)
+
+        for _, frame_key in ipairs(required_frames) do
+            if frames[frame_key] == nil then
+                error("The required frame `" .. frame_key .. "` was not defined within the robot specification.")
+            end
+        end
+
+        local function getFrame(fname)
+            if frames[fname]~= nil then
+                return frames[fname]
+            else
+                error("The requested frame `" .. fname .. "` does not exist, or was not specified as a required frame within the argument table `required_frames` of function `robot_model(required_frames)`")
+                return nil
+            end
+        end
+        
+
+        local return_robot_tab = {}
+        return_robot_tab.robot_joints = json_robot_tab["robot_joints"]
+        return_robot_tab.getFrame= getFrame
+        return_robot_tab.xmlstr = xmlstr
+        return_robot_tab.robot_worldmodel = robot_worldmodel
+        return_robot_tab.urdfreader = urdfreader
+
+
+        return return_robot_tab
+    else
+        return nil
+    end
+
+end
+
+
+local function robot_model(required_frames)
+
+    local robot = load_robot(required_frames)
+
+    
+    if not robot.robot_joints or next(robot.robot_joints) == nil then
+        error("There are no robot_joints defined in the robot specification.")
+    end
+    
+    return robot
+end
 
 
 
@@ -604,13 +723,17 @@ local function adapt_to_units(tbl, unit)
 end
 
 
+
+
 M.parameters = parameters
 M.adapt_to_units= adapt_to_units
 M.params.scalar = param_scalar
+M.params.string = param_string
 M.params.int= param_int
 M.params.bool= param_bool
 M.params.enum= param_enum
 M.params.array= param_array
 
+M.robot_model= robot_model
 
 return M

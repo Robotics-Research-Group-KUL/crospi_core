@@ -1,5 +1,5 @@
 {
-    "$schema": "http://json-schema.org/draft-04/schema",
+    "$schema": "http://json-schema.org/draft-06/schema",
     "$id": "default-task.json",
     "title": "Default task",
     "description": "The default task that will be running when no other tasks are queued.  Typically just standing still.",

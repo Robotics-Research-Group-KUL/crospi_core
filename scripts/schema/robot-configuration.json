@@ -1,5 +1,5 @@
 {
-    "$schema": "http://json-schema.org/draft-04/schema",
+    "$schema": "http://json-schema.org/draft-06/schema",
     "$id": "robot-configuration.json",
     "title": "DRAFT Robot configuration",
     "description": " DRAFT Describes the robot configuration. This does not change for the whole robot application.",

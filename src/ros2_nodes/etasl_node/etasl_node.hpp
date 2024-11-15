@@ -119,7 +119,7 @@ class etaslNode : public rclcpp_lifecycle::LifecycleNode
         void register_factories();
         void update_robot_status();
         boost::shared_ptr<t_manager::thread_t> create_thread_str(std::atomic<bool> & stopFlag);
-        bool load_robot_specification(Json::Value const&  param );
+        void load_robot_specification(Json::Value const&  param );
         
 
 

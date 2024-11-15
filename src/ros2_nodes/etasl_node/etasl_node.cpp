@@ -107,6 +107,8 @@ etaslNode::etaslNode(const std::string & node_name, bool intra_process_comms = f
   // this->get_node_base_interface()->get_context()->add_on_shutdown_callback(std::bind( &etaslNode::safe_shutdown, this)); //Can be used to add callback during shutdown (not pre-shutdown, so publishers and others are no longer available)
   // rclcpp::on_shutdown(std::bind( &etaslNode::safe_shutdown, my_etasl_node)); //Alternative to add_on_shutdown_callback (don't know the difference)
 
+  load_robot_specification(param); // Called here and on_cleanup such that is always available before any lua file, string or lua task specification is executed. 
+
 }
 
 
@@ -295,6 +297,7 @@ void etaslNode::solver_configuration(){
     solver_registry = boost::make_shared<SolverRegistry>();
     registerSolverFactory_qpOases(solver_registry, "qpoases");
     //registerSolverFactory_hqp(R, "hqp");
+    
 
     // we can get the properties from the solver from the context and specify these properties in eTaSL or
     // create a parameter plist (instead of ctx->solver_property) :
@@ -379,10 +382,10 @@ void etaslNode::initialize_joints(){
 
 
     if(jnames_in_expr.size()==0){
-        RCUTILS_LOG_WARN_NAMED(get_name(), "None of the joint_names specified in the JSON configuration correspond the joints defined in the eTaSL robot expression graph.");
+        RCUTILS_LOG_WARN_NAMED(get_name(), "None of the robot_joints specified in the JSON configuration correspond the joints defined in the eTaSL robot expression graph.");
     }
     else if(jnames_in_expr.size() != jointnames.size()){
-      RCUTILS_LOG_WARN_NAMED(get_name(), "The number of joint_names specified in the JSON configuration do not correspond to all the joints defined in the eTaSL robot expression graph.");
+      RCUTILS_LOG_WARN_NAMED(get_name(), "The number of robot_joints specified in the JSON configuration do not correspond to all the joints defined in the eTaSL robot expression graph.");
       RCUTILS_LOG_WARN_NAMED(get_name(), "The jointnames that do not correspond are ignored and not published");
     }
 
@@ -439,7 +442,7 @@ void etaslNode::configure_etasl(){
     // fmt::print("{:->80}\n", "-");
 
     jointnames.clear();
-    for (auto n : jsonchecker->asArray(param, "robotdriver/joint_names")) {
+    for (auto n : jsonchecker->asArray(param, "robotdriver/robot_joints")) {
         jointnames.push_back(jsonchecker->asString(n, ""));
     }
  
@@ -670,12 +673,12 @@ void etaslNode::construct_node(){
     Json::Value param = board->getPath("/default-etasl", false);
 
     // jointnames.clear();
-    // for (auto n : param["robotdriver"]["joint_names"]) {
+    // for (auto n : param["robotdriver"]["robot_joints"]) {
     //     jointnames.push_back(n.asString());
     // }
 
     jointnames.clear();
-    for (auto n : jsonchecker->asArray(param, "robotdriver/joint_names")) {
+    for (auto n : jsonchecker->asArray(param, "robotdriver/robot_joints")) {
         jointnames.push_back(jsonchecker->asString(n, ""));
     }
 
@@ -965,6 +968,8 @@ void etaslNode::construct_node(){
     RCUTILS_LOG_INFO_NAMED(get_name(), "on cleanup is called.");
 
     is_configured = false; //To indicate that it has not being configured after cleanup node
+    Json::Value param = board->getPath("/default-etasl", false);
+    load_robot_specification(param ); // Called here and in class constructor such that is always available before any lua file, string or lua task specification is executed. 
 
     // We return a success and hence invoke the transition to the next
     // step: "unconfigured".
@@ -1070,12 +1075,47 @@ void etaslNode::construct_node(){
 
   }
 
-  // bool etaslNode::load_robot_specification(Json::Value const& param ){
-  //   double periodicity = jsonchecker->asDouble(param, "robotdriver/periodicity");
+  void etaslNode::load_robot_specification(Json::Value const& param ){
 
-  //   return true;
-  //   // TODO 
-  // }
+    if(param["robotspecification"].isMember("is-inline_robotspecification") && param["robotspecification"]["is-inline_robotspecification"].isBool()){
+      // Create a StreamWriterBuilder to serialize the JSON value
+      Json::StreamWriterBuilder writer;
+      writer["indentation"] = "";  // Optional: adjust to control whitespace in output
+      std::string robot_spec = "_JSON_ROBOT_SPECIFICATION = '" + Json::writeString(writer, param["robotspecification"]) + "'";
+      // std::cout << ")))))))))))))))))))))))))))))" << std::endl;
+      // std::cout << robot_spec << std::endl;
+      try{
+        // Read eTaSL specification:
+        int retval = LUA->executeString(robot_spec);
+        if (retval !=0) {
+          RCUTILS_LOG_ERROR_NAMED(get_name(), "Error executing the following specificed string command in LUA while loading the robot specification ");
+          RCUTILS_LOG_ERROR_NAMED(get_name(), robot_spec.c_str());
+          rclcpp::shutdown(); 
+        }
+      } catch (const char* msg) {
+        // can be thrown by file/string errors during reading
+        // by lua_bind during reading
+        // by expressiongraph during reading ( expressiongraph will not throw when evaluating)
+        std::string message = "The following error was thrown while loading the robot specification: " + std::string(msg);
+        RCUTILS_LOG_ERROR_NAMED(get_name(), message.c_str());
+        rclcpp::shutdown(); 
+      }
+    }
+    else if(param["robotspecification"].isMember("is-lua_robotspecification") && param["robotspecification"]["is-lua_robotspecification"].isBool()){
+        RCUTILS_LOG_ERROR_NAMED(get_name(), "is-lua_robotspecification is still not implemented");
+        rclcpp::shutdown(); 
+    }
+    else if(param["robotspecification"].isMember("is-emptyrobotspecification") && param["robotspecification"]["is-emptyrobotspecification"].isBool()){
+        RCUTILS_LOG_ERROR_NAMED(get_name(), "is-emptyrobotspecification is still not implemented");
+        rclcpp::shutdown(); 
+    }
+    else{
+          RCUTILS_LOG_ERROR_NAMED(get_name(), "Error when loading the robot specification. Only is-inline_robotspecification, is-lua_robotspecification and is-emptyrobotspecification types are allowed.");
+          rclcpp::shutdown(); 
+    }
+
+    // TODO 
+  }
 
 
 int main(int argc, char * argv[])

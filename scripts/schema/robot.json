@@ -1,5 +1,5 @@
 {
-    "$schema": "http://json-schema.org/draft-04/schema",
+    "$schema": "http://json-schema.org/draft-06/schema",
     "$id": "robot.json",
     "title": "Robot",
     "description": "Description of a robot class. This can be a robot simulator or a robot-driver that communicates with a physical robot",

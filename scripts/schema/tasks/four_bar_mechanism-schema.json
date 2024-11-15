@@ -1,5 +1,5 @@
 {
-    "$schema": "http://json-schema.org/draft-04/schema",
+    "$schema": "http://json-schema.org/draft-06/schema",
     "$id": "four_bar_mechanism-schema.json",
     "title": "Four bar mechanism",
     "description": "A small application that involves a feature variable",

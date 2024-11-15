@@ -1,5 +1,5 @@
 {
-    "$schema": "http://json-schema.org/draft-04/schema",
+    "$schema": "http://json-schema.org/draft-06/schema",
     "$id": "move-circle.json",
     "title": "Circular trajectory",
     "description": "Move a robot on a circular trajectory.",
