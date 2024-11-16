@@ -4,7 +4,7 @@
     "title":"eTaSL Parameters",
     "type":"object",
     "description":"Parameters needed to run eTaSL",
-    "required": ["general", "robotspecification","robotdriver"],
+    "required": ["general", "default_robot_specification","robotdriver"],
     "properties": {
         "$schema" : {
             "type":"string"
@@ -26,10 +26,10 @@
             "description":"Robotdriver interfaces robot hardware with eTaSL and runs in a separate thread, communicating with shared memory for reduced latency",
             "$ref": "robotdriver.json"
         },
-        "robotspecification": {
-            "title":"robotspecification",
+        "default_robot_specification": {
+            "title":"default_robot_specification",
             "description":"Robot specification that describes the kinematics, jointnames, relevant frames and others",
-            "$ref": "robotspecification.json"
+            "$ref": "default_robot_specification.json"
         },
         "outputhandlers": {
             "title":"Outputhandlers",

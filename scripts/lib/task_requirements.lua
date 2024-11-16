@@ -173,7 +173,7 @@ local function param_scalar(spec)
     local param_schema = param_generic(spec) --pre-fills generic data necessary by all types
     param_schema, tab_fields = param_numerical(spec, param_schema) -- Fills fields required for all numbers (double and integers)
     tab_fields.type = "number"
-    param_schema[spec.name].oneOf = {tab_fields, { enum= {"external"}}}
+    param_schema[spec.name].oneOf = {tab_fields, { type="string", const="external"}}
     return param_schema
 end
 
@@ -194,7 +194,7 @@ local function param_int(spec)
     local param_schema = param_generic(spec) --pre-fills generic data necessary by all types
     param_schema, tab_fields = param_numerical(spec, param_schema) -- Fills fields required for all numbers (double and integers)
     tab_fields.type = "integer"
-    param_schema[spec.name].oneOf = {tab_fields, { enum= {"external"}}}
+    param_schema[spec.name].oneOf = {tab_fields, { type="string", const="external"}}
     return param_schema
 end
 
@@ -213,7 +213,7 @@ local function param_bool(spec)
     if spec.default ~=nil and type(param_schema[spec.name].default) ~= "boolean" then
         error("The default value specified for parameter " .. spec.name .. " should be a boolean.")
     end    
-    param_schema[spec.name].oneOf = {{ type= "boolean" }, { enum= {"external"}}}
+    param_schema[spec.name].oneOf = {{ type= "boolean" }, { type="string", const="external"}}
 
     return param_schema
 end
@@ -243,9 +243,9 @@ local function param_string(spec)
         if not success then
             error("The provided pattern for parameter `" .. spec.name .. "` is not a valid regex pattern.")
         end
-        param_schema[spec.name].oneOf = {{ type= "string", pattern = spec.pattern }, { enum= {"external"}}}
+        param_schema[spec.name].oneOf = {{ type= "string", pattern = spec.pattern }, {  type="string", const="external"}}
     else
-        param_schema[spec.name].oneOf = {{ type= "string" }, { enum= {"external"}}}
+        param_schema[spec.name].oneOf = {{ type= "string" }, {  type="string", const="external"}}
     end
 
     return param_schema
@@ -302,7 +302,7 @@ local function param_enum(spec)
         error("The specified default value of the enum " .. spec.name .. " does not correspond to one of the specified accepted_vals")
     end
     
-    param_schema[spec.name].oneOf = {{ enum= spec.accepted_vals }, { enum= {"external"}}}
+    param_schema[spec.name].oneOf = {{ enum= spec.accepted_vals }, {  type="string", const="external"}}
 
     return param_schema
 end
@@ -402,7 +402,7 @@ local function param_array(spec)
     end
 
 
-    param_schema[spec.name].oneOf = {tab_fields, { enum= {"external"}}}
+    param_schema[spec.name].oneOf = {tab_fields, {  type="string", const="external"}}
 
     return param_schema
 end
@@ -615,35 +615,70 @@ local function parameters(task_description, param_tab)
     return function_tab
 end
 
+local function path_interpolate(path_formatted)
+    local ament = require("libamentlua")
+
+    local copy_path_formatted = path_formatted
+
+    local package_name, rest_of_path = path_formatted:match("%$%[(.-)%]/(.*)")
+    
+    if package_name then
+        print("this is wrooooonnnnnnnnnnnnggggggggggggggggggg")
+        print("this is wrooooonnnnnnnnnnnnggggggggggggggggggg")
+        local package_dir = ament.get_package_share_directory(package_name)
+        return package_dir .."/".. rest_of_path
+    else
+        print("this is gooooooooooooooooooooooooooooooooood")
+        print("this is gooooooooooooooooooooooooooooooooood")
+        print(copy_path_formatted)
+        print("this is gooooooooooooooooooooooooooooooooood")
+        return copy_path_formatted
+    end
+
+end
+
 local function load_robot(required_frames)
 
-    if _JSON_ROBOT_SPECIFICATION then
+
+    
+    local json_robot_tab = nil
+    local err
+    if _JSON_ROBOTSPECIFICATION_STRING~= nil then
+        json_robot_tab,_,err = JSON:decode(_JSON_ROBOTSPECIFICATION_STRING)
+    else
+        error("_JSON_ROBOTSPECIFICATION_STRING does not exist. This must be defined by the etasl_node and must contain the JSON robot specification")
+    end
+
+    if err then
+        error("The following error was encountered when loading the robot according to the robot specification: "..err);
+    end
+
+    local inspect = require("inspect")
+    print(inspect(_JSON_ROBOTSPECIFICATION_STRING))
+    print("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
+
+    local frames = {}
+    local xmlstr
+    local robot_worldmodel
+    local urdfreader
+
+    if json_robot_tab ~= nil and json_robot_tab["is-inline_robotspecification"] then
         
         -- require("context")
         -- require("geometric")
-        local urdfreader=require("urdfreader")
+        urdfreader=require("urdfreader")
 
 
         -- local f = io.open("/home/santiregui/ros2_ws/src/etasl_ros2_application_template/config_files/config_ur10_simulation.json", "rb")
         -- local json_string = f:read("*all")
         -- f:close()
-        local json_robot_tab = JSON:decode(_JSON_ROBOT_SPECIFICATION)
 
-        local urdf_path_formatted = json_robot_tab["urdf_path"]
-        local package_name, rest_of_path = urdf_path_formatted:match("%$%[(.-)%]/(.*)")
-        
-        local urdf_file =""
-        if package_name then
-            ament = require("libamentlua")
-            package_dir = ament.get_package_share_directory("etasl_ros2_application_template")
-            urdf_file = package_dir .."/".. rest_of_path
-        else
-            urdf_file = urdf_path_formatted
-        end
+        local urdf_file = path_interpolate(json_robot_tab["urdf_path"])
+
         -- print(urdf_file)
         -- print("lllllllllllllllllllll")
-        local xmlstr = urdfreader.loadFile(urdf_file)
-        local robot_worldmodel = urdfreader.readUrdf(xmlstr,{})
+        xmlstr = urdfreader.loadFile(urdf_file)
+        robot_worldmodel = urdfreader.readUrdf(xmlstr,{})
 
         -- Load all frames (tcp_frame and additional_frames)
         local VL = {}
@@ -656,7 +691,7 @@ local function load_robot(required_frames)
             end
             -- expr_tab[value.name] = {value.child_link,value.parent_link}
         end
-        local frames= robot_worldmodel:getExpressions(VL, ctx, expr_tab)
+        frames= robot_worldmodel:getExpressions(VL, ctx, expr_tab)
 
         for _, frame_key in ipairs(required_frames) do
             if frames[frame_key] == nil then
@@ -664,28 +699,80 @@ local function load_robot(required_frames)
             end
         end
 
-        local function getFrame(fname)
-            if frames[fname]~= nil then
-                return frames[fname]
-            else
-                error("The requested frame `" .. fname .. "` does not exist, or was not specified as a required frame within the argument table `required_frames` of function `robot_model(required_frames)`")
-                return nil
+
+    elseif json_robot_tab ~= nil and json_robot_tab["is-lua_robotspecification"] then
+
+        print(json_robot_tab["file_path"])
+        print("////////////////////////////////////")
+        local lua_file_path = path_interpolate(json_robot_tab["file_path"])
+        print(lua_file_path)
+        print("////////////////////////////////////")
+        local robot_spec = dofile(lua_file_path)
+
+        frames = robot_spec.frames
+        xmlstr = robot_spec.xmlstr
+        robot_worldmodel = robot_spec.robot_worldmodel
+        urdfreader = robot_spec.urdfreader
+
+        if frames == nil then
+            error("The specified LUA robot specification must return a table with key `frames`")
+        end
+        if xmlstr == nil then
+            error("The specified LUA robot specification must return a table with key `xmlstr`")
+        end
+        if robot_worldmodel == nil then
+            error("The specified LUA robot specification must return a table with key `robot_worldmodel`")
+        end
+        if urdfreader == nil then
+            error("The specified LUA robot specification must return a table with key `urdfreader`")
+        end
+
+        for _, frame_key in ipairs(required_frames) do
+            if frames[frame_key] == nil then
+                error("The required frame `" .. frame_key .. "` was not defined within the robot specification.")
             end
         end
-        
 
-        local return_robot_tab = {}
-        return_robot_tab.robot_joints = json_robot_tab["robot_joints"]
-        return_robot_tab.getFrame= getFrame
-        return_robot_tab.xmlstr = xmlstr
-        return_robot_tab.robot_worldmodel = robot_worldmodel
-        return_robot_tab.urdfreader = urdfreader
-
-
-        return return_robot_tab
     else
         return nil
     end
+
+    local function getFrame(fname)
+        if frames[fname]~= nil then
+            return frames[fname]
+        else
+            error("The requested frame `" .. fname .. "` does not exist, or was not specified as a required frame within the argument table `required_frames` of function `robot_model(required_frames)`")
+            return nil
+        end
+    end
+
+    -- ======== Checks if the world model is compatible with the configuration of etasl_node (by checking the that all the robot_joints exist in the worldmodel)
+    --TODO: This is not generic since not all URDFs and worldmodels contain a "world" node/link.
+    local elements = {}
+    for name, con in robot_worldmodel:allconnections("world") do
+        table.insert(elements,name)
+    end
+
+    local element_set = {}
+    -- Convert elements for quick lookup
+    for _, value in ipairs(elements) do
+        element_set[value] = true
+    end
+    -- Check if all elements in subset exist in the set
+    for _, value in ipairs(json_robot_tab["robot_joints"]) do
+        if not element_set[value] then
+            error("The provided robot model is not compatible with the provided configuration file since not all the specifiend robot_joints exist in the robot robot_worldmodel.")
+        end
+    end
+
+    local return_robot_tab = {}
+    return_robot_tab.robot_joints = json_robot_tab["robot_joints"]
+    return_robot_tab.getFrame= getFrame
+    return_robot_tab.xmlstr = xmlstr
+    return_robot_tab.robot_worldmodel = robot_worldmodel
+    return_robot_tab.urdfreader = urdfreader
+
+    return return_robot_tab
 
 end
 

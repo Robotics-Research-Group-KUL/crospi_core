@@ -42,6 +42,7 @@ etaslNode::etaslNode(const std::string & node_name, bool intra_process_comms = f
   srv_etasl_console_ = create_service<std_srvs::srv::Empty>("etasl_node/etasl_console", std::bind(&etaslNode::etasl_console, this, std::placeholders::_1, std::placeholders::_2));
 
   srv_readTaskSpecificationFile_ = create_service<etasl_interfaces::srv::TaskSpecificationFile>("etasl_node/readTaskSpecificationFile", std::bind(&etaslNode::readTaskSpecificationFile, this, std::placeholders::_1, std::placeholders::_2));
+  srv_readRobotSpecification_ = create_service<etasl_interfaces::srv::TaskSpecificationFile>("etasl_node/readRobotSpecification", std::bind(&etaslNode::readRobotSpecification, this, std::placeholders::_1, std::placeholders::_2));
 
   srv_readTaskSpecificationString_ = create_service<etasl_interfaces::srv::TaskSpecificationString>("etasl_node/readTaskSpecificationString", std::bind(&etaslNode::readTaskSpecificationString, this, std::placeholders::_1, std::placeholders::_2));
   
@@ -107,7 +108,7 @@ etaslNode::etaslNode(const std::string & node_name, bool intra_process_comms = f
   // this->get_node_base_interface()->get_context()->add_on_shutdown_callback(std::bind( &etaslNode::safe_shutdown, this)); //Can be used to add callback during shutdown (not pre-shutdown, so publishers and others are no longer available)
   // rclcpp::on_shutdown(std::bind( &etaslNode::safe_shutdown, my_etasl_node)); //Alternative to add_on_shutdown_callback (don't know the difference)
 
-  load_robot_specification(param); // Called here and on_cleanup such that is always available before any lua file, string or lua task specification is executed. 
+  // load_robot_specification(param); // Called here and on_cleanup such that is always available before any lua file, string or lua task specification is executed. 
 
 }
 
@@ -141,26 +142,8 @@ bool etaslNode::readTaskSpecificationFile(const std::shared_ptr<etasl_interfaces
 		return false;
 	}
 
-  // Old method:
-	// std::stringstream file_path;
-	// file_path << "Solver and initialization properties : \n";
-	// file_path.str()).c_str()
-	// std::string file_path = "";
-	// if(request->rel_shared_dir){
-	// 	std::string shared_dir = ament_index_cpp::get_package_share_directory("etasl_ros2");
-	// 	file_path = shared_dir + "/etasl/" + request->file_path;
-	// }
-	// else{
-	// 	file_path = request->file_path;
-	// }
-
   std::string file_path = etasl::string_interpolate(request->file_path);
-
-	// std::cout << "]]]]]]]]]]]]]]]]]]]]" <<std::endl; 
-	// std::cout << file_path <<std::endl; 
-	// std::cout << "]]]]]]]]]]]]]]]]]]]]" <<std::endl; 
-	// std::cout << "response:" <<request->file_path <<std::endl; 
-
+	
 	try{
 		// Read eTaSL specification:
 		int retval = LUA->executeFile(std::string(file_path));
@@ -185,6 +168,63 @@ bool etaslNode::readTaskSpecificationFile(const std::shared_ptr<etasl_interfaces
 		return false;
 	}
 
+
+	response->success = true;
+
+	return true;
+}
+
+bool etaslNode::readRobotSpecification(const std::shared_ptr<etasl_interfaces::srv::TaskSpecificationFile::Request> request, std::shared_ptr<etasl_interfaces::srv::TaskSpecificationFile::Response>  response) {
+
+  Json::Value param_original = board->getPath("/default-etasl", false);
+  Json::Value param = param_original; //Copy
+
+	if(this->get_current_state().label() != "unconfigured"){
+		RCUTILS_LOG_ERROR_NAMED(get_name(), "Service etasl_node/readTaskSpecificationFile can only be read in unconfigured state");
+		response->success = false;
+		return false;
+	}
+
+  // std::cout << "+++++++++++++++++++++++++++++" << std::endl;
+  // std::cout << "+++++++++++++++++++++++++++++" << std::endl;
+  // std::cout << "THE REQUESTED ROBOT SPECIFICATION IS: " << request->file_path << std::endl;
+  // std::cout << "+++++++++++++++++++++++++++++" << std::endl;
+
+
+  if (request->file_path != "") { // If a file_path is provided, then we override the default_robot_specification to use the provided lua file
+    std::string file_path = etasl::string_interpolate(request->file_path);
+    Json::Value robot_joints = param["default_robot_specification"]["robot_joints"];
+    param.removeMember("default_robot_specification");
+    param["default_robot_specification"]["is-lua_robotspecification"] = true;
+    param["default_robot_specification"]["file_path"] = file_path;
+    param["default_robot_specification"]["robot_joints"] = robot_joints;
+    RCUTILS_LOG_WARN_NAMED(get_name(), "The default robot specification is being overridden by passing non empty lua file_path in the request of readRobotSpecification");
+  }
+
+  Json::StreamWriterBuilder writer;
+  writer["indentation"] = "";  // Optional: adjust to control whitespace in output
+  // Create a StreamWriterBuilder to serialize the JSON value
+  std::string robot_spec = "_JSON_ROBOTSPECIFICATION_STRING = '" + Json::writeString(writer, param["default_robot_specification"]) + "'";
+  try{
+    // Read eTaSL specification:
+    int retval = LUA->executeString(robot_spec);
+    if (retval !=0) {
+      RCUTILS_LOG_ERROR_NAMED(get_name(), "Error executing the following specificed string command in LUA while loading the robot specification ");
+      RCUTILS_LOG_ERROR_NAMED(get_name(), robot_spec.c_str());
+      response->success = false;
+      rclcpp::shutdown(); 
+      return false;
+    }
+  } catch (const char* msg) {
+    // can be thrown by file/string errors during reading
+    // by lua_bind during reading
+    // by expressiongraph during reading ( expressiongraph will not throw when evaluating)
+    std::string message = "The following error was thrown while loading the robot specification: " + std::string(msg);
+    RCUTILS_LOG_ERROR_NAMED(get_name(), message.c_str());
+    response->success = false;
+    rclcpp::shutdown(); 
+    return false;
+  }
 
 	response->success = true;
 
@@ -229,6 +269,7 @@ bool etaslNode::readTaskSpecificationString(const std::shared_ptr<etasl_interfac
 	return true;
 
 }
+
 
 bool etaslNode::readTaskParameters(const std::shared_ptr<etasl_interfaces::srv::TaskSpecificationString::Request> request, std::shared_ptr<etasl_interfaces::srv::TaskSpecificationString::Response>  response) {
 	
@@ -442,7 +483,7 @@ void etaslNode::configure_etasl(){
     // fmt::print("{:->80}\n", "-");
 
     jointnames.clear();
-    for (auto n : jsonchecker->asArray(param, "robotdriver/robot_joints")) {
+    for (auto n : jsonchecker->asArray(param, "default_robot_specification/robot_joints")) {
         jointnames.push_back(jsonchecker->asString(n, ""));
     }
  
@@ -673,12 +714,12 @@ void etaslNode::construct_node(){
     Json::Value param = board->getPath("/default-etasl", false);
 
     // jointnames.clear();
-    // for (auto n : param["robotdriver"]["robot_joints"]) {
+    // for (auto n : param["default_robot_specification"]["robot_joints"]) {
     //     jointnames.push_back(n.asString());
     // }
 
     jointnames.clear();
-    for (auto n : jsonchecker->asArray(param, "robotdriver/robot_joints")) {
+    for (auto n : jsonchecker->asArray(param, "default_robot_specification/robot_joints")) {
         jointnames.push_back(jsonchecker->asString(n, ""));
     }
 
@@ -969,7 +1010,6 @@ void etaslNode::construct_node(){
 
     is_configured = false; //To indicate that it has not being configured after cleanup node
     Json::Value param = board->getPath("/default-etasl", false);
-    load_robot_specification(param ); // Called here and in class constructor such that is always available before any lua file, string or lua task specification is executed. 
 
     // We return a success and hence invoke the transition to the next
     // step: "unconfigured".
@@ -1076,43 +1116,30 @@ void etaslNode::construct_node(){
   }
 
   void etaslNode::load_robot_specification(Json::Value const& param ){
+    Json::StreamWriterBuilder writer;
+    writer["indentation"] = "";  // Optional: adjust to control whitespace in output
 
-    if(param["robotspecification"].isMember("is-inline_robotspecification") && param["robotspecification"]["is-inline_robotspecification"].isBool()){
-      // Create a StreamWriterBuilder to serialize the JSON value
-      Json::StreamWriterBuilder writer;
-      writer["indentation"] = "";  // Optional: adjust to control whitespace in output
-      std::string robot_spec = "_JSON_ROBOT_SPECIFICATION = '" + Json::writeString(writer, param["robotspecification"]) + "'";
-      // std::cout << ")))))))))))))))))))))))))))))" << std::endl;
-      // std::cout << robot_spec << std::endl;
-      try{
-        // Read eTaSL specification:
-        int retval = LUA->executeString(robot_spec);
-        if (retval !=0) {
-          RCUTILS_LOG_ERROR_NAMED(get_name(), "Error executing the following specificed string command in LUA while loading the robot specification ");
-          RCUTILS_LOG_ERROR_NAMED(get_name(), robot_spec.c_str());
-          rclcpp::shutdown(); 
-        }
-      } catch (const char* msg) {
-        // can be thrown by file/string errors during reading
-        // by lua_bind during reading
-        // by expressiongraph during reading ( expressiongraph will not throw when evaluating)
-        std::string message = "The following error was thrown while loading the robot specification: " + std::string(msg);
-        RCUTILS_LOG_ERROR_NAMED(get_name(), message.c_str());
+    // Create a StreamWriterBuilder to serialize the JSON value
+    std::string robot_spec = "_JSON_ROBOTSPECIFICATION_STRING = '" + Json::writeString(writer, param["default_robot_specification"]) + "'";
+    // std::cout << ")))))))))))))))))))))))))))))" << std::endl;
+    // std::cout << robot_spec << std::endl;
+    try{
+      // Read eTaSL specification:
+      int retval = LUA->executeString(robot_spec);
+      if (retval !=0) {
+        RCUTILS_LOG_ERROR_NAMED(get_name(), "Error executing the following specificed string command in LUA while loading the robot specification ");
+        RCUTILS_LOG_ERROR_NAMED(get_name(), robot_spec.c_str());
         rclcpp::shutdown(); 
       }
+    } catch (const char* msg) {
+      // can be thrown by file/string errors during reading
+      // by lua_bind during reading
+      // by expressiongraph during reading ( expressiongraph will not throw when evaluating)
+      std::string message = "The following error was thrown while loading the robot specification: " + std::string(msg);
+      RCUTILS_LOG_ERROR_NAMED(get_name(), message.c_str());
+      rclcpp::shutdown(); 
     }
-    else if(param["robotspecification"].isMember("is-lua_robotspecification") && param["robotspecification"]["is-lua_robotspecification"].isBool()){
-        RCUTILS_LOG_ERROR_NAMED(get_name(), "is-lua_robotspecification is still not implemented");
-        rclcpp::shutdown(); 
-    }
-    else if(param["robotspecification"].isMember("is-emptyrobotspecification") && param["robotspecification"]["is-emptyrobotspecification"].isBool()){
-        RCUTILS_LOG_ERROR_NAMED(get_name(), "is-emptyrobotspecification is still not implemented");
-        rclcpp::shutdown(); 
-    }
-    else{
-          RCUTILS_LOG_ERROR_NAMED(get_name(), "Error when loading the robot specification. Only is-inline_robotspecification, is-lua_robotspecification and is-emptyrobotspecification types are allowed.");
-          rclcpp::shutdown(); 
-    }
+
 
     // TODO 
   }

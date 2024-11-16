@@ -131,6 +131,7 @@ class etaslNode : public rclcpp_lifecycle::LifecycleNode
 
         bool etasl_console(const std::shared_ptr<std_srvs::srv::Empty::Request> request, std::shared_ptr<std_srvs::srv::Empty::Response>  response);
         bool readTaskSpecificationFile(const std::shared_ptr<etasl_interfaces::srv::TaskSpecificationFile::Request> request, std::shared_ptr<etasl_interfaces::srv::TaskSpecificationFile::Response>  response);
+        bool readRobotSpecification(const std::shared_ptr<etasl_interfaces::srv::TaskSpecificationFile::Request> request, std::shared_ptr<etasl_interfaces::srv::TaskSpecificationFile::Response>  response);
         bool readTaskSpecificationString(const std::shared_ptr<etasl_interfaces::srv::TaskSpecificationString::Request> request, std::shared_ptr<etasl_interfaces::srv::TaskSpecificationString::Response>  response);
         bool readTaskParameters(const std::shared_ptr<etasl_interfaces::srv::TaskSpecificationString::Request> request, std::shared_ptr<etasl_interfaces::srv::TaskSpecificationString::Response>  response);
     
@@ -205,6 +206,7 @@ class etaslNode : public rclcpp_lifecycle::LifecycleNode
         rclcpp::Service<std_srvs::srv::Empty>::SharedPtr srv_etasl_console_;
         rclcpp::Service<etasl_interfaces::srv::TaskSpecificationString>::SharedPtr srv_readTaskSpecificationString_;
         rclcpp::Service<etasl_interfaces::srv::TaskSpecificationFile>::SharedPtr srv_readTaskSpecificationFile_;
+        rclcpp::Service<etasl_interfaces::srv::TaskSpecificationFile>::SharedPtr srv_readRobotSpecification_;
         rclcpp::Service<etasl_interfaces::srv::TaskSpecificationString>::SharedPtr srv_readTaskParameters_;
 
 
