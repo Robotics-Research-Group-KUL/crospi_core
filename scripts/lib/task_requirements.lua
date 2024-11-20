@@ -235,9 +235,6 @@ local function param_string(spec)
         error("The default value specified for parameter `" .. spec.name .. "` should be a string.")
     end
 
-    print("===================================____________________")
-    print(spec.pattern)
-
     if (spec.pattern ~= nil and type(spec.pattern) == "string") then
         local success, _ = pcall(function() string.match("", spec.pattern) end)
         if not success then
@@ -413,11 +410,7 @@ end
 --- @param param_tab (table) A table containing the JSON Schema specification of all individual parameters.
 --- @return function_tab (table) A table containing important functions to load and get the defined parameters
 local function parameters(task_description, param_tab)
-    -- for k, _ in ipairs(param_tab) do
-    --     local key_name = next(param_tab[k])
-    --     print(key_name .. " = " .. inspect(param_tab[k][key_name]))
-    --     print("-----------------------------")
-    -- end
+
 
     -- The following obtains the filename where this function is called, such that we can generate the JSON Schema using the naming convention
 
@@ -504,7 +497,7 @@ local function parameters(task_description, param_tab)
         end
         local des_var = _TABLE_CONTAINING_ETASL_PARAMS[var_name]
         if des_var ~= nil then
-            print(var_name .. " value: " .. tostring(des_var))
+            -- print(var_name .. " value: " .. tostring(des_var))
             return des_var
         else --Due to the jsonschema validator, this case will never occur since the missing non-required parameters are automatically filled as the default value
             -- print("variable ".. var_name .. " was nil")
@@ -518,7 +511,6 @@ local function parameters(task_description, param_tab)
             end
             
             if not is_required then
-                -- print("Warning: " .. var_name .. " does not exist and thus the default value is used. If this code was executed during generation of JSON Schemas, please ignore this warning.")
                 local default_val = nil
                 for k, _ in ipairs(param_tab) do
                     local key_name = next(param_tab[k])
@@ -526,7 +518,7 @@ local function parameters(task_description, param_tab)
                         default_val = param_tab[k][key_name]["default"]
                     end
                 end
-                print(var_name .. " was set to default value: " .. tostring(default_val))
+                -- print(var_name .. " was set to default value: " .. tostring(default_val))
                 return default_val
             else
                 error("Parameter `" .. var_name .. "` was set as required but was not found in the JSON file.")
@@ -578,7 +570,7 @@ local function parameters(task_description, param_tab)
         _TABLE_CONTAINING_ETASL_PARAMS ={}
         for key_param, val_param in pairs(json_table) do
             _TABLE_CONTAINING_ETASL_PARAMS[key_param] = val_param
-            print("Value of parameter `".. tostring(key_param) .. "` is: " .. tostring(val_param))
+            -- print("Value of parameter `".. tostring(key_param) .. "` is: " .. tostring(val_param))
         end
         
     end
@@ -601,7 +593,7 @@ local function parameters(task_description, param_tab)
     end
 
     if _JSON_TASK_SPECIFICATION_PARAMETERS_STRING then
-        print(_JSON_TASK_SPECIFICATION_PARAMETERS_STRING)
+        -- print(_JSON_TASK_SPECIFICATION_PARAMETERS_STRING)
         load_json_string(_JSON_TASK_SPECIFICATION_PARAMETERS_STRING)
     end
 
@@ -623,15 +615,9 @@ local function path_interpolate(path_formatted)
     local package_name, rest_of_path = path_formatted:match("%$%[(.-)%]/(.*)")
     
     if package_name then
-        print("this is wrooooonnnnnnnnnnnnggggggggggggggggggg")
-        print("this is wrooooonnnnnnnnnnnnggggggggggggggggggg")
         local package_dir = ament.get_package_share_directory(package_name)
         return package_dir .."/".. rest_of_path
     else
-        print("this is gooooooooooooooooooooooooooooooooood")
-        print("this is gooooooooooooooooooooooooooooooooood")
-        print(copy_path_formatted)
-        print("this is gooooooooooooooooooooooooooooooooood")
         return copy_path_formatted
     end
 
@@ -653,10 +639,6 @@ local function load_robot(required_frames)
         error("The following error was encountered when loading the robot according to the robot specification: "..err);
     end
 
-    local inspect = require("inspect")
-    print(inspect(_JSON_ROBOTSPECIFICATION_STRING))
-    print("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
-
     local frames = {}
     local xmlstr
     local robot_worldmodel
@@ -675,8 +657,6 @@ local function load_robot(required_frames)
 
         local urdf_file = path_interpolate(json_robot_tab["urdf_path"])
 
-        -- print(urdf_file)
-        -- print("lllllllllllllllllllll")
         xmlstr = urdfreader.loadFile(urdf_file)
         robot_worldmodel = urdfreader.readUrdf(xmlstr,{})
 
@@ -702,11 +682,7 @@ local function load_robot(required_frames)
 
     elseif json_robot_tab ~= nil and json_robot_tab["is-lua_robotspecification"] then
 
-        print(json_robot_tab["file_path"])
-        print("////////////////////////////////////")
         local lua_file_path = path_interpolate(json_robot_tab["file_path"])
-        print(lua_file_path)
-        print("////////////////////////////////////")
         local robot_spec = dofile(lua_file_path)
 
         frames = robot_spec.frames
@@ -747,9 +723,8 @@ local function load_robot(required_frames)
     end
 
     -- ======== Checks if the world model is compatible with the configuration of etasl_node (by checking the that all the robot_joints exist in the worldmodel)
-    --TODO: This is not generic since not all URDFs and worldmodels contain a "world" node/link.
     local elements = {}
-    for name, con in robot_worldmodel:allconnections("world") do
+    for name, _ in pairs(robot_worldmodel.connections) do
         table.insert(elements,name)
     end
 
@@ -781,7 +756,6 @@ local function robot_model(required_frames)
 
     local robot = load_robot(required_frames)
 
-    
     if not robot.robot_joints or next(robot.robot_joints) == nil then
         error("There are no robot_joints defined in the robot specification.")
     end
