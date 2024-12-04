@@ -38,12 +38,12 @@
                         "parent_link" : {
                             "description":"Name of the frame parent_link (i.e. base link), which should exist as a link in the URDF.",
                             "type":"string",
-                            "default": "my_parent_kink"
+                            "default": "my_parent_link"
                         },
                         "child_link" : {
                             "description":"Name of the frame child_link (i.e. link of interest), which should exist as a link in the URDF.",
                             "type":"string",
-                            "default": "my_child_kink"
+                            "default": "my_child_link"
                         }
                     }
                 },
@@ -64,12 +64,12 @@
                             "parent_link" : {
                                 "description":"Name of the frame parent_link (i.e. base link), which should exist as a link in the URDF.",
                                 "type":"string",
-                                "default": "my_parent_kink"
+                                "default": "my_parent_link"
                             },
                             "child_link" : {
                                 "description":"Name of the frame child_link (i.e. link of interest), which should exist as a link in the URDF.",
                                 "type":"string",
-                                "default": "my_child_kink"
+                                "default": "my_child_link"
                             }
                         }
                     }
