@@ -25,7 +25,8 @@ KukaIiwaRobotDriver::KukaIiwaRobotDriver(): periodicity(0.0),
 void KukaIiwaRobotDriver::construct(std::string robot_name, 
                         FeedbackMsg* fb, 
                         SetpointMsg* sp,
-                        const Json::Value& config)
+                        const Json::Value& config,
+                        boost::shared_ptr<etasl::JsonChecker> jsonchecker)
 {
 
     ip_address = config["ip_address"].asString();
