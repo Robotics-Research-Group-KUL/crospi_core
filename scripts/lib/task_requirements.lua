@@ -69,7 +69,7 @@ local function param_generic(spec)
     end
 
     param_schema[spec.name] = {
-        description = spec.description .. ". Set as a string begining with $blackboard such as `$blackboard/output_param/my_task/my_param` if the value is not yet known and thus will be set externally at runtime (only once) depending on e.g. the outcome of a previous action or the outcome of another module.",
+        description = spec.description .. ". \nSet as a string beginning with $blackboard such as `$blackboard/output_param/my_task/my_param` if the value is not yet known and thus will be set externally at runtime (only once) depending on e.g. the outcome of a previous action or the outcome of another module.",
         examples={"$blackboard/output_param/my_task/" .. spec.name}
     }
     
@@ -424,12 +424,45 @@ local function parameters(task_description, param_tab)
     local filename_no_ext = filename_json:gsub("%.json$", ""):gsub("%.etasl$", "")--removes extensions .etasl and .json
     -- local unique_identifier = "is-" .. filename_no_ext
 
+    local function load_json_string(json_string)
+        local json_table,_,err = JSON:decode(json_string)
+        if err then
+            error(err);
+        end
+
+        return json_table
+    
+    end
+
+    local function load_json_file(file_path)
+        local f = io.open(file_path, "rb")
+        local json_string = f:read("*all")
+        f:close()
+        local json_tab = load_json_string(json_string)
+        return json_tab
+    end
+
     --- Generates a JSON Schema file based on the parameters defined.
     --- It's meant to be used locally, i.e. it is not exposed to the user
     --- @param task_description (string) A string containing a description of the task specification.
     --- @param param_tab (table) A table containing a partial JSON Schema specification of all individual parameters.
     --- @return schema (table) A table containing the full generated JSON Schema
     local function write_json_schema(task_description, param_tab)
+
+        local task_library_json = {name="",version="",description="", authors={}} --During execution (and not generation of schemas) this is not relevant
+        local file_path_libs = "" --During execution (and not generation of schemas) this is not relevant
+
+        if _LUA_FILEPATH_TO_GENERATE_JSON_SCHEMA then -- _LUA_FILEPATH_TO_GENERATE_JSON_SCHEMA is only defined during generation of schemas and NOT during execution of tasks
+            task_library_json = load_json_file(_LUA_FILEPATH_TO_GENERATE_JSON_SCHEMA .. "../task_library.json")
+            local file_path_libs = _LUA_FILEPATH_TO_GENERATE_JSON_SCHEMA:match("([^/]+)/task_json_schemas/$")
+            if file_path_libs == nil then
+                error("The file structure for the task specification libraries is not being followed. " .. _LUA_FILEPATH_TO_GENERATE_JSON_SCHEMA)
+            end
+        -- local lib_alias = task_library_json["alias"]
+        end
+        local lib_name = task_library_json["name"]
+        local lib_version = task_library_json["version"]
+        local lib_description = task_library_json["description"]
 
         -- local filename_lua = "dummy_name.etasl.lua"
         -- if _LUA_FILEPATH_TO_GENERATE_JSON_SCHEMA then
@@ -444,8 +477,18 @@ local function parameters(task_description, param_tab)
             descript = "Parameters needed to the corresponding task specification in eTaSL. In this case no parameters were specified and hence the properties field is empty"
         end
         
+        local lib_identifier = "from-".. lib_name .."-version-" .. lib_version
+        local task_identifier = "is-".. filename_no_ext
+
+        local lib_description = "Library ".. lib_name .. " version " .. lib_version .. ".\n Set to true to indicate that task specification comes from the library above. \n Library description: " .. lib_description .. "\nAuthors: "
+        for index, value in pairs(task_library_json["authors"]) do
+            lib_description = lib_description .. task_library_json["authors"][index]["name"] .. " (" .. task_library_json["authors"][index]["affiliation"] .. "), "
+        end
+        lib_description = lib_description:gsub(",%s*$", "") --Deletes the last comma from authors list
+
         local def_properties = {
-            ["is-"..filename_no_ext] = {description="Set to true to indicate that the task specification is defined in: " .. filename_lua .. ". \n" .. task_description, type="boolean", const=true},
+            -- [task_identifier] = {description="Set to true to indicate that the task specification is defined in: " .. filename_lua .. ". \n" .. task_description, type="boolean", const=true},
+            [lib_identifier] = {description=lib_description, type="boolean", const=true},
         }
 
         local schema = {
@@ -455,29 +498,38 @@ local function parameters(task_description, param_tab)
             description = descript,
             type = "object",
             properties = def_properties,
-            dependencies = {["is-"..filename_no_ext] ={
-                ["properties"]={},
-                ["required"]={"file_path","parameters"}
-            }},
-            required = {"is-"..filename_no_ext},
+            dependencies = {
+                [lib_identifier] = {
+                    ["properties"]={
+                        [task_identifier] = {description="Task Specification: " .. filename_lua .."\nSet to true to indicate that the task uses the task specification mentioned above. \n Task description: " .. task_description, type="boolean", const=true}
+                    },
+                    ["required"]={task_identifier}
+                },
+                [task_identifier] = {
+                    ["properties"]={},
+                    ["required"]={"file_path","parameters"}
+                },
+            },
+            required = {lib_identifier},
             additionalProperties= true, --needed to be true for using dependencies
         }
 
-        local filepath_lua =  "$[etasl_ros2_application_template]/etasl/task_specifications/" .. filename_lua
-        schema.dependencies["is-"..filename_no_ext].properties["file_path"] = {description="File path of the corresponding task specification", type="string", const=filepath_lua}
-        schema.dependencies["is-"..filename_no_ext].properties["parameters"] = {type="object", description= "List of parameters needed to define an instance of the task specification",required=required_parameters,additionalProperties=false, properties={}}
+
+        local filepath_lua =  "$[etasl_ros2_application_template]/task_specifications/libraries/" .. file_path_libs .. "/task_specifications/" .. filename_lua
+        schema.dependencies[task_identifier].properties["file_path"] = {description="File path of the corresponding task specification", type="string", const=filepath_lua}
+        schema.dependencies[task_identifier].properties["parameters"] = {type="object", description= "List of parameters needed to define an instance of the task specification",required=required_parameters,additionalProperties=false, properties={}}
 
         for k, _ in ipairs(param_tab) do
             local key_name = next(param_tab[k])
-            schema.dependencies["is-"..filename_no_ext].properties.parameters.properties[key_name] = param_tab[k][key_name]
+            schema.dependencies[task_identifier].properties.parameters.properties[key_name] = param_tab[k][key_name]
         end
-        -- schema.dependencies["is-"..filename_no_ext].required = required_parameters
-        -- table.insert(schema.dependencies["is-"..filename_no_ext].required, "file_path")
+        -- schema.dependencies[task_identifier].required = required_parameters
+        -- table.insert(schema.dependencies[task_identifier].required, "file_path")
 
 
         if _LUA_FILEPATH_TO_GENERATE_JSON_SCHEMA then 
-            local file = assert(io.open(_LUA_FILEPATH_TO_GENERATE_JSON_SCHEMA .. filename_json, "w"))
             local dkjson = require("dkjson") -- Ensure you have a JSON library like json, dkjson or cjson. In this case dkjson is used
+            local file = assert(io.open(_LUA_FILEPATH_TO_GENERATE_JSON_SCHEMA .. filename_json, "w"))
             file:write(dkjson.encode(schema, { indent = true }))
             file:close()
             print("Code was exited after generating the JSON Schema file, since this should not be done during execution but only in the generation phase.")
@@ -581,26 +633,13 @@ local function parameters(task_description, param_tab)
         
     end
 
-    local function load_json_string(json_string)
-        local json_table,_,err = JSON:decode(json_string)
-        if err then
-            error(err);
-        end
-
-        load_json_table(json_table)
-    
-    end
-
-    local function load_json_file(file_path)
-        local f = io.open(file_path, "rb")
-        local json_string = f:read("*all")
-        f:close()
-        load_json_string(json_string)
-    end
 
     if _JSON_TASK_SPECIFICATION_PARAMETERS_STRING then
         -- print(_JSON_TASK_SPECIFICATION_PARAMETERS_STRING)
-        load_json_string(_JSON_TASK_SPECIFICATION_PARAMETERS_STRING)
+        local json_table = load_json_string(_JSON_TASK_SPECIFICATION_PARAMETERS_STRING)
+
+        load_json_table(json_table)
+
     end
 
     local function_tab = {}

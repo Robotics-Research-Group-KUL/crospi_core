@@ -14,32 +14,38 @@ nav:
   - 'Installation':
     - 'markdown/installation/regular_installation.md'
     - 'markdown/installation/docker.md'
-  - 'Application Template':
-    - 'markdown/template/application_template.md'
-  - 'Basic Tutorials':
-    - 'Preparing your application':
-      - 'markdown/basic_tutorials/setup_configuration.md'
-      - 'markdown/basic_tutorials/skills_configuration.md'
-      - 'markdown/basic_tutorials/task_parameters.md'
-    - 'Running the eTaSL lifecycle node':
-      - 'markdown/basic_tutorials/execution.md'
-    - 'Starting a task':
-      - 'markdown/basic_tutorials/starting_a_task.md'
+  - 'Introduction':
+    - 'markdown/introduction/about.md'
+    - 'markdown/introduction/application_template.md'
+  - 'How to run':
+    - 'markdown/basic_tutorials/node_execution.md'
+    - 'markdown/basic_tutorials/running_examples.md'
+  - 'Developing Applications':
+    - Introduction: 'markdown/basic_tutorials/intro_to_applications.md'
+    - 'markdown/basic_tutorials/setup_configuration.md'
     - 'Outputting data':
-      - 'markdown/basic_tutorials/monitoring_of_events.md' 
       - 'markdown/basic_tutorials/task_variables_to_topics.md' 
       - 'markdown/basic_tutorials/task_variables_to_csv_files.md'
     - 'Inputting data':
       - 'markdown/basic_tutorials/subscribing_to_ros_topics.md' 
       - 'markdown/basic_tutorials/intraprocess_communication.md' 
-  - 'Intermediate tutorials':
-    - 'Coordinating tasks and other nodes':
-      - 'markdown/intermediate_tutorials/fsm_yasmin.md'
-      - 'markdown/intermediate_tutorials/action_server.md'
-      - 'markdown/intermediate_tutorials/behavior_tree.md' 
-    - 'Debugging':
-      - 'markdown/intermediate_tutorials/etasl_console.md'
-  - 'Advanced tutorials':
+    - 'Coordination of skills and nodes':
+      - 'markdown/basic_tutorials/applications_with_betfsm.md'
+      - 'markdown/basic_tutorials/action_server.md'
+      - 'markdown/basic_tutorials/behavior_tree.md' 
+  - 'Developing Skills':
+    - Introduction: 'markdown/basic_tutorials/intro_to_skills.md'
+    - 'markdown/basic_tutorials/installing_task_spec_library.md'
+    - 'markdown/basic_tutorials/task_configuration.md'
+    - 'markdown/basic_tutorials/general_skill_development.md'
+    - 'markdown/basic_tutorials/monitoring_of_events.md' 
+    - 'markdown/basic_tutorials/skills_with_betfsm.md'
+  - 'Developing Task Specifications':
+    - Introduction: 'markdown/basic_tutorials/intro_to_task_specifications.md'
+    - 'markdown/basic_tutorials/task_specifications.md'
+    - 'markdown/basic_tutorials/creating_libraries.md'
+    - Debugging: 'markdown/basic_tutorials/etasl_console.md'
+  - 'Extending node (advanced)':
     - 'I/O Handlers':
       - 'markdown/advanced_tutorials/input_handlers.md'
       - 'markdown/advanced_tutorials/output_handlers.md'
@@ -77,6 +83,7 @@ markdown_extensions:
   - pymdownx.snippets
   # - pymdownx.superfences
   - pymdownx.details
+  - pymdownx.tabbed
     #- nl2br
     ##  - mdx_gh_links:
 #      user: mkdocs

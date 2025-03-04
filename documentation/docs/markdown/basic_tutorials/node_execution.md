@@ -50,7 +50,7 @@ In every terminal that you open first run the `ros2_source` command (alias creat
         This example is compatible with example 1, since it will run a setup with a UR10 in simulation that can move the virtual robot in RVIZ.
 
         ```bash
-        ros2 run etasl_ros2 etasl_node --ros-args -p directory_path:="\$[etasl_ros2_application_template]/config_files/config_ur10_simulation.json"
+        ros2 run etasl_ros2 etasl_node --ros-args -p directory_path:="\$[etasl_ros2_application_template]/applications/application_example_ur10_simulation.setup.json"
         ``` 
 
     !!! warning

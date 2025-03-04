@@ -140,5 +140,8 @@
         "*.ipp": "cpp",
         "*.txx": "cpp"
     },
-    "ros.distro": "humble"
+    "ros.distro": "humble",
+    "Lua.diagnostics.globals": [
+        "param_scalar"
+    ]
 }
