@@ -33,7 +33,7 @@ public:
     {
         std::string schema_src = R"(
                     {
-                        "$schema": "http://json-schema.org/draft-04/schema",
+                        "$schema": "http://json-schema.org/draft-06/schema",
                         "$id":"jointstateinputhandler",
                         "type":"object",
                         "properties":{
@@ -76,11 +76,11 @@ public:
      * @brief create the solver with the given parameters
      *
      */
-    virtual InputHandler::SharedPtr create(const Json::Value& parameters)
+    virtual InputHandler::SharedPtr create(const Json::Value& parameters, boost::shared_ptr<etasl::JsonChecker> jsonchecker)
     {
-        std::string topic_name = parameters["topic-name"].asString();
-        int depth = parameters["depth"].asInt();
-        int nroftries = parameters["number_of_tries"].asInt();
+        std::string topic_name = jsonchecker->asString(parameters, "topic-name");
+        int depth = jsonchecker->asInt(parameters, "depth");
+        int nroftries = jsonchecker->asInt(parameters, "number_of_tries");
         return std::make_shared<JointStateInputHandler>(
             node,
             topic_name,

@@ -1,3 +1,0 @@
-# Starting a task
-
-TODO

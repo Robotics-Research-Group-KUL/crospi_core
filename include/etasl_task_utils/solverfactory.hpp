@@ -4,6 +4,7 @@
 #include <expressiongraph/solver.hpp>
 #include <memory>
 #include <unordered_map>
+#include "etasl_task_utils/json_checker.hpp"
 
 namespace etasl {
 
@@ -30,7 +31,7 @@ public:
      * @brief create the solver with the given parameters
      *
      */
-    virtual ProductSharedPtr create(const Json::Value& parameters) = 0;
+    virtual ProductSharedPtr create(const Json::Value& parameters, boost::shared_ptr<JsonChecker> jsonchecker) = 0;
 
     virtual ~SolverFactory() { }
 };

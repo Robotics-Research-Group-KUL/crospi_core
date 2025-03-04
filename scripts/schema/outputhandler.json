@@ -1,5 +1,5 @@
 {
-    "$schema": "http://json-schema.org/draft-04/schema",
+    "$schema": "http://json-schema.org/draft-06/schema",
     "$id": "outputhandler.json",
     "title": "Outputhandler",
     "description": "An outputhandler extract data from eTaSL and communicate this in some way to the outside world, such as writing to a file or using a ROS Topic",

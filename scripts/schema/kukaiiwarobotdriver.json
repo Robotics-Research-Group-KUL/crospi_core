@@ -1,5 +1,5 @@
 {
-    "$schema": "http://json-schema.org/draft-04/schema",
+    "$schema": "http://json-schema.org/draft-06/schema",
     "$id":"kukaiiwarobotdriver.json",
     "type":"object",
     "properties":{
@@ -13,7 +13,7 @@
     "additionalProperties": true,
     "dependencies":{
         "is-kukaiiwarobotdriver":{
-          "required":["ip_address", "fri_port", "joint_names"],
+          "required":["ip_address", "fri_port"],
           "properties":{
                 "ip_address" : {
                     "description":"IP address of the robot using Ipv4 format.",
@@ -25,12 +25,6 @@
                     "type":"number",
                     "default": 30200,
                     "minimum": 0
-                },
-                "joint_names": {
-                    "description":"Names of the joints in order from the world to the end effector. This names need to be consistent with the ones declared in the URDF file of the robot.",
-                    "type":"array",
-                    "items": {"type": "string"},
-                    "default": ["joint1", "joint2", "joint3", "etc..."]
                 }
           }
         }

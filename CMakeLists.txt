@@ -68,6 +68,13 @@ add_subdirectory(src/ros2_nodes/test_publisher_node)
 add_subdirectory(src/ros2_nodes/erwin_node)
 
 
+# Install the Python package
+find_package(Python3 REQUIRED COMPONENTS Interpreter Development)
+# ament_python_install_package(scripts/python/etasl_ros2_py)
+ament_python_install_package(etasl_ros2_py)
+
+
+
 
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)

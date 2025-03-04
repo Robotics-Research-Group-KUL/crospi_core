@@ -7,6 +7,8 @@
 
 #include "feedback_struct.hpp"
 #include <jsoncpp/json/json.h>
+#include "etasl_task_utils/json_checker.hpp"
+
 
 // #include <expressiongraph/context.hpp>
 
@@ -50,7 +52,8 @@ namespace etasl {
             virtual void construct(std::string robot_name, 
                                     FeedbackMsg* fb, 
                                     SetpointMsg* sp,
-                                    const Json::Value& config) = 0;
+                                    const Json::Value& config,
+                                    boost::shared_ptr<etasl::JsonChecker> jsonchecker) = 0;
 
             /**
              * @brief Initialize the communication with the Robot

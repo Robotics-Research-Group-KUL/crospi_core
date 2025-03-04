@@ -1,0 +1,81 @@
+{
+    "$schema": "http://json-schema.org/draft-06/schema",
+    "$id": "inline_robotspecification.json",
+    "type":"object",
+    "additionalProperties": true,
+    "required":["is-inline_robotspecification"],
+    "properties":{
+        "is-inline_robotspecification" : {
+            "description":"To indicate that the robot specification will be declared inline within the JSON configuration file (and not in an external lua file).",
+            "type":"boolean",
+            "const": true
+        }
+    },
+    "dependencies":{
+        "is-inline_robotspecification":{
+            "required":["urdf_path", "robot_joints","tcp_frame"],
+            "properties":{
+                "urdf_path" : {
+                    "description":"Path of the urdf. Use $[colcon_package] to make the path relative to a colcon package",
+                    "type":"string",
+                    "pattern": ".*\\.urdf$",
+                    "default": "$[etasl_ros2_application_template]/robot_description/urdf/ur10/use_case_setup_ur10.urdf"
+                },
+                "robot_joints": {
+                    "description":"Names of the joints in order from the world to the end effector. This names need to be consistent with the ones declared in the URDF file of the robot.",
+                    "type":"array",
+                    "items": {"type": "string"},
+                    "default": ["joint1", "joint2", "joint3", "etc..."],
+                    "examples": [
+                        ["shoulder_pan_joint","shoulder_lift_joint","elbow_joint","wrist_1_joint","wrist_2_joint","wrist_3_joint"],
+                        ["joint1","joint2","joint3","joint4","joint5","joint6","joint7"]
+                    ]
+                },
+                "tcp_frame": {
+                    "description":"Tool center point frame that goes from parent_link to the child_link. A variable with the name tcp_frame will be available in each LUA task specification.",
+                    "type":"object",
+                    "properties": {
+                        "parent_link" : {
+                            "description":"Name of the frame parent_link (i.e. base link), which should exist as a link in the URDF.",
+                            "type":"string",
+                            "default": "my_parent_link"
+                        },
+                        "child_link" : {
+                            "description":"Name of the frame child_link (i.e. link of interest), which should exist as a link in the URDF.",
+                            "type":"string",
+                            "default": "my_child_link"
+                        }
+                    }
+                },
+                "additional_frames": {
+                    "title":"additional_frames",
+                    "description":"List of additional frames that are declared with the purpose of imposing constraints over them in the task specification",
+                    "type" : "array",
+                    "items" : {
+                        "description":"Additional frame that is declared with the purpose of imposing constraints over it in the task specification",
+                        "type":"object",
+                        "properties": {
+                            "name" : {
+                                "description":"Name of the frame that goes from parent_link to the child_link. A variable will be created in LUA with this name and will be available in each task specification.",
+                                "type":"string",
+                                "default": "my_frame",
+                                "pattern": "^[A-Za-z0-9_]+$"
+                            },
+                            "parent_link" : {
+                                "description":"Name of the frame parent_link (i.e. base link), which should exist as a link in the URDF.",
+                                "type":"string",
+                                "default": "my_parent_link"
+                            },
+                            "child_link" : {
+                                "description":"Name of the frame child_link (i.e. link of interest), which should exist as a link in the URDF.",
+                                "type":"string",
+                                "default": "my_child_link"
+                            }
+                        }
+                    }
+                }
+            }
+        }
+      }
+}
+

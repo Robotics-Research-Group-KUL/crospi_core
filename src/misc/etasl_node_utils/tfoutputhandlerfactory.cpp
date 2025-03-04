@@ -32,7 +32,7 @@ public:
     {
         std::string schema_src = R"(
 {
-    "$schema": "http://json-schema.org/draft-04/schema",
+    "$schema": "http://json-schema.org/draft-06/schema",
     "$id": "tfoutputhandler.json",
     "type": "object",
     "title": "Parameters for TFOutputHandler",
@@ -95,14 +95,14 @@ public:
      * @brief create the solver with the given parameters
      *
      */
-    virtual TFOutputHandler::SharedPtr create(const Json::Value& parameters)
+    virtual TFOutputHandler::SharedPtr create(const Json::Value& parameters, boost::shared_ptr<etasl::JsonChecker> jsonchecker)
     {
         std::vector<TFSpec> tfspecs;
-        for (auto p : parameters["tf"]) {
+        for (auto p : jsonchecker->asArray(parameters, "tf")) {
             TFSpec tfspec;
-            tfspec.frame_id = p["frame_id"].asString();
-            for (auto v: p["variable-names"]) {
-                tfspec.variablenames.push_back(v.asString());
+            tfspec.frame_id = jsonchecker->asString(p, "frame_id");
+            for (auto v: jsonchecker->asArray(p, "variable-names")) {
+                tfspec.variablenames.push_back(jsonchecker->asString(v, ""));
             }
             tfspecs.emplace_back(tfspec);
         }

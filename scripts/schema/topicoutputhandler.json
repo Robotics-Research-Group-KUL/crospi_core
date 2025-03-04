@@ -1,5 +1,5 @@
 {
-    "$schema":"http://json-schema.org/draft-04/schema",
+    "$schema":"http://json-schema.org/draft-06/schema",
     "$id": "topicoutputhandler.json",
     "type" : "object",
     "title":"TopicOutputHandler",
@@ -7,7 +7,8 @@
     "properties" : {
         "is-topicoutputhandler" : {
             "description":"A key to indicate that this describes a TopicOutputHandler which publishes scalar values defined as Output Expressions in eTaSL.",
-            "enum":[true]
+            "type":"boolean",
+            "const": true
         }
     },
     "required": ["is-topicoutputhandler"],

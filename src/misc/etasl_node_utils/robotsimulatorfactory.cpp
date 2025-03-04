@@ -32,16 +32,16 @@ public:
         return "robotsimulator";
     }
 
-    virtual Robot::SharedPtr create(const Json::Value& parameters) override
+    virtual Robot::SharedPtr create(const Json::Value& parameters, boost::shared_ptr<etasl::JsonChecker> jsonchecker) override
     {
-        double sample_time = parameters["sample_time"].asDouble();
-        std::string name = parameters["name"].asString();
-        std::string input_topicname = parameters["input_topicname"].asString();
-        std::string output_topicname = parameters["output_topicname"].asString();
-        bool ignore_non_existing = parameters["ignore_non_existing"].asBool();
+        double sample_time = jsonchecker->asDouble(parameters, "sample_time");
+        std::string name = jsonchecker->asString(parameters, "name");
+        std::string input_topicname = jsonchecker->asString(parameters, "input_topicname");
+        std::string output_topicname = jsonchecker->asString(parameters, "output_topicname");
+        bool ignore_non_existing = jsonchecker->asBool(parameters, "ignore_non_existing");
         std::unordered_map<std::string, double> iv;
         for (auto& k : parameters["initial_values"].getMemberNames()) {
-            iv[k] = parameters["initial_values"][k].asDouble();
+            iv[k] = jsonchecker->asDouble(parameters, "initial_values/k");
         }
 
         return std::make_shared<RobotSimulator>(name, options, sample_time, input_topicname, output_topicname, ignore_non_existing,iv);

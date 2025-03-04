@@ -1,11 +1,13 @@
 {
-    "$schema": "http://json-schema.org/draft-04/schema",
+    "$schema": "http://json-schema.org/draft-06/schema",
     "$id":"simulationrobotdriver.json",
     "type":"object",
     "properties":{
         "is-simulationrobotdriver" : {
             "description":"To indicate that the task will be executed in simulation, with a virtual robot that integrates joint velocities and gives back joint positions to eTaSL.",
-            "enum":[true]        }
+            "type":"boolean",
+            "const": true
+          }
     },
     "required":["is-simulationrobotdriver"],
     "additionalProperties": true,
@@ -14,7 +16,7 @@
           "required":["initial_joints", "periodicity"],
           "properties":{
             "initial_joints" : {
-                "description":"Initial joint values in [rad] for rotational joints or [m] for prismatic joints. The size must coincide with the number of robot variables in eTaSL.",
+                "description":"Initial joint values in [rad] for rotational joints or [m] for prismatic joints. The size must coincide with the length of the robot_joints of the specified robot.",
                 "type":"array",
                 "items": {"type": "number"},
                 "default": [0.0, 0.0 ,0.0 ,0.0 ,0.0 ,0.0]
@@ -23,12 +25,6 @@
                 "description":"Periodicity in which the integration will be performed in seconds. 1/periodicity is the update frequency in Hz.",
                 "type":"number",
                 "default": 0.01
-            },
-            "joint_names": {
-                "description":"Names of the joints in order from the world to the end effector. This names need to be consistent with the ones declared in the URDF file of the robot.",
-                "type":"array",
-                "items": {"type": "string"},
-                "default": ["joint1", "joint2", "joint3", "etc..."]
             }
           }
         }

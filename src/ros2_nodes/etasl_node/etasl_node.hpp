@@ -68,6 +68,8 @@
 #include "robot_interfacing_utils/feedback_struct.hpp"
 #include "robot_interfacing_utils/thread_manager.hpp"
 
+#include "etasl_task_utils/json_checker.hpp"
+
 
 
 
@@ -118,6 +120,7 @@ class etaslNode : public rclcpp_lifecycle::LifecycleNode
         void register_factories();
         void update_robot_status();
         boost::shared_ptr<t_manager::thread_t> create_thread_str(std::atomic<bool> & stopFlag);
+        void load_robot_specification(Json::Value const&  param );
         
 
 
@@ -129,14 +132,16 @@ class etaslNode : public rclcpp_lifecycle::LifecycleNode
 
         bool etasl_console(const std::shared_ptr<std_srvs::srv::Empty::Request> request, std::shared_ptr<std_srvs::srv::Empty::Response>  response);
         bool readTaskSpecificationFile(const std::shared_ptr<etasl_interfaces::srv::TaskSpecificationFile::Request> request, std::shared_ptr<etasl_interfaces::srv::TaskSpecificationFile::Response>  response);
+        bool readRobotSpecification(const std::shared_ptr<etasl_interfaces::srv::TaskSpecificationFile::Request> request, std::shared_ptr<etasl_interfaces::srv::TaskSpecificationFile::Response>  response);
         bool readTaskSpecificationString(const std::shared_ptr<etasl_interfaces::srv::TaskSpecificationString::Request> request, std::shared_ptr<etasl_interfaces::srv::TaskSpecificationString::Response>  response);
+        bool readTaskParameters(const std::shared_ptr<etasl_interfaces::srv::TaskSpecificationString::Request> request, std::shared_ptr<etasl_interfaces::srv::TaskSpecificationString::Response>  response);
     
     private:
         std::shared_ptr<rclcpp::TimerBase> timer_;
         rclcpp::Publisher<std_msgs::msg::String>::SharedPtr events_pub_;
 
 
-        int periodicity_param; //Expressed in milliseconds
+        int periodicity_ms; //Expressed in milliseconds
         double time;
         std_msgs::msg::String event_msg;
         std::string event_postfix;
@@ -168,6 +173,7 @@ class etaslNode : public rclcpp_lifecycle::LifecycleNode
         boost::shared_ptr<etasl::FeedbackMsg> feedback_shared_ptr;
         boost::shared_ptr<etasl::SetpointMsg> setpoint_shared_ptr;
         boost::shared_ptr<t_manager::thread_t> thread_str_driver;
+        boost::shared_ptr<etasl::JsonChecker> jsonchecker;
         
 
 
@@ -201,6 +207,8 @@ class etaslNode : public rclcpp_lifecycle::LifecycleNode
         rclcpp::Service<std_srvs::srv::Empty>::SharedPtr srv_etasl_console_;
         rclcpp::Service<etasl_interfaces::srv::TaskSpecificationString>::SharedPtr srv_readTaskSpecificationString_;
         rclcpp::Service<etasl_interfaces::srv::TaskSpecificationFile>::SharedPtr srv_readTaskSpecificationFile_;
+        rclcpp::Service<etasl_interfaces::srv::TaskSpecificationFile>::SharedPtr srv_readRobotSpecification_;
+        rclcpp::Service<etasl_interfaces::srv::TaskSpecificationString>::SharedPtr srv_readTaskParameters_;
 
 
 

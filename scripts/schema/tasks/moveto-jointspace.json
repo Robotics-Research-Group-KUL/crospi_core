@@ -1,5 +1,5 @@
 {
-    "$schema": "http://json-schema.org/draft-04/schema",
+    "$schema": "http://json-schema.org/draft-06/schema",
     "$id": "moveto-jointspace.json",
     "title": "moveto-jointspace",
     "description": "Move to a point in joint space",

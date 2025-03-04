@@ -72,12 +72,13 @@ public:
      * @brief create the solver with the given parameters
      *
      */
-    virtual TopicOutputHandler::SharedPtr create(const Json::Value& parameters)
+    virtual TopicOutputHandler::SharedPtr create(const Json::Value& parameters, boost::shared_ptr<etasl::JsonChecker> jsonchecker)
     {
-        std::string topic_name = parameters["topic-name"].asString();
+        std::string topic_name = jsonchecker->asString(parameters, "topic-name");
         std::vector<std::string> varnames;
-        for (auto n : parameters["variable-names"]) {
-            varnames.push_back(n.asString());
+        // for (auto n : parameters["variable-names"]) {
+        for (auto n : jsonchecker->asArray(parameters, "variable-names")) {
+            varnames.push_back(jsonchecker->asString(n, ""));
         }
         return std::make_shared<TopicOutputHandler>(
             node,

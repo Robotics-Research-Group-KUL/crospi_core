@@ -1,5 +1,5 @@
 {
-    "$schema": "http://json-schema.org/draft-04/schema",
+    "$schema": "http://json-schema.org/draft-06/schema",
     "$id":"moveto-schema.json",
     "title": "Move to",
     "description": "Performs a Cartesian-space linear motion to a given target pose",

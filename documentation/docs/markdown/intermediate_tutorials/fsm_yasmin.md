@@ -1,3 +1,0 @@
-# FSM with Yasmin
-
-TODO

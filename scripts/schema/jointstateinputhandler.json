@@ -1,11 +1,12 @@
 {
-    "$schema": "http://json-schema.org/draft-04/schema",
+    "$schema": "http://json-schema.org/draft-06/schema",
     "$id":"jointstateinputhandler.json",
     "type":"object",
     "properties":{
         "is-jointstateinputhandler" : {
             "description":"To indicate that this describes a jointstate inputhandler",
-            "enum":[true]
+            "type":"boolean",
+            "const": true
         }
     },
     "required":["is-jointstateinputhandler"],

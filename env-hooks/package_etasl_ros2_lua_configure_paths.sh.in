@@ -30,6 +30,7 @@ luacpath_append ()
 }
 
 
+export LUA_PATH="?.lua;$LUA_PATH" #First tries to find file in local dir
 
 luapath_append "@CMAKE_CURRENT_SOURCE_DIR@/scripts/lib/?.lua"
 luapath_append "@CMAKE_CURRENT_SOURCE_DIR@/?.lua"

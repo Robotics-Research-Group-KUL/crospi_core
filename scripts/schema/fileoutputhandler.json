@@ -1,5 +1,5 @@
 {
-    "$schema":"http://json-schema.org/draft-04/schema",
+    "$schema":"http://json-schema.org/draft-06/schema",
     "$id": "fileoutputhandler.json",
     "type" : "object",
     "title":"Parameters for FileOutputHandler",
@@ -7,7 +7,8 @@
     "properties" : {
         "is-fileoutputhandler" : {
             "description":"A key value to flag that this describes a FileOutputHandler",
-            "enum":[true]
+            "type":"boolean",
+            "const": true
         }
     },
     "required": ["is-fileoutputhandler"],

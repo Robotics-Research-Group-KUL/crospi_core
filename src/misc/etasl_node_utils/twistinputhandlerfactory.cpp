@@ -33,7 +33,7 @@ public:
     {
         std::string schema_src = R"(
                     {
-                        "$schema": "http://json-schema.org/draft-04/schema",
+                        "$schema": "http://json-schema.org/draft-06/schema",
                         "$id":"twistinputhandler",
                         "type":"object",
                             "properties":{
@@ -102,24 +102,25 @@ public:
      * @brief create the solver with the given parameters
      *
      */
-    virtual InputHandler::SharedPtr create(const Json::Value& parameters)
+    virtual InputHandler::SharedPtr create(const Json::Value& parameters, boost::shared_ptr<etasl::JsonChecker> jsonchecker)
     {
-        std::string topic_name = parameters["topic-name"].asString();
-        int depth = parameters["depth"].asInt();
-        int nroftries = parameters["number_of_tries"].asInt();
+        std::string topic_name = jsonchecker->asString(parameters, "topic-name");
+        
+        int depth = jsonchecker->asInt(parameters, "depth");
+        int nroftries = jsonchecker->asInt(parameters, "number_of_tries");
 
-        std::string when_unpublished = parameters["when_unpublished"].asString();
+        std::string when_unpublished = jsonchecker->asString(parameters, "when_unpublished");
 
-        std::string varname = parameters["varname"].asString();
+        std::string varname = jsonchecker->asString(parameters, "varname");
 
 
         geometry_msgs::msg::Twist def_msg;
-        def_msg.linear.x = parameters["default_twist"]["linear"]["x"].asDouble();
-        def_msg.linear.y = parameters["default_twist"]["linear"]["y"].asDouble();
-        def_msg.linear.z = parameters["default_twist"]["linear"]["z"].asDouble();
-        def_msg.angular.x = parameters["default_twist"]["angular"]["x"].asDouble();
-        def_msg.angular.y = parameters["default_twist"]["angular"]["y"].asDouble();
-        def_msg.angular.z = parameters["default_twist"]["angular"]["z"].asDouble();
+        def_msg.linear.x = jsonchecker->asDouble(parameters, "default_twist/linear/x");
+        def_msg.linear.y = jsonchecker->asDouble(parameters, "default_twist/linear/y");
+        def_msg.linear.z = jsonchecker->asDouble(parameters, "default_twist/linear/z");
+        def_msg.angular.x = jsonchecker->asDouble(parameters, "default_twist/angular/x");
+        def_msg.angular.y = jsonchecker->asDouble(parameters, "default_twist/angular/y");
+        def_msg.angular.z = jsonchecker->asDouble(parameters, "default_twist/angular/z");
 
         // for (auto n : parameters["variable-names"]) {
         //     varnames.push_back(n.asString());
