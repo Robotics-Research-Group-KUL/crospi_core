@@ -12,6 +12,9 @@
         },
         {
             "$ref":"twistinputhandler.json"
+        },
+        {
+            "$ref":"wrenchinputhandler.json"
         }
     ]
 }

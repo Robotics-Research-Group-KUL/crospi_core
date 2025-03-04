@@ -46,9 +46,9 @@ include_directories(
 )
 
 
-# include_directories(
-#    src/misc/kuka_iiwa_driver
-# ) #TODO: Remove this
+include_directories(
+   src/misc/kuka_iiwa_driver
+) #TODO: Remove this
 
 # TODO: Delete the following. It is only used for debug in VSCODE:
 # include_directories("/home/santiregui/etasl-cmake/standalone-cmake/install/include")
