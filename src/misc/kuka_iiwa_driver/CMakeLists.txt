@@ -30,22 +30,26 @@ include_directories(include ${LUA_INCLUDE_DIR})
 set(KUKA_FRI_SDK ${CMAKE_CURRENT_SOURCE_DIR}/external/kuka_fri_sdk/)
 set(FRISDK_INCLUDE ${CMAKE_CURRENT_SOURCE_DIR}/external/kuka_fri_sdk/include)
 set(FRISDK_LIB ${CMAKE_CURRENT_SOURCE_DIR}/external/kuka_fri_sdk/lib)
-add_custom_target(kuka_fri_sdk COMMAND make clean && make
-                   WORKING_DIRECTORY ${KUKA_FRI_SDK}/build/GNUMake
+
+add_custom_target(
+    kuka_fri_sdk
+    ALL
+    COMMAND make clean && make
+    COMMENT "Building KUKA FRI SDK"
+    WORKING_DIRECTORY ${KUKA_FRI_SDK}/build/GNUMake
 )
+
 include_directories(${FRISDK_INCLUDE})
 
 # link_directories(${FRISDK_LIB})
 
-
 set(src_kuka_iiwa_driver
-kukaiiwa_robotdriver.cpp
-kukaiiwa_robotdriverfactory.cpp
-kukaiiwa_client.cpp
+    kukaiiwa_robotdriver.cpp
+    kukaiiwa_robotdriverfactory.cpp
+    kukaiiwa_client.cpp
 )
 
-
-add_library(kuka_iiwa_driver ${src_kuka_iiwa_driver})
+add_library(kuka_iiwa_driver SHARED ${src_kuka_iiwa_driver})
 
 add_dependencies(kuka_iiwa_driver kuka_fri_sdk) #Makes sure to compile first kuka_fri_sdk before the kuka_iiwa_driver
 
@@ -54,26 +58,19 @@ find_library(FRI_CLIENT_LIB
              PATHS ${FRISDK_LIB}
 )
 
-
-
 set(rosdependencies)
 
 set(dependencies
     fmt   
     # pugixml
     jsoncpp
-    etasl_misc_lib 
-    etasl_task_utils
-    etasl_node_utils
-    robot_interfacing_utils
+    # etasl_misc_lib 
+    # etasl_task_utils
+    # etasl_node_utils
+    # robot_interfacing_utils
     # ${FRISDK_LIB}/libFRIClient.so
     ${FRI_CLIENT_LIB}
-    )
-
-
-    
-
-
+)
 
 
 message("--------------FRI_CLIENT_LIB: ${FRI_CLIENT_LIB}----------------")

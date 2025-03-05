@@ -68,6 +68,18 @@ add_subdirectory(src/ros2_nodes/test_publisher_node)
 add_subdirectory(src/ros2_nodes/erwin_node)
 
 
+ament_export_dependencies(ament_cmake)
+
+
+# install(
+#   TARGETS etasl_node_utils
+#   EXPORT export_${PROJECT_NAME}
+#   ARCHIVE DESTINATION lib
+#   LIBRARY DESTINATION lib
+#   RUNTIME DESTINATION bin
+# )
+
+
 # Install the Python package
 find_package(Python3 REQUIRED COMPONENTS Interpreter Development)
 # ament_python_install_package(scripts/python/etasl_ros2_py)

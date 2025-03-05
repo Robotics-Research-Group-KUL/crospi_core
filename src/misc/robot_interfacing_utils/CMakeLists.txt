@@ -42,14 +42,30 @@ set(dependencies
 )
 
 
-add_library(robot_interfacing_utils ${src_robot_interfacing_utils})
+add_library(robot_interfacing_utils SHARED ${src_robot_interfacing_utils})
 
-target_include_directories(robot_interfacing_utils PUBLIC
+target_include_directories(robot_interfacing_utils 
+  PUBLIC
   $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/include/robot_interfacing_utils>
   $<INSTALL_INTERFACE:include/robot_interfacing_utils>)
 
+
+ament_export_libraries(
+  robot_interfacing_utils
+)
+
+
+
 ament_target_dependencies(robot_interfacing_utils ${rosdependencies})  
+
 target_link_libraries(robot_interfacing_utils ${dependencies})
 
-install(TARGETS robot_interfacing_utils
-  DESTINATION lib/${PROJECT_NAME})
+install(
+  TARGETS robot_interfacing_utils
+  EXPORT export_robot_interfacing_utils
+  ARCHIVE DESTINATION lib
+  LIBRARY DESTINATION lib
+  RUNTIME DESTINATION bin
+)
+
+

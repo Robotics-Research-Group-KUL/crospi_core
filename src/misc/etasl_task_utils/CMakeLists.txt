@@ -1,7 +1,5 @@
 message("Compiling misc/etasl_task_utils libraries ${CMAKE_CURRENT_SOURCE_DIR}")
 
-
-
 # find dependencies
 find_package(ament_cmake REQUIRED)
 find_package(ament_index_cpp REQUIRED)
@@ -65,23 +63,34 @@ set(dependencies
 )
 
 
-add_library(etasl_task_utils ${src_etasl_task_utils})
+add_library(etasl_task_utils SHARED ${src_etasl_task_utils})
 
-target_include_directories(etasl_task_utils PUBLIC
+target_include_directories(etasl_task_utils 
+  PUBLIC
   $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/include/etasl_task_utils>
   $<INSTALL_INTERFACE:include/etasl_task_utils>)
-ament_target_dependencies(etasl_task_utils ${rosdependencies})  
+
+
+ament_export_libraries(
+  etasl_task_utils
+)
+
+ament_target_dependencies(etasl_task_utils ${rosdependencies}) 
+
 target_link_libraries(etasl_task_utils ${dependencies})
 
-install(TARGETS etasl_task_utils
-  DESTINATION lib/${PROJECT_NAME})
 
+install(
+  TARGETS etasl_task_utils
+  EXPORT export_etasl_task_utils
+  ARCHIVE DESTINATION lib
+  LIBRARY DESTINATION lib
+  RUNTIME DESTINATION bin
+)
 
-
-
-  add_library(amentlua SHARED amentlua.cpp )
-  ament_target_dependencies(amentlua ${rosdependencies})
-  target_link_libraries(amentlua ${dependencies})
-  install(TARGETS amentlua
-     DESTINATION lib)
+add_library(amentlua SHARED amentlua.cpp )
+ament_target_dependencies(amentlua ${rosdependencies})
+target_link_libraries(amentlua ${dependencies})
+install(TARGETS amentlua
+    DESTINATION lib)
   

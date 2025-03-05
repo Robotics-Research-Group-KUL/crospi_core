@@ -1,7 +1,5 @@
 message("Compiling misc/etasl_node_utils libraries ${CMAKE_CURRENT_SOURCE_DIR}")
 
-
-
 # find dependencies
 find_package(ament_cmake REQUIRED)
 find_package(ament_index_cpp REQUIRED)
@@ -21,7 +19,6 @@ find_package(jsoncpp REQUIRED)
 find_package(tf2 REQUIRED)
 find_package(tf2_geometry_msgs REQUIRED)
 find_package(tf2_ros REQUIRED)
-
 #add_subdirectory( doc )
 
 set(CMAKE_CXX_STANDARD 17)
@@ -78,13 +75,28 @@ set(dependencies
 )
 
 
-add_library(etasl_node_utils ${src_etasl_node_utils})
+add_library(etasl_node_utils SHARED ${src_etasl_node_utils})
 
-target_include_directories(etasl_node_utils PUBLIC
+target_include_directories(etasl_node_utils 
+  PUBLIC
   $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/include/etasl_node_utils>
   $<INSTALL_INTERFACE:include/etasl_node_utils>)
-ament_target_dependencies(etasl_node_utils ${rosdependencies})  
+
+ament_export_libraries(
+  etasl_node_utils
+)
+
+ament_target_dependencies(etasl_node_utils ${rosdependencies})
+ 
 target_link_libraries(etasl_node_utils ${dependencies})
 
-install(TARGETS etasl_node_utils
-  DESTINATION lib/${PROJECT_NAME})
+install(
+  TARGETS etasl_node_utils
+  EXPORT export_etasl_node_utils
+  ARCHIVE DESTINATION lib
+  LIBRARY DESTINATION lib
+  RUNTIME DESTINATION bin
+)
+
+
+
