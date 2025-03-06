@@ -450,16 +450,17 @@ local function parameters(task_description, param_tab)
     local function write_json_schema(task_description, param_tab)
 
         local task_library_json = {name="",version="",description="", authors={}} --During execution (and not generation of schemas) this is not relevant
-        local file_path_libs = "" --During execution (and not generation of schemas) this is not relevant
+        local lib_directory_name = "" --During execution (and not generation of schemas) this is not relevant. This is not necessarily the same as lib_name
 
         if _LUA_FILEPATH_TO_GENERATE_JSON_SCHEMA then -- _LUA_FILEPATH_TO_GENERATE_JSON_SCHEMA is only defined during generation of schemas and NOT during execution of tasks
             task_library_json = load_json_file(_LUA_FILEPATH_TO_GENERATE_JSON_SCHEMA .. "../task_library.json")
-            local file_path_libs = _LUA_FILEPATH_TO_GENERATE_JSON_SCHEMA:match("([^/]+)/task_json_schemas/$")
-            if file_path_libs == nil then
+            lib_directory_name = _LUA_FILEPATH_TO_GENERATE_JSON_SCHEMA:match("([^/]+)/task_json_schemas/$")
+
+            if lib_directory_name == nil then
                 error("The file structure for the task specification libraries is not being followed. " .. _LUA_FILEPATH_TO_GENERATE_JSON_SCHEMA)
             end
-        -- local lib_alias = task_library_json["alias"]
         end
+
         local lib_name = task_library_json["name"]
         local lib_version = task_library_json["version"]
         local lib_description = task_library_json["description"]
@@ -515,7 +516,7 @@ local function parameters(task_description, param_tab)
         }
 
 
-        local filepath_lua =  "$[etasl_ros2_application_template]/task_specifications/libraries/" .. file_path_libs .. "/task_specifications/" .. filename_lua
+        local filepath_lua =  "$[etasl_ros2_application_template]/task_specifications/libraries/" .. lib_directory_name .. "/task_specifications/" .. filename_lua
         schema.dependencies[task_identifier].properties["file_path"] = {description="File path of the corresponding task specification", type="string", const=filepath_lua}
         schema.dependencies[task_identifier].properties["parameters"] = {type="object", description= "List of parameters needed to define an instance of the task specification",required=required_parameters,additionalProperties=false, properties={}}
 
