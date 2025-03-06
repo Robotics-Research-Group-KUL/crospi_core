@@ -745,6 +745,8 @@ void etaslNode::construct_node(){
       //   robotdriver = driver_loader->createSharedInstance("etasl::TemplateDriverEtasl");
       // }
       robotdriver = driver_loader->createSharedInstance("etasl::Ur10eDriverEtasl");
+      // robotdriver = driver_loader->createSharedInstance("etasl::TemplateDriverEtasl");
+
       // robotdriver = driver_loader->createSharedInstance("etasl::KukaIiwaRobotDriver");
 
     }

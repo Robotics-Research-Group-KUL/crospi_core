@@ -1,0 +1,36 @@
+{
+    "$schema": "http://json-schema.org/draft-06/schema",
+    "$id":"ur10erobotdriver.json",
+    "type":"object",
+    "properties":{
+        "is-ur10_e_driver_etasl" : {
+            "description":"To indicate that the task will be executed using a ur10e robot.",
+            "type":"boolean",
+            "default":true
+        }
+    },
+    "required":["is-ur10_e_driver_etasl"],
+    "additionalProperties": true,
+    "dependencies":{
+        "is-ur10_e_driver_etasl":{
+          "required":["ip_address", "periodicity","q_acceleration"],
+          "properties":{
+                "ip_address" : {
+                    "description":"IP address of the robot using Ipv4 format.",
+                    "type":"string",
+                    "default": "xxx.xxx.xx.xx"
+                },
+                "periodicity" : {
+                    "description":"Periodicity in which the integration will be performed in seconds. 1/periodicity is the update frequency in Hz.",
+                    "type":"number",
+                    "default": 0.01
+                },
+                "q_acceleration" : {
+                    "description":"Acceleration of leading joint [rad/s^2]",
+                    "type":"number",
+                    "default": 1.2
+                }
+          }
+        }
+      }
+}

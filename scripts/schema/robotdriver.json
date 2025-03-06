@@ -9,6 +9,9 @@
         },
         {
             "$ref":"kukaiiwarobotdriver.json"
+        },
+        {
+            "$ref":"ur10erobotdriver.json"
         }
     ]
 }
