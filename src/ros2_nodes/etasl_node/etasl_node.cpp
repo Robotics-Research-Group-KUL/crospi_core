@@ -49,6 +49,9 @@ etaslNode::etaslNode(const std::string & node_name, bool intra_process_comms = f
   srv_readTaskParameters_ = create_service<etasl_interfaces::srv::TaskSpecificationString>("etasl_node/readTaskParameters", std::bind(&etaslNode::readTaskParameters, this, std::placeholders::_1, std::placeholders::_2));
 
   std::string dirPath = this->declare_parameter<std::string>("directory_path", "");
+  bool simulation_param = this->declare_parameter<bool>("simulation", true);
+
+
 
 // Checks if the path is empty. i.e. the parameter was not defined.
   if (dirPath.empty()) {
@@ -56,6 +59,7 @@ etaslNode::etaslNode(const std::string & node_name, bool intra_process_comms = f
       rclcpp::shutdown();
       return;
   }
+
 
 
  // Checks if the package exists when performing the string interpolation. It does not check if the file exists! 
@@ -94,11 +98,11 @@ etaslNode::etaslNode(const std::string & node_name, bool intra_process_comms = f
   // fmt::print("{:->80}\n", "-");
 
 
-  Json::Value param = board->getPath("/default-etasl", false);
-  periodicity_ms = 1000*jsonchecker->asDouble(param, "general/sample_time"); //Expressed in milliseconds
+  Json::Value etasl_param = board->getPath("/etasl", false);
+  periodicity_ms = 1000*jsonchecker->asDouble(etasl_param, "general/sample_time"); //Expressed in milliseconds
 
   // TODO: change the quality of service to transient local and reliable:
-  events_pub_ = this->create_publisher<std_msgs::msg::String>(jsonchecker->asString(param, "general/event_topic"), 10); 
+  events_pub_ = this->create_publisher<std_msgs::msg::String>(jsonchecker->asString(etasl_param, "general/event_topic"), 10); 
 
   std::string message = "\n+++++++++++++++++++++++++++++++++++++++++++++++++\nThe following configuration file was loaded correctly:" + file_path + "\n+++++++++++++++++++++++++++++++++++++++++++++++++";
   RCUTILS_LOG_INFO_NAMED(get_name(), message.c_str());
@@ -108,8 +112,14 @@ etaslNode::etaslNode(const std::string & node_name, bool intra_process_comms = f
   // this->get_node_base_interface()->get_context()->add_on_shutdown_callback(std::bind( &etaslNode::safe_shutdown, this)); //Can be used to add callback during shutdown (not pre-shutdown, so publishers and others are no longer available)
   // rclcpp::on_shutdown(std::bind( &etaslNode::safe_shutdown, my_etasl_node)); //Alternative to add_on_shutdown_callback (don't know the difference)
 
-  // load_robot_specification(param); // Called here and on_cleanup such that is always available before any lua file, string or lua task specification is executed. 
-
+  Json::Value robot_param = board->getPath("/robot", false);
+  if (simulation_param || (robot_param.isMember("robotdriver") && robot_param["robotdriver"].isMember("is-no_driver") && robot_param["robotdriver"]["is-no_driver"].isBool()) ) {
+    simulation = true;
+  }
+  else {
+    simulation = false;
+  }
+  
 }
 
 
@@ -176,7 +186,7 @@ bool etaslNode::readTaskSpecificationFile(const std::shared_ptr<etasl_interfaces
 
 bool etaslNode::readRobotSpecification(const std::shared_ptr<etasl_interfaces::srv::TaskSpecificationFile::Request> request, std::shared_ptr<etasl_interfaces::srv::TaskSpecificationFile::Response>  response) {
 
-  Json::Value param_original = board->getPath("/default-etasl", false);
+  Json::Value param_original = board->getPath("/robot", false);
   Json::Value param = param_original; //Copy
 
 	if(this->get_current_state().label() != "unconfigured"){
@@ -333,7 +343,7 @@ void etaslNode::update_controller_input(Eigen::VectorXd const& jvalues_meas){
 
 void etaslNode::solver_configuration(){
       // Create registry and register known solvers: 
-    Json::Value param = board->getPath("/default-etasl", false);
+    Json::Value param = board->getPath("/etasl", false);
 
     solver_registry = boost::make_shared<SolverRegistry>();
     registerSolverFactory_qpOases(solver_registry, "qpoases");
@@ -476,12 +486,8 @@ void etaslNode::initialize_feature_variables(){
 
 
 void etaslNode::configure_etasl(){
-  
-    // fmt::print("blackboard/default-etasl : ");
-    Json::Value param = board->getPath("/default-etasl", false);
-    // fmt::print("After processing and validating:\n{}", param);
-    // fmt::print("{:->80}\n", "-");
-
+    
+    Json::Value param = board->getPath("/robot", false);
     jointnames.clear();
     for (auto n : jsonchecker->asArray(param, "default_robot_specification/robot_joints")) {
         jointnames.push_back(jsonchecker->asString(n, ""));
@@ -551,11 +557,6 @@ void etaslNode::configure_etasl(){
 }
 
 
-
-int etaslNode::get_periodicity_param()
-{
-  return periodicity_ms;
-}
 
 
 
@@ -711,7 +712,7 @@ bool etaslNode::initialize_output_handlers(){
 void etaslNode::construct_node(){
     
 
-    Json::Value param = board->getPath("/default-etasl", false);
+    Json::Value param = board->getPath("/robot", false);
 
     // jointnames.clear();
     // for (auto n : param["default_robot_specification"]["robot_joints"]) {
@@ -737,29 +738,50 @@ void etaslNode::construct_node(){
     RCUTILS_LOG_INFO_NAMED(get_name(), "register_output_handler");
     // TODO: add info about the output handler added (e.g. p[is-...] and p[topic-name])
 
-    driver_loader = boost::make_shared<pluginlib::ClassLoader<etasl::RobotDriver>>("etasl_ros2", "etasl::RobotDriver");
-    try
-    {
-      // if (driver_loader->isClassAvailable("etasl::TemplateDriverEtasl"))
-      // {
-      //   robotdriver = driver_loader->createSharedInstance("etasl::TemplateDriverEtasl");
-      // }
-      robotdriver = driver_loader->createSharedInstance("etasl::TemplateDriverEtasl");
-      // robotdriver = driver_loader->createSharedInstance("etasl::Ur10eDriverEtasl");
-      // robotdriver = driver_loader->createSharedInstance("etasl::KukaIiwaRobotDriver");
+    
 
+    //Checks if it's in simulation, and else it loads the driver from pluginlib
+    if (simulation) {
+      robotdriver = etasl::Registry<etasl::RobotDriverFactory>::create(param["simulation"],jsonchecker);
     }
-    catch(pluginlib::PluginlibException& ex)
-    {
-      // printf("The plugin failed to load for some reason. Error: %s\n", ex.what());
+    else{
+      driver_loader = boost::make_shared<pluginlib::ClassLoader<etasl::RobotDriver>>("etasl_ros2", "etasl::RobotDriver");
+      std::string driver_name = "no_driver_specified_in_json";
 
-      std::string message = "The plugin failed to load. Error: \n" + std::string(ex.what());
-      RCUTILS_LOG_ERROR_NAMED(get_name(), message.c_str());
+      try
+      {
+        for (const auto& key : param["robotdriver"].getMemberNames()) {
+          if (key.rfind("is-", 0) == 0) { // Check if key starts with "is-"
+              driver_name = key.substr(3);
+          }
+        }
+        robotdriver = driver_loader->createSharedInstance("etasl::" + driver_name);
 
-      auto transition = this->shutdown(); //calls on_shutdown() hook.
-      return;
+        // if (driver_loader->isClassAvailable("etasl::TemplateDriverEtasl"))
+        // {
+        //   robotdriver = driver_loader->createSharedInstance("etasl::TemplateDriverEtasl");
+        // }
+        // robotdriver = driver_loader->createSharedInstance("etasl::TemplateDriverEtasl");
+        // robotdriver = driver_loader->createSharedInstance("etasl::Ur10eDriverEtasl");
+        // robotdriver = driver_loader->createSharedInstance("etasl::KukaIiwaRobotDriver");
+
+        
+      }
+      catch(pluginlib::PluginlibException& ex)
+      {
+        // printf("The plugin failed to load for some reason. Error: %s\n", ex.what());
+  
+        std::string message = "The plugin failed to load. Error: \n" + std::string(ex.what());
+        RCUTILS_LOG_ERROR_NAMED(get_name(), message.c_str());
+  
+        auto transition = this->shutdown(); //calls on_shutdown() hook.
+        return;
+      }
+      robotdriver->construct(driver_name, feedback_shared_ptr.get(), setpoint_shared_ptr.get(), param["robotdriver"],jsonchecker);
     }
-    robotdriver->construct("templateetasldriver", feedback_shared_ptr.get(), setpoint_shared_ptr.get(), param["robotdriver"],jsonchecker);
+ 
+    
+
 
   
 
@@ -770,11 +792,12 @@ void etaslNode::construct_node(){
     /****************************************************
     * Adding input and output handlers from the read JSON file 
     ***************************************************/
-    for (const auto& p : param["outputhandlers"]) {
+   Json::Value param_iohandlers = board->getPath("/iohandlers", false);
+    for (const auto& p : param_iohandlers["outputhandlers"]) {
         RCUTILS_LOG_INFO_NAMED(get_name(), "register_output_handler");
         outputhandlers.push_back(etasl::Registry<etasl::OutputHandlerFactory>::create(p, jsonchecker));
     }
-    for (const auto& p : param["inputhandlers"]) {
+    for (const auto& p : param_iohandlers["inputhandlers"]) {
         RCUTILS_LOG_INFO_NAMED(get_name(), "register_input_handler");
         inputhandlers.push_back(etasl::Registry<etasl::InputHandlerFactory>::create(p, jsonchecker));
         ih_initialized.push_back(false);
@@ -1010,7 +1033,7 @@ void etaslNode::construct_node(){
     RCUTILS_LOG_INFO_NAMED(get_name(), "on cleanup is called.");
 
     is_configured = false; //To indicate that it has not being configured after cleanup node
-    Json::Value param = board->getPath("/default-etasl", false);
+    // Json::Value param = board->getPath("/default-etasl", false);
 
     // We return a success and hence invoke the transition to the next
     // step: "unconfigured".
@@ -1092,17 +1115,25 @@ void etaslNode::construct_node(){
     // etasl::registerTFOutputHandlerFactory(shared_from_this());
     etasl::registerTwistInputHandlerFactory(shared_from_this());
     etasl::registerWrenchInputHandlerFactory(shared_from_this());
-    etasl::registerSimulationRobotDriverFactory(feedback_shared_ptr.get(), setpoint_shared_ptr.get());
-    etasl::registerKukaIiwaRobotDriverFactory(feedback_shared_ptr.get(), setpoint_shared_ptr.get());
+    // etasl::registerSimulationRobotDriverFactory(feedback_shared_ptr.get(), setpoint_shared_ptr.get());
+    // etasl::registerKukaIiwaRobotDriverFactory(feedback_shared_ptr.get(), setpoint_shared_ptr.get());
+    etasl::register_simple_kinematic_simulation_factory(feedback_shared_ptr.get(), setpoint_shared_ptr.get());
 
   }
 
   boost::shared_ptr<t_manager::thread_t> etaslNode::create_thread_str(std::atomic<bool> & stopFlag){
     
+    double periodicity;
+    Json::Value param = board->getPath("/robot", false);
+    if(simulation){
+      periodicity = jsonchecker->asDouble(param, "simulation/periodicity");
+    }
+    else{
+      periodicity = jsonchecker->asDouble(param, "robotdriver/periodicity");
+    }
+    
 
-    Json::Value param = board->getPath("/default-etasl", false);
-
-    double periodicity = jsonchecker->asDouble(param, "robotdriver/periodicity");
+    // double periodicity = jsonchecker->asDouble(param, "robotdriver/periodicity");
 
     thread_str_driver = boost::make_shared<t_manager::thread_t>();
 
@@ -1117,34 +1148,6 @@ void etaslNode::construct_node(){
 
   }
 
-  void etaslNode::load_robot_specification(Json::Value const& param ){
-    Json::StreamWriterBuilder writer;
-    writer["indentation"] = "";  // Optional: adjust to control whitespace in output
-
-    // Create a StreamWriterBuilder to serialize the JSON value
-    std::string robot_spec = "_JSON_ROBOTSPECIFICATION_STRING = '" + Json::writeString(writer, param["default_robot_specification"]) + "'";
-    // std::cout << ")))))))))))))))))))))))))))))" << std::endl;
-    // std::cout << robot_spec << std::endl;
-    try{
-      // Read eTaSL specification:
-      int retval = LUA->executeString(robot_spec);
-      if (retval !=0) {
-        RCUTILS_LOG_ERROR_NAMED(get_name(), "Error executing the following specificed string command in LUA while loading the robot specification ");
-        RCUTILS_LOG_ERROR_NAMED(get_name(), robot_spec.c_str());
-        rclcpp::shutdown(); 
-      }
-    } catch (const char* msg) {
-      // can be thrown by file/string errors during reading
-      // by lua_bind during reading
-      // by expressiongraph during reading ( expressiongraph will not throw when evaluating)
-      std::string message = "The following error was thrown while loading the robot specification: " + std::string(msg);
-      RCUTILS_LOG_ERROR_NAMED(get_name(), message.c_str());
-      rclcpp::shutdown(); 
-    }
-
-
-    // TODO 
-  }
 
 
 int main(int argc, char * argv[])

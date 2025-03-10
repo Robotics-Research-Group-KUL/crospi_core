@@ -352,7 +352,7 @@ Json::Value BlackBoard::process_and_validate(Json::Value& schema,
         // throw std::logic_error(fmt::format("{} : schema should not be zero and should be an JSON object", ctx));
     }
     if (schema.isMember("$defs")) {
-        // if schema contains $def declaration, add it to the defs :
+        // if schema contains $defs declaration, add it to the defs :
         if (!schema["$defs"].isObject()) {
             throw std::logic_error(fmt::format("{}: type of '$defs' member in schema should be JSON object ", ctx));
         }
@@ -481,6 +481,15 @@ Json::Value BlackBoard::process_and_validate(Json::Value& schema,
         if (!data.isString()) {
             throw std::logic_error(fmt::format("{} : should be a string", ctx));
         }
+        if (schema.isMember("const")) {
+            Json::Value const_val = schema["const"];
+            if (!const_val.isString()) {
+                throw std::logic_error(fmt::format("{} : const property of schema should be a string", ctx));
+            }
+            if (data.asString() != const_val.asString()) {
+                throw std::logic_error(fmt::format("{} : string ({}) should be equal to constant value ({})", ctx, data.asString(), const_val.asString()));
+            }
+        }
         Json::Value interp = schema["interpolate"];
         retval = Json::Value(data.asString());
         if (interp) {
@@ -494,6 +503,15 @@ Json::Value BlackBoard::process_and_validate(Json::Value& schema,
     } else if (type == "number") {
         if (!data.isDouble()) {
             throw std::logic_error(fmt::format("{} : should be a number", ctx));
+        }
+        if (schema.isMember("const")) {
+            Json::Value const_val = schema["const"];
+            if (!const_val.isDouble()) {
+                throw std::logic_error(fmt::format("{} : const property of schema should be a number", ctx));
+            }
+            if (data.asDouble() != const_val.asDouble()) {
+                throw std::logic_error(fmt::format("{} : number ({}) should be equal to constant value ({})", ctx, data.asDouble(), const_val.asDouble()));
+            }
         }
 
         if (schema.isMember("minimum")) {
@@ -519,6 +537,15 @@ Json::Value BlackBoard::process_and_validate(Json::Value& schema,
     } else if (type == "boolean") {
         if (!data.isBool()) {
             throw std::logic_error(fmt::format("{} : should be a boolean", ctx));
+        }
+        if (schema.isMember("const")) {
+            Json::Value const_val = schema["const"];
+            if (!const_val.isBool()) {
+                throw std::logic_error(fmt::format("{} : const property of schema should be a boolean", ctx));
+            }
+            if (data.asBool() != const_val.asBool()) {
+                throw std::logic_error(fmt::format("{} : boolean ({}) should be equal to constant value ({})", ctx, data.asBool(), const_val.asBool()));
+            }
         }
         retval = data;
     } else if (type == "array") {

@@ -4,11 +4,8 @@
     "title":"eTaSL Parameters",
     "type":"object",
     "description":"Parameters needed to run eTaSL",
-    "required": ["general", "default_robot_specification","robotdriver"],
+    "required": ["general", "initializer","solver"],
     "properties": {
-        "$schema" : {
-            "type":"string"
-        },
         "general":{
             "$ref":"general.json"
         },
@@ -20,32 +17,6 @@
             "oneOf" : [
                 {"$ref":"qpoasessolver.json"}
             ]
-        },
-        "robotdriver": {
-            "title":"Robotdriver",
-            "description":"Robotdriver interfaces robot hardware with eTaSL and runs in a separate thread, communicating with shared memory for reduced latency",
-            "$ref": "robotdriver.json"
-        },
-        "default_robot_specification": {
-            "title":"default_robot_specification",
-            "description":"Robot specification that describes the kinematics, jointnames, relevant frames and others",
-            "$ref": "default_robot_specification.json"
-        },
-        "outputhandlers": {
-            "title":"Outputhandlers",
-            "description":"Outputhandlers extract data from eTaSL and communicate it in some way to the outside world, such as writing to a file or using a ROS Topic",
-            "type" : "array",
-            "items" : {
-                "$ref" : "outputhandler.json"
-            }
-        },
-        "inputhandlers": {
-            "title":"Inputhandlers",
-            "description":"Inputhandlers get information from the outside world and puts it into eTaSL",
-            "type" : "array",
-            "items" : {
-                "$ref": "inputhandler.json"
-            }
         }
     },
     "additionalProperties":false

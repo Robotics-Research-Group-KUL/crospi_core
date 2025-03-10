@@ -87,7 +87,7 @@ public:
                     for (auto a:reg.m) {
                         ss << "\t" << a.first << std::endl;
                     }
-                    throw etasl_error(etasl_error::NOT_REGISTERED, fmt::format("name '{}' whasasa is not registered\n{}", name,ss.str()));
+                    throw etasl_error(etasl_error::NOT_REGISTERED, fmt::format("name '{}' is not registered and thus the factory cannot be created\n{}", name,ss.str()));
                 }
                 return r->second->create(parameters, jsonchecker);
             }

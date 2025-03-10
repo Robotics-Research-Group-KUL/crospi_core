@@ -60,8 +60,9 @@
 
 
 #include "robot_interfacing_utils/robotdriverfactory.hpp"
-#include "robot_interfacing_utils/simulationrobotdriverfactory.hpp"
-#include "kuka_iiwa_driver/kukaiiwa_robotdriverfactory.hpp"
+#include "simple_kinematic_simulation/simple_kinematic_simulation_factory.hpp"
+// #include "robot_interfacing_utils/simulationrobotdriverfactory.hpp"
+// #include "kuka_iiwa_driver/kukaiiwa_robotdriverfactory.hpp"
 #include <pluginlib/class_loader.hpp> //For plugins such as robot drivers
 
 
@@ -106,8 +107,6 @@ class etaslNode : public rclcpp_lifecycle::LifecycleNode
 
         // void setJointValues(const std::vector<double>& jval, const std::vector<std::string>& jvalnames);
 
-        int get_periodicity_param();
-
 
         void update_controller_output(Eigen::VectorXd const& jvalues);
         void update_controller_input(Eigen::VectorXd const& jvalues);
@@ -120,7 +119,6 @@ class etaslNode : public rclcpp_lifecycle::LifecycleNode
         void register_factories();
         void update_robot_status();
         boost::shared_ptr<t_manager::thread_t> create_thread_str(std::atomic<bool> & stopFlag);
-        void load_robot_specification(Json::Value const&  param );
         
 
 
@@ -201,6 +199,8 @@ class etaslNode : public rclcpp_lifecycle::LifecycleNode
 
         bool first_time_configured;
         bool is_configured;
+
+        bool simulation;
 
 
         rclcpp::Service<lifecycle_msgs::srv::ChangeState>::SharedPtr test_service_;

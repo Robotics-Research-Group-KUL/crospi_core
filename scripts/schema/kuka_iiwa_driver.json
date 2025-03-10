@@ -1,19 +1,19 @@
 {
     "$schema": "http://json-schema.org/draft-06/schema",
-    "$id":"ur10erobotdriver.json",
+    "$id":"kuka_iiwa_driver.json",
     "type":"object",
     "properties":{
-        "is-ur10_e_driver_etasl" : {
-            "description":"To indicate that the task will be executed using a ur10e robot.",
+        "is-kuka_iiwa_driver" : {
+            "description":"To indicate that the task will be executed using a kuka iiwa robot.",
             "type":"boolean",
             "default":true
         }
     },
-    "required":["is-ur10_e_driver_etasl"],
+    "required":["is-kuka_iiwa_driver"],
     "additionalProperties": true,
     "dependencies":{
-        "is-ur10_e_driver_etasl":{
-          "required":["ip_address", "periodicity","q_acceleration"],
+        "is-kuka_iiwa_driver":{
+          "required":["ip_address", "fri_port", "periodicity"],
           "properties":{
                 "ip_address" : {
                     "description":"IP address of the robot using Ipv4 format.",
@@ -21,15 +21,16 @@
                     "pattern": "^(25[0-5]|2[0-4][0-9]|1[0-9]{2}|[1-9]?[0-9])\\.(25[0-5]|2[0-4][0-9]|1[0-9]{2}|[1-9]?[0-9])\\.(25[0-5]|2[0-4][0-9]|1[0-9]{2}|[1-9]?[0-9])\\.(25[0-5]|2[0-4][0-9]|1[0-9]{2}|[1-9]?[0-9])$",
                     "default": "192.168.1.1"
                 },
-                "periodicity" : {
-                    "description":"Periodicity in which the integration will be performed in seconds. 1/periodicity is the update frequency in Hz.",
+                "fri_port" : {
+                    "description":"FRI port number (related to communication).",
                     "type":"number",
-                    "default": 0.01
+                    "default": 30200,
+                    "minimum": 0
                 },
-                "q_acceleration" : {
-                    "description":"Acceleration of leading joint [rad/s^2]",
+                "periodicity" : {
+                    "description":"Periodicity in which the driver runs. For the KUKA iiwa this needs to be zero (i.e. does not sleep at a fixed time) since it synchronizes with the robot controller.",
                     "type":"number",
-                    "default": 1.2
+                    "const":0
                 }
           }
         }

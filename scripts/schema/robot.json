@@ -1,11 +1,26 @@
 {
-    "$schema": "http://json-schema.org/draft-06/schema",
-    "$id": "robot.json",
-    "title": "Robot",
-    "description": "Description of a robot class. This can be a robot simulator or a robot-driver that communicates with a physical robot",
-    "oneOf": [
-        {
-            "$ref": "robotsimulator.json"
+    "$schema":"http://json-schema.org/draft-06/schema",
+    "$id":"robot.json",
+    "title":"eTaSL robot configuration",
+    "type":"object",
+    "description":"Configuration to setup the robot kinematic model and robot driver",
+    "required": ["simulation","default_robot_specification","robotdriver"],
+    "properties": {
+        "simulation":{
+            "oneOf" : [
+                {"$ref":"simple_kinematic_simulation.json"}
+            ]
+        },
+        "robotdriver": {
+            "title":"Robotdriver",
+            "description":"Robotdriver interfaces robot hardware with eTaSL and runs in a separate thread, communicating with shared memory for reduced latency",
+            "$ref": "robotdriver.json"
+        },
+        "default_robot_specification": {
+            "title":"default_robot_specification",
+            "description":"Robot specification that describes the kinematics, jointnames, relevant frames and others",
+            "$ref": "default_robot_specification.json"
         }
-    ]
+    },
+    "additionalProperties":false
 }

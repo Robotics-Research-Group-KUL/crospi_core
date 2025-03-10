@@ -25,6 +25,7 @@ target_link_libraries(etasl_node
         etasl_node_utils
         robot_interfacing_utils
         kuka_iiwa_driver
+        simple_kinematic_simulation
         )
         # TODO: Find a way of removing kuka_iiwa_driver
 

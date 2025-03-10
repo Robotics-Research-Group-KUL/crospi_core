@@ -3,18 +3,22 @@
     "$id": "blackboard-schema.json",
     "title": "Blackboard",
     "type": "object",
-    "description": "A blackboard is a place to store in a hierarchical way default values and values that have to be used by more than 1 module",
+    "description": "Schema defining configuration properties for the etasl_node",
     "properties": {
         "blackboard": {
             "type": "object",
             "properties": {
-                "default-etasl": {
+                "etasl": {
                     "$ref": "../schema/etasl.json"
+                },
+                "robot": {
+                    "$ref": "../schema/robot.json"
+                },
+                "iohandlers": {
+                    "$ref": "../schema/iohandlers.json"
                 }
             },
-            "required": [
-                "default-etasl"
-            ]
+            "required": [ "etasl", "robot"]
         }
     },
     "required": [

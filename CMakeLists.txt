@@ -48,6 +48,7 @@ include_directories(
 
 include_directories(
    src/misc/kuka_iiwa_driver
+   src/misc/simple_kinematic_simulation
 ) #TODO: Remove this
 
 # TODO: Delete the following. It is only used for debug in VSCODE:
