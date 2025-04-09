@@ -34,13 +34,13 @@ In every terminal that you open first run the `ros2_source` command (alias creat
 2. In a second terminal run:
 
     ```bash
-    ros2 run etasl_ros2 etasl_node --ros-args -p directory_path:=/path/to/config_file
+    ros2 run etasl_ros2 etasl_node --ros-args -p config_file:=/path/to/config_file
     ```
 
-    which will run the etasl_node in an unconfigured state. The `directory_path` can be set as any absolute path of a [config_file](/offline_configuration/setup_configuration/#setup-configuration). However, to facilitate the specification of this parameter, the directory can be specified relatively to any ros2 package in the (sourced) workspace:
+    which will run the etasl_node in an unconfigured state. The `config_file` can be set as any absolute path of a [config_file](/offline_configuration/setup_configuration/#setup-configuration). However, to facilitate the specification of this parameter, the directory can be specified relatively to any ros2 package in the (sourced) workspace:
 
     ```bash
-    ros2 run etasl_ros2 etasl_node --ros-args -p directory_path:="\$[my_package]/rest/of/the/path/<my_config_file>.json"
+    ros2 run etasl_ros2 etasl_node --ros-args -p config_file:="\$[my_package]/rest/of/the/path/<my_config_file>.json"
     ``` 
 
     The etasl_node will interpret the text in between `$[text]` as a package name and will use ament functionalities to search for that package. In bash the `\` before the `$[text]` (i.e. `\$[text]`, see command above) is required, since bash otherwise would try to extract the value of an environment variable called `text` instead of interpreting it as a simple string.
@@ -50,7 +50,7 @@ In every terminal that you open first run the `ros2_source` command (alias creat
         This example is compatible with example 1, since it will run a setup with a UR10 in simulation that can move the virtual robot in RVIZ.
 
         ```bash
-        ros2 run etasl_ros2 etasl_node --ros-args -p directory_path:="\$[etasl_ros2_application_template]/applications/application_example_ur10_simulation.setup.json"
+        ros2 run etasl_ros2 etasl_node --ros-args -p config_file:="\$[etasl_ros2_application_template]/applications/application_example_ur10_simulation.setup.json"
         ``` 
 
     !!! warning
