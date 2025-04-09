@@ -48,14 +48,14 @@ etaslNode::etaslNode(const std::string & node_name, bool intra_process_comms = f
   
   srv_readTaskParameters_ = create_service<etasl_interfaces::srv::TaskSpecificationString>("etasl_node/readTaskParameters", std::bind(&etaslNode::readTaskParameters, this, std::placeholders::_1, std::placeholders::_2));
 
-  std::string dirPath = this->declare_parameter<std::string>("directory_path", "");
+  std::string configFilePath = this->declare_parameter<std::string>("config_file", "");
   bool simulation_param = this->declare_parameter<bool>("simulation", true);
 
 
 
 // Checks if the path is empty. i.e. the parameter was not defined.
-  if (dirPath.empty()) {
-      RCLCPP_ERROR(this->get_logger(), "No directory path provided. Use the 'directory_path' ros parameter as follows: \n ros2 run etasl_ros2 etasl_node --ros-args -p directory_path:=/path/to/directory");
+  if (configFilePath.empty()) {
+      RCLCPP_ERROR(this->get_logger(), "No directory path provided. Use the 'config_file' ros parameter as follows: \n ros2 run etasl_ros2 etasl_node --ros-args -p config_file:=/path/to/directory");
       rclcpp::shutdown();
       return;
   }
@@ -66,10 +66,10 @@ etaslNode::etaslNode(const std::string & node_name, bool intra_process_comms = f
 //  Necessary because BlackBoard::load called in BlackBoard::load_process_and_validate does not handle the exception thrown by string_interpolate 
   std::string file_path;
   try {
-      file_path = etasl::string_interpolate(dirPath);
+      file_path = etasl::string_interpolate(configFilePath);
   } catch (const std::exception& e) {
     // Catches any other exceptions derived from std::exception
-      std::string message = "Exception caught when reading the directory_path:=" + dirPath + " provided as --ros-arg: \n Exception e.what():" + std::string(e.what());
+      std::string message = "Exception caught when reading the config_file:=" + configFilePath + " provided as --ros-arg: \n Exception e.what():" + std::string(e.what());
       RCUTILS_LOG_ERROR_NAMED(get_name(), message.c_str());
       rclcpp::shutdown();
       return;
@@ -79,7 +79,7 @@ etaslNode::etaslNode(const std::string & node_name, bool intra_process_comms = f
 
     // Check if the file path exists
   if (!std::filesystem::exists(path) || !std::filesystem::is_regular_file(path)) {
-      std::string message = "The directory_path:=" + file_path + " which was provided through --ros-arg is not a valid file directory.";
+      std::string message = "The config_file:=" + file_path + " which was provided through --ros-arg is not a valid file directory.";
       RCUTILS_LOG_ERROR_NAMED(get_name(), message.c_str());
       rclcpp::shutdown();
   } 
@@ -94,7 +94,7 @@ etaslNode::etaslNode(const std::string & node_name, bool intra_process_comms = f
   board->setSearchPath("$[etasl_ros2]/scripts/schema:$[etasl_ros2]/scripts/schema/tasks");
   // board->load_process_and_validate("$[etasl_ros2]/scripts/json/blackboard.json");
   
-  board->load_process_and_validate(dirPath); // Also checks if it is a valid JSON file
+  board->load_process_and_validate(configFilePath); // Also checks if it is a valid JSON file
   // fmt::print("{:->80}\n", "-");
 
 
