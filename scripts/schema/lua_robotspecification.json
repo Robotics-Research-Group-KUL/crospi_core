@@ -19,7 +19,7 @@
                     "description":"Path of the LUA file containing the robot specification. Start with $[colcon_package] to make the path relative to a colcon_package, or start with / to make it an absolute path.",
                     "type":"string",
                     "pattern": ".*\\.lua$",
-                    "default": "$[etasl_ros2_application_template]/etasl/robot_specifications/ur10.etasl.lua"
+                    "default": "$[etasl_ros2_application_template]/robot_models/robot_specifications/ur10.etasl.lua"
                 },
                 "robot_joints": {
                     "description":"Names of the joints in order from the world to the end effector. This names need to be consistent with the ones declared in the URDF file of the robot.",

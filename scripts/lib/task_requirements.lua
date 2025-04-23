@@ -709,13 +709,15 @@ local function load_robot(required_frames)
         -- Load all frames (tcp_frame and additional_frames)
         local VL = {}
         local expr_tab = {tcp_frame={json_robot_tab["tcp_frame"].child_link,json_robot_tab["tcp_frame"].parent_link}}
-        for _, value in ipairs(json_robot_tab["additional_frames"]) do
-            for _, req_frame in ipairs(required_frames) do
-                if req_frame == value.name then
-                    expr_tab[value.name] = {value.child_link,value.parent_link}
+        if json_robot_tab["additional_frames"] ~= nil then
+            for _, value in ipairs(json_robot_tab["additional_frames"]) do
+                for _, req_frame in ipairs(required_frames) do
+                    if req_frame == value.name then
+                        expr_tab[value.name] = {value.child_link,value.parent_link}
+                    end
                 end
+                -- expr_tab[value.name] = {value.child_link,value.parent_link}
             end
-            -- expr_tab[value.name] = {value.child_link,value.parent_link}
         end
         frames= robot_worldmodel:getExpressions(VL, ctx, expr_tab)
 
