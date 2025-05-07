@@ -1137,7 +1137,7 @@ void etaslNode::construct_node(){
 
       // --------- Check if the requested feedback is available in the robot driver ---------------
       Json::Value param_robot = board->getPath("/robot", false);
-      Json::Value param_iohandlers = board->getPath("/inputhandlers", false);
+      Json::Value param_iohandlers = board->getPath("iohandlers", false);
       feedback_report["joint_vel"] = jsonchecker->is_member(param_robot, "robotdriver/name_expr_joint_vel") && feedback_copy_ptr->joint.vel.is_available;
       feedback_report["joint_torque"] = jsonchecker->is_member(param_robot, "robotdriver/name_expr_joint_torque") && feedback_copy_ptr->joint.torque.is_available;
       feedback_report["joint_current"] = jsonchecker->is_member(param_robot, "robotdriver/name_expr_joint_current") && feedback_copy_ptr->joint.current.is_available;
@@ -1182,18 +1182,20 @@ void etaslNode::construct_node(){
 
         if(jsonchecker->is_member(param_robot, "robotdriver/name_expr_" + key)){
 
+
           if(!value){
             std::string message = "The requested " + key + " feedback is not available in the used robot driver. Delete the input value name_expr_"+ key +" from the setup.json file or fix the robot driver to report it.";
             RCUTILS_LOG_ERROR_NAMED(get_name(), message.c_str());
             auto transition = this->shutdown(); //calls on_shutdown() hook.
-            lifecycle_return::ERROR;
+            return lifecycle_return::ERROR;
           }
+          
           for (const auto& input_h : param_iohandlers["inputhandlers"]){ //Check that the user is not requesting a topic with the same name as the expression variable for the driver
             if(input_h["varname"].asString() == jsonchecker->asString(param_robot, "robotdriver/name_expr_" + key)){
               std::string message = "The name `" + input_h["varname"].asString() + "` cannot be used within the setup.json file for both the name_expr_"+ key + " of robotdriver field and an input handler.";
               RCUTILS_LOG_ERROR_NAMED(get_name(), message.c_str());
               auto transition = this->shutdown(); //calls on_shutdown() hook.
-              lifecycle_return::ERROR;
+              return lifecycle_return::ERROR;
             } 
           }
         }
