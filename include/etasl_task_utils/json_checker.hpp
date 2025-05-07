@@ -36,6 +36,7 @@ namespace etasl {
             unsigned int asUInt(Json::Value const& json_param, const std::string& key_path);
             size_t asUInt64(Json::Value const& json_param, const std::string& key_path);
             Json::Value asArray(Json::Value const& json_param, const std::string& key_path);
+            bool is_member(Json::Value const& json_param, const std::string& key_path);
 
             bool getPath(Json::Value & current, const std::string& key_path, std::string& key);
 

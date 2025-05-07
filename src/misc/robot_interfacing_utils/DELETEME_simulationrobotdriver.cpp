@@ -46,8 +46,14 @@ bool SimulationRobotDriver::initialize()
     feedback_ptr->joint.pos.data = joint_pos;
     feedback_ptr->joint.pos.is_available = true;
 
+    //TODO: This is only for test. Remove:
+    feedback_ptr->cartesian.wrench.is_available = true;
+
     setpoint_ptr->mtx.unlock();
     feedback_ptr->mtx.unlock();
+
+    std::cout << "***************************Initialized with cartesian wrench available!!!!!!!!!!" << name << std::endl;
+
 
     return true;
 }
@@ -66,6 +72,13 @@ void SimulationRobotDriver::update(volatile std::atomic<bool>& stopFlag)
         // joint_pos[i] += 0.00000001; //test
         feedback_ptr->joint.pos.data[i] = joint_pos[i];
     }
+    //TODO: This is only for test. Remove:
+    feedback_ptr->cartesian.wrench.data[0] = 10.0;
+    feedback_ptr->cartesian.wrench.data[1] = 11.0;
+    feedback_ptr->cartesian.wrench.data[2] = 12.0;
+    feedback_ptr->cartesian.wrench.data[3] = 13.0;
+    feedback_ptr->cartesian.wrench.data[4] = 14.0;
+    feedback_ptr->cartesian.wrench.data[5] = 15.0;
 
     setpoint_ptr->velocity.fs = etasl::OldData;
     // std::cout << "vel val:" << setpoint_ptr->velocity.data[0] << " , " << setpoint_ptr->velocity.data[1] << " , "<< setpoint_ptr->velocity.data[2] << std::endl;
@@ -77,6 +90,9 @@ void SimulationRobotDriver::update(volatile std::atomic<bool>& stopFlag)
 
     setpoint_ptr->mtx.unlock();
     feedback_ptr->mtx.unlock();
+
+    std::cout << "hihihi" << std::endl;
+
 }
 
 void SimulationRobotDriver::on_configure() {

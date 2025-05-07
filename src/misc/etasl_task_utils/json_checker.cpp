@@ -115,6 +115,16 @@ Json::Value JsonChecker::asArray(Json::Value const& json_param, const std::strin
     return current;
 }
 
+bool JsonChecker::is_member(Json::Value const& json_param, const std::string& key_path){
+    std::stringstream ss(key_path);
+    std::string key;
+    Json::Value current = json_param;
+
+    bool is_key_found = getPath(current, key_path, key);
+
+    return is_key_found;
+}
+
 bool JsonChecker::getPath(Json::Value & current, const std::string& key_path, std::string& key){
     std::stringstream ss(key_path);
     while (std::getline(ss, key, '/')) {

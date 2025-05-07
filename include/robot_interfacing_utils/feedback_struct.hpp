@@ -14,7 +14,7 @@ namespace etasl {
 
     // template <typename T> 
     // struct FeedbackField { 
-    //     const bool is_available = false; //To indicate if the robot has that type of data available
+    //     bool is_available = false; //To indicate if the robot has that type of data available
     //     T *data; // Template of data
         
     // }; 
@@ -30,24 +30,46 @@ namespace etasl {
     }; 
 
     struct PositionField { 
-        const bool is_available = false; //To indicate if the robot has that type of data available
-        std::array<float, 3> data; // std::array of 3D position values
-        PositionField(): data{0}
+        bool is_available = false; //To indicate if the robot has that type of data available
+        double x;
+        double y;
+        double z;
+        PositionField(): x(0.0), y(0.0), z(0.0)
         {}
     }; 
 
     struct QuaternionField { 
-        const bool is_available = false; //To indicate if the robot has that type of data available
-        std::array<float, 4> data; // std::array of quaternion values representing orientation
-        QuaternionField(): data{0}
+        bool is_available = false; //To indicate if the robot has that type of data available
+        double qx;
+        double qy;
+        double qz;
+        double qw;
+        QuaternionField(): qx(0.0), qy(0.0), qz(0.0), qw(1.0)
         {}
     }; 
 
 
+
+
     struct ScrewField { 
-        const bool is_available = false; //To indicate if the robot has that type of data available
-        std::array<float, 6> data; // std::array of 6D screw values
-        ScrewField(): data{0}
+        bool is_available = false; //To indicate if the robot has that type of data available
+        struct ForceField { 
+            double x;
+            double y;
+            double z;
+            ForceField(): x(0.0), y(0.0), z(0.0)
+            {}
+        } linear; 
+    
+        struct TorqueField { 
+            double x;
+            double y;
+            double z;
+            TorqueField(): x(0.0), y(0.0), z(0.0)
+            {}
+        } angular; 
+
+        ScrewField(): linear(), angular()
         {}
     }; 
 

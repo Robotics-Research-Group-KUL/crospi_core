@@ -29,6 +29,10 @@ etaslNode::etaslNode(const std::string & node_name, bool intra_process_comms = f
 , event_postfix(get_name())
 , first_time_configured(false)
 , is_configured(false)
+, vector_inp(KDL::Vector::Zero())
+, rotation_inp(KDL::Rotation::Identity())
+, twist_inp(KDL::Twist::Zero())
+, wrench_inp(KDL::Wrench::Zero())
 {
 
   // Lambda function to handle errors when reading a JSON element from the configuration file
@@ -487,9 +491,9 @@ void etaslNode::initialize_feature_variables(){
 
 void etaslNode::configure_etasl(){
     
-    Json::Value param = board->getPath("/robot", false);
+    Json::Value param_robot = board->getPath("/robot", false);
     jointnames.clear();
-    for (auto n : jsonchecker->asArray(param, "default_robot_specification/robot_joints")) {
+    for (auto n : jsonchecker->asArray(param_robot, "default_robot_specification/robot_joints")) {
         jointnames.push_back(jsonchecker->asString(n, ""));
     }
  
@@ -552,6 +556,54 @@ void etaslNode::configure_etasl(){
         message2 << "The initial state of the solver is: " << state.transpose();
         RCUTILS_LOG_INFO_NAMED(get_name(), (message2.str()).c_str());
     }
+
+    for (const auto& pair : feedback_report) {
+      std::string key = pair.first;
+      bool value = pair.second;
+
+      if(value){
+        //Check types and get Input Channels accordingly. Joint values are vectors of pointers, and the rest are pointers. Careful!
+        if (key == "joint_vel") {
+          for (unsigned int i = 0; i < jvel_etasl.size(); ++i) {
+            input_channels_feedback.joint_vel[i] = ctx->getInputChannel<double>(jsonchecker->asString(param_robot, "robotdriver/name_expr_" + key) + "_" + std::to_string(i));
+          }
+        } 
+        else if (key == "joint_torque") {
+          for (unsigned int i = 0; i < jvel_etasl.size(); ++i) {
+            input_channels_feedback.joint_torque[i] = ctx->getInputChannel<double>(jsonchecker->asString(param_robot, "robotdriver/name_expr_" + key) + "_" + std::to_string(i));
+          }
+        }
+        else if (key == "joint_current") {
+          for (unsigned int i = 0; i < jvel_etasl.size(); ++i) {
+            input_channels_feedback.joint_current[i] = ctx->getInputChannel<double>(jsonchecker->asString(param_robot, "robotdriver/name_expr_" + key) + "_" + std::to_string(i));
+          }
+        }
+        else if (key == "cartesian_pos") {
+            input_channels_feedback.cartesian_pos = ctx->getInputChannel<KDL::Vector>(jsonchecker->asString(param_robot, "robotdriver/name_expr_" + key));
+        }
+        else if (key == "cartesian_quat") {
+            input_channels_feedback.cartesian_quat = ctx->getInputChannel<KDL::Rotation>(jsonchecker->asString(param_robot, "robotdriver/name_expr_" + key));
+        }
+        else if (key == "cartesian_twist") {
+            input_channels_feedback.cartesian_twist = ctx->getInputChannel<KDL::Twist>(jsonchecker->asString(param_robot, "robotdriver/name_expr_" + key));
+        }
+        else if (key == "cartesian_wrench") {
+            input_channels_feedback.cartesian_wrench = ctx->getInputChannel<KDL::Wrench>(jsonchecker->asString(param_robot, "robotdriver/name_expr_" + key));
+        }
+        else if (key == "base_pos") {
+            input_channels_feedback.base_pos = ctx->getInputChannel<KDL::Vector>(jsonchecker->asString(param_robot, "robotdriver/name_expr_" + key));
+        }
+        else if (key == "base_quat") {
+            input_channels_feedback.base_quat = ctx->getInputChannel<KDL::Rotation>(jsonchecker->asString(param_robot, "robotdriver/name_expr_" + key));
+        }
+        else if (key == "base_twist") {
+            input_channels_feedback.base_twist = ctx->getInputChannel<KDL::Twist>(jsonchecker->asString(param_robot, "robotdriver/name_expr_" + key));
+        }
+      }
+
+
+    }
+
 
 
 }
@@ -625,7 +677,7 @@ void etaslNode::update_robot_status(){
 
     // jpos_etasl += jvel_etasl*(periodicity_ms/1000.0);  // or replace with reading joint positions from real robot
     fpos_etasl += fvel_etasl*(periodicity_ms/1000.0);  // you always integrate feature variables yourself
-    time += (periodicity_ms/1000.0);       // idem.
+    time += (periodicity_ms/1000.0);
 
     feedback_shared_ptr->mtx.lock();
     setpoint_shared_ptr->mtx.lock();
@@ -636,13 +688,225 @@ void etaslNode::update_robot_status(){
     setpoint_shared_ptr->velocity.fs = etasl::NewData;
     for (unsigned int i=0; i<jvel_etasl.size(); ++i) {
       setpoint_shared_ptr->velocity.data[i] = jvel_etasl[i];
-      jpos_etasl[i] = feedback_shared_ptr->joint.pos.data[i];
-    // TODO: retrieve other feedback values into a structure saved locally in this thread
+    }
+
+    // -------- Jointspace feedback -----------------
+    //Copy joint positions
+    // Json::Value param_robot = board->getPath("/robot", false);
+    // feedback_report["joint_vel"] = jsonchecker->is_member(param_robot, "robotdriver/name_expr_joint_vel") && feedback_copy_ptr->joint.vel.is_available;
+    // feedback_report["joint_torque"] = jsonchecker->is_member(param_robot, "robotdriver/name_expr_joint_torque") && feedback_copy_ptr->joint.torque.is_available;
+    // feedback_report["joint_current"] = jsonchecker->is_member(param_robot, "robotdriver/name_expr_joint_current") && feedback_copy_ptr->joint.current.is_available;
+    // feedback_report["cartesian_pos"] = jsonchecker->is_member(param_robot, "robotdriver/name_expr_cartesian_pos") && feedback_copy_ptr->cartesian.pos.is_available;
+    // feedback_report["cartesian_quat"] = jsonchecker->is_member(param_robot, "robotdriver/name_expr_cartesian_quat") && feedback_copy_ptr->cartesian.quat.is_available;
+    // feedback_report["cartesian_twist"] = jsonchecker->is_member(param_robot, "robotdriver/name_expr_cartesian_twist") && feedback_copy_ptr->cartesian.twist.is_available;
+    // feedback_report["cartesian_wrench"] = jsonchecker->is_member(param_robot, "robotdriver/name_expr_cartesian_wrench") && feedback_copy_ptr->cartesian.wrench.is_available;
+    // feedback_report["base_pos"] = jsonchecker->is_member(param_robot, "robotdriver/name_expr_base_pos") && feedback_copy_ptr->base.pos.is_available;
+    // feedback_report["base_quat"] = jsonchecker->is_member(param_robot, "robotdriver/name_expr_base_quat") && feedback_copy_ptr->base.quat.is_available;
+    // feedback_report["base_twist"] = jsonchecker->is_member(param_robot, "robotdriver/name_expr_base_twist") && feedback_copy_ptr->base.twist.is_available;
+
+
+
+    if (feedback_copy_ptr->joint.pos.is_available){
+      for (unsigned int i=0; i<jvel_etasl.size(); ++i) {
+        feedback_copy_ptr->joint.pos.data[i] = feedback_shared_ptr->joint.pos.data[i];
+        jpos_etasl[i] = feedback_shared_ptr->joint.pos.data[i]; //required only for positions
+      }
     }
 
 
+    //Copy joint velocities
+    if (feedback_report["joint_vel"]){
+      for (unsigned int i=0; i<jvel_etasl.size(); ++i) {
+        feedback_copy_ptr->joint.vel.data[i] = feedback_shared_ptr->joint.vel.data[i];
+      }
+    }
+
+    //Copy joint torques
+    if (feedback_report["joint_torque"]){
+      for (unsigned int i=0; i<jvel_etasl.size(); ++i) {
+        feedback_copy_ptr->joint.torque.data[i] = feedback_shared_ptr->joint.torque.data[i];
+      }
+    }
+
+    //Copy joint currents
+    if (feedback_report["joint_current"]){
+      for (unsigned int i=0; i<jvel_etasl.size(); ++i) {
+        feedback_copy_ptr->joint.current.data[i] = feedback_shared_ptr->joint.current.data[i];
+      }
+    }
+
+    // -------- Cartesian feedback -----------------
+
+    //Copy Cartesian position
+    if (feedback_report["cartesian_pos"]){
+      feedback_copy_ptr->cartesian.pos.x = feedback_shared_ptr->cartesian.pos.x;
+      feedback_copy_ptr->cartesian.pos.y = feedback_shared_ptr->cartesian.pos.y;
+      feedback_copy_ptr->cartesian.pos.z = feedback_shared_ptr->cartesian.pos.z;
+    }
+
+    //Copy Cartesian orientation in quaternion format
+    if (feedback_report["cartesian_quat"]){
+      feedback_copy_ptr->cartesian.quat.qx = feedback_shared_ptr->cartesian.quat.qx;
+      feedback_copy_ptr->cartesian.quat.qy = feedback_shared_ptr->cartesian.quat.qy;
+      feedback_copy_ptr->cartesian.quat.qz = feedback_shared_ptr->cartesian.quat.qz;
+      feedback_copy_ptr->cartesian.quat.qw = feedback_shared_ptr->cartesian.quat.qw;
+    }
+
+    //Copy Cartesian twist
+    if (feedback_report["cartesian_twist"]){
+      feedback_copy_ptr->cartesian.twist.linear.x = feedback_shared_ptr->cartesian.twist.linear.x;
+      feedback_copy_ptr->cartesian.twist.linear.y = feedback_shared_ptr->cartesian.twist.linear.y;
+      feedback_copy_ptr->cartesian.twist.linear.z = feedback_shared_ptr->cartesian.twist.linear.z;
+      feedback_copy_ptr->cartesian.twist.angular.x = feedback_shared_ptr->cartesian.twist.angular.x;
+      feedback_copy_ptr->cartesian.twist.angular.y = feedback_shared_ptr->cartesian.twist.angular.y;
+      feedback_copy_ptr->cartesian.twist.angular.z = feedback_shared_ptr->cartesian.twist.angular.z;
+    }
+
+    //Copy Cartesian wrench
+    if (feedback_report["cartesian_wrench"]){
+      feedback_copy_ptr->cartesian.wrench.linear.x = feedback_shared_ptr->cartesian.wrench.linear.x;
+      feedback_copy_ptr->cartesian.wrench.linear.y = feedback_shared_ptr->cartesian.wrench.linear.y;
+      feedback_copy_ptr->cartesian.wrench.linear.z = feedback_shared_ptr->cartesian.wrench.linear.z;
+      feedback_copy_ptr->cartesian.wrench.angular.x = feedback_shared_ptr->cartesian.wrench.angular.x;
+      feedback_copy_ptr->cartesian.wrench.angular.y = feedback_shared_ptr->cartesian.wrench.angular.y;
+      feedback_copy_ptr->cartesian.wrench.angular.z = feedback_shared_ptr->cartesian.wrench.angular.z;
+    }
+
+    //Copy base position
+    if (feedback_report["base_pos"]){
+      feedback_copy_ptr->base.pos.x = feedback_shared_ptr->base.pos.x;
+      feedback_copy_ptr->base.pos.y = feedback_shared_ptr->base.pos.y;
+      feedback_copy_ptr->base.pos.z = feedback_shared_ptr->base.pos.z;
+    }
+
+    //Copy base orientation in quaternion format
+    if (feedback_report["base_quat"]){
+      feedback_copy_ptr->base.quat.qx = feedback_shared_ptr->base.quat.qx;
+      feedback_copy_ptr->base.quat.qy = feedback_shared_ptr->base.quat.qy;
+      feedback_copy_ptr->base.quat.qz = feedback_shared_ptr->base.quat.qz;
+      feedback_copy_ptr->base.quat.qw = feedback_shared_ptr->base.quat.qw;
+    }
+
+    //Copy base twist
+    if (feedback_report["base_twist"]){
+      feedback_copy_ptr->base.twist.linear.x = feedback_shared_ptr->base.twist.linear.x;
+      feedback_copy_ptr->base.twist.linear.y = feedback_shared_ptr->base.twist.linear.y;
+      feedback_copy_ptr->base.twist.linear.z = feedback_shared_ptr->base.twist.linear.z;
+      feedback_copy_ptr->base.twist.angular.x = feedback_shared_ptr->base.twist.angular.x;
+      feedback_copy_ptr->base.twist.angular.y = feedback_shared_ptr->base.twist.angular.y;
+      feedback_copy_ptr->base.twist.angular.z = feedback_shared_ptr->base.twist.angular.z;
+    }
+
     feedback_shared_ptr->mtx.unlock();
     setpoint_shared_ptr->mtx.unlock();
+
+        // Write in the input handler the joint velocities
+        if (feedback_report["joint_vel"]){
+          for (unsigned int i=0; i<jvel_etasl.size(); ++i) { //Check that the input channel exists (i.e. was declared in the task specification)
+            if(input_channels_feedback.joint_vel[i]){      
+              input_channels_feedback.joint_vel[i]->setValue(feedback_copy_ptr->joint.vel.data[i]);
+            }
+          }
+        }
+    
+        //Write in the input handler the joint torques
+        if (feedback_report["joint_torque"]){
+          for (unsigned int i=0; i<jvel_etasl.size(); ++i) { //Check that the input channel exists (i.e. was declared in the task specification)
+            if(input_channels_feedback.joint_torque[i]){      
+              input_channels_feedback.joint_torque[i]->setValue(feedback_copy_ptr->joint.torque.data[i]);
+            }
+          }
+        }
+    
+        //Write in the input handler the joint currents
+        if (feedback_report["joint_current"]){
+          for (unsigned int i=0; i<jvel_etasl.size(); ++i) { //Check that the input channel exists (i.e. was declared in the task specification)
+            if(input_channels_feedback.joint_current[i]){      
+              input_channels_feedback.joint_current[i]->setValue(feedback_copy_ptr->joint.current.data[i]);
+            }
+          }
+        }
+    
+        // -------- Cartesian feedback -----------------
+    
+        //Write in the input handler the Cartesian position
+        if (feedback_report["cartesian_pos"]){
+            if(input_channels_feedback.cartesian_pos){
+              vector_inp[0] = feedback_copy_ptr->cartesian.pos.x;
+              vector_inp[1] = feedback_copy_ptr->cartesian.pos.y;
+              vector_inp[2] = feedback_copy_ptr->cartesian.pos.z;
+
+              input_channels_feedback.cartesian_pos->setValue(vector_inp);
+            }
+        }
+    
+        //Write in the input handler the Cartesian orientation in quaternion format
+        //TODO: Check the quaternion format in KDL and also how to transform it to rotation
+        if (feedback_report["cartesian_quat"]){
+            if(input_channels_feedback.cartesian_quat){
+              input_channels_feedback.cartesian_quat->setValue(KDL::Rotation::Quaternion(feedback_copy_ptr->cartesian.quat.qw, feedback_copy_ptr->cartesian.quat.qx, feedback_copy_ptr->cartesian.quat.qy, feedback_copy_ptr->cartesian.quat.qz));
+            }
+        }
+    
+        //Write in the input handler the Cartesian twist
+        if (feedback_report["cartesian_twist"]){
+          if(input_channels_feedback.cartesian_twist){
+              twist_inp.vel[0] = feedback_copy_ptr->cartesian.twist.linear.x;
+              twist_inp.vel[1] = feedback_copy_ptr->cartesian.twist.linear.y;
+              twist_inp.vel[2] = feedback_copy_ptr->cartesian.twist.linear.z;
+              twist_inp.rot[0] = feedback_copy_ptr->cartesian.twist.angular.x;
+              twist_inp.rot[1] = feedback_copy_ptr->cartesian.twist.angular.y;
+              twist_inp.rot[2] = feedback_copy_ptr->cartesian.twist.angular.z;
+              input_channels_feedback.cartesian_twist->setValue(twist_inp);
+          }
+      }
+    
+        //Write in the input handler the Cartesian wrench
+        if (feedback_report["cartesian_wrench"]){
+          if(input_channels_feedback.cartesian_wrench){
+              wrench_inp.force[0] = feedback_copy_ptr->cartesian.wrench.linear.x;
+              wrench_inp.force[1] = feedback_copy_ptr->cartesian.wrench.linear.y;
+              wrench_inp.force[2] = feedback_copy_ptr->cartesian.wrench.linear.z;
+              wrench_inp.torque[0] = feedback_copy_ptr->cartesian.wrench.angular.x;
+              wrench_inp.torque[1] = feedback_copy_ptr->cartesian.wrench.angular.y;
+              wrench_inp.torque[2] = feedback_copy_ptr->cartesian.wrench.angular.z;
+
+              input_channels_feedback.cartesian_wrench->setValue(wrench_inp);
+          }
+      }
+    
+        //Write in the input handler the base position
+        if (feedback_report["base_pos"]){
+          if(input_channels_feedback.base_pos){
+            vector_inp[0] = feedback_copy_ptr->base.pos.x;
+            vector_inp[1] = feedback_copy_ptr->base.pos.y;
+            vector_inp[2] = feedback_copy_ptr->base.pos.z;
+            input_channels_feedback.base_pos->setValue(vector_inp);
+          }
+      }
+    
+        //Write in the input handler the base orientation in quaternion format
+        if (feedback_report["base_quat"]){
+          if(input_channels_feedback.base_quat){
+            input_channels_feedback.base_quat->setValue(KDL::Rotation::Quaternion(feedback_copy_ptr->base.quat.qw, feedback_copy_ptr->base.quat.qx, feedback_copy_ptr->base.quat.qy, feedback_copy_ptr->base.quat.qz));
+          }
+      }
+    
+        //Write in the input handler the base twist
+        if (feedback_report["base_twist"]){
+          if(input_channels_feedback.base_twist){
+              twist_inp.vel[0] = feedback_copy_ptr->base.twist.linear.x;
+              twist_inp.vel[1] = feedback_copy_ptr->base.twist.linear.y;
+              twist_inp.vel[2] = feedback_copy_ptr->base.twist.linear.z;
+              twist_inp.rot[0] = feedback_copy_ptr->base.twist.angular.x;
+              twist_inp.rot[1] = feedback_copy_ptr->base.twist.angular.y;
+              twist_inp.rot[2] = feedback_copy_ptr->base.twist.angular.z;
+              input_channels_feedback.base_twist->setValue(twist_inp);
+          }
+      }
+    
+    
+    
 }
 
 void etaslNode::reinitialize_data_structures() {
@@ -727,6 +991,7 @@ void etaslNode::construct_node(){
     feedback_shared_ptr = boost::make_shared<etasl::FeedbackMsg>(jointnames.size());
     setpoint_shared_ptr = boost::make_shared<etasl::SetpointMsg>(jointnames.size());
 
+    feedback_copy_ptr = std::make_unique<etasl::FeedbackMsg>(jointnames.size());
     /****************************************************
     * Registering factories
     ***************************************************/
@@ -837,17 +1102,105 @@ void etaslNode::construct_node(){
 
       std::vector<double> jpos_init_vec;
       feedback_shared_ptr->mtx.lock();
+
+      feedback_copy_ptr->joint.pos.is_available = feedback_shared_ptr->joint.pos.is_available;
+      feedback_copy_ptr->joint.vel.is_available = feedback_shared_ptr->joint.vel.is_available;
+      feedback_copy_ptr->joint.torque.is_available = feedback_shared_ptr->joint.torque.is_available;
+      feedback_copy_ptr->joint.current.is_available = feedback_shared_ptr->joint.current.is_available;
+
+      feedback_copy_ptr->cartesian.pos.is_available = feedback_shared_ptr->cartesian.pos.is_available;
+      feedback_copy_ptr->cartesian.quat.is_available = feedback_shared_ptr->cartesian.quat.is_available;
+      feedback_copy_ptr->cartesian.twist.is_available = feedback_shared_ptr->cartesian.twist.is_available;
+      feedback_copy_ptr->cartesian.wrench.is_available = feedback_shared_ptr->cartesian.wrench.is_available;
+      
+      feedback_copy_ptr->base.pos.is_available = feedback_shared_ptr->base.pos.is_available;
+      feedback_copy_ptr->base.quat.is_available = feedback_shared_ptr->base.quat.is_available;
+      feedback_copy_ptr->base.twist.is_available = feedback_shared_ptr->base.twist.is_available;
+
+      if (!feedback_copy_ptr->joint.pos.is_available){
+        std::string message = "The position feedback is not available in the used robot driver. This is required to run eTaSL.";
+        RCUTILS_LOG_ERROR_NAMED(get_name(), message.c_str());
+        auto transition = this->shutdown(); //calls on_shutdown() hook.
+      }
+
       jpos_init_vec.resize(feedback_shared_ptr->joint.pos.data.size(),0.0);
       for(unsigned int i = 0; i < feedback_shared_ptr->joint.pos.data.size(); ++i){
         jpos_init_vec[i] = feedback_shared_ptr->joint.pos.data[i];
       }
+
       feedback_shared_ptr->mtx.unlock();
 
       jpos_init = VectorXd::Zero(jpos_init_vec.size());
       for (unsigned int i = 0; i < jpos_init_vec.size(); ++i) {
         jpos_init[i] = jpos_init_vec[i];
       }
-      
+
+      // --------- Check if the requested feedback is available in the robot driver ---------------
+      Json::Value param_robot = board->getPath("/robot", false);
+      Json::Value param_iohandlers = board->getPath("/inputhandlers", false);
+      feedback_report["joint_vel"] = jsonchecker->is_member(param_robot, "robotdriver/name_expr_joint_vel") && feedback_copy_ptr->joint.vel.is_available;
+      feedback_report["joint_torque"] = jsonchecker->is_member(param_robot, "robotdriver/name_expr_joint_torque") && feedback_copy_ptr->joint.torque.is_available;
+      feedback_report["joint_current"] = jsonchecker->is_member(param_robot, "robotdriver/name_expr_joint_current") && feedback_copy_ptr->joint.current.is_available;
+      feedback_report["cartesian_pos"] = jsonchecker->is_member(param_robot, "robotdriver/name_expr_cartesian_pos") && feedback_copy_ptr->cartesian.pos.is_available;
+      feedback_report["cartesian_quat"] = jsonchecker->is_member(param_robot, "robotdriver/name_expr_cartesian_quat") && feedback_copy_ptr->cartesian.quat.is_available;
+      feedback_report["cartesian_twist"] = jsonchecker->is_member(param_robot, "robotdriver/name_expr_cartesian_twist") && feedback_copy_ptr->cartesian.twist.is_available;
+      feedback_report["cartesian_wrench"] = jsonchecker->is_member(param_robot, "robotdriver/name_expr_cartesian_wrench") && feedback_copy_ptr->cartesian.wrench.is_available;
+      feedback_report["base_pos"] = jsonchecker->is_member(param_robot, "robotdriver/name_expr_base_pos") && feedback_copy_ptr->base.pos.is_available;
+      feedback_report["base_quat"] = jsonchecker->is_member(param_robot, "robotdriver/name_expr_base_quat") && feedback_copy_ptr->base.quat.is_available;
+      feedback_report["base_twist"] = jsonchecker->is_member(param_robot, "robotdriver/name_expr_base_twist") && feedback_copy_ptr->base.twist.is_available;
+
+
+
+      input_channels_feedback.joint_vel.clear();
+      input_channels_feedback.joint_torque.clear();
+      input_channels_feedback.joint_current.clear();
+
+      input_channels_feedback.joint_vel.resize(jpos_init_vec.size(), nullptr);
+      input_channels_feedback.joint_torque.resize(jpos_init_vec.size(),nullptr);
+      input_channels_feedback.joint_current.resize(jpos_init_vec.size(),nullptr);
+
+      // if(jsonchecker->is_member(param_robot, "robotdriver/name_expr_joint_vel")){
+      //   if(!feedback_copy_ptr->joint.vel.is_available){
+      //     std::string message = "The requested joint.vel feedback is not available in the used robot driver. Delete the input value name_expr_joint_vel from the setup.json file or fix the robot driver to report it.";
+      //     RCUTILS_LOG_ERROR_NAMED(get_name(), message.c_str());
+      //     auto transition = this->shutdown(); //calls on_shutdown() hook.
+      //     return;
+      //   }
+      //   for (const auto& input_h : param_iohandlers["inputhandlers"]){ //Check that the user is not requesting a topic with the same name as the expression variable for the driver
+      //     if(input_h["varname"].asString() == jsonchecker->asString(param_robot, "robotdriver/name_expr_joint_vel")){
+      //       std::string message = "The name `" + input_h["varname"].asString() + "` cannot be used within the setup.json file for both the name_expr_joint_vel of robotdriver field and the an input handler.";
+      //       RCUTILS_LOG_ERROR_NAMED(get_name(), message.c_str());
+      //       auto transition = this->shutdown(); //calls on_shutdown() hook.
+      //       return;
+      //     } 
+      //   }
+      // }
+
+      for (const auto& pair : feedback_report) {
+        std::string key = pair.first;
+        bool value = pair.second;
+
+        if(jsonchecker->is_member(param_robot, "robotdriver/name_expr_" + key)){
+
+          if(!value){
+            std::string message = "The requested " + key + " feedback is not available in the used robot driver. Delete the input value name_expr_"+ key +" from the setup.json file or fix the robot driver to report it.";
+            RCUTILS_LOG_ERROR_NAMED(get_name(), message.c_str());
+            auto transition = this->shutdown(); //calls on_shutdown() hook.
+            lifecycle_return::ERROR;
+          }
+          for (const auto& input_h : param_iohandlers["inputhandlers"]){ //Check that the user is not requesting a topic with the same name as the expression variable for the driver
+            if(input_h["varname"].asString() == jsonchecker->asString(param_robot, "robotdriver/name_expr_" + key)){
+              std::string message = "The name `" + input_h["varname"].asString() + "` cannot be used within the setup.json file for both the name_expr_"+ key + " of robotdriver field and an input handler.";
+              RCUTILS_LOG_ERROR_NAMED(get_name(), message.c_str());
+              auto transition = this->shutdown(); //calls on_shutdown() hook.
+              lifecycle_return::ERROR;
+            } 
+          }
+        }
+    }
+
+ 
+
       // jpos_init << 180.0/180.0*3.1416, -90.0/180.0*3.1416, 90.0/180.0*3.1416, -90.0/180.0*3.1416, -90.0/180.0*3.1416, 0.0/180.0*3.1416;
       
       this->initialize_input_handlers();
