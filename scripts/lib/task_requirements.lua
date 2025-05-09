@@ -12,6 +12,8 @@ M.params = {}
 M.robot = {}
 
 local external_param = { type="string", pattern="^\\$blackboard(/[a-zA-Z0-9_\\-]+)+$"}
+local application_defined_parameter = { type="string", const="$application_defined_parameter"}
+
 
 --- Table defining allowed types for enums.
 M.enum_types = {
@@ -69,8 +71,9 @@ local function param_generic(spec)
     end
 
     param_schema[spec.name] = {
-        description = spec.description .. ". \nSet as a string beginning with $blackboard such as `$blackboard/output_param/my_task/my_param` if the value is not yet known and thus will be set externally at runtime (only once) depending on e.g. the outcome of a previous action or the outcome of another module.",
-        examples={"$blackboard/output_param/my_task/" .. spec.name}
+        description = spec.description .. ". \nSet as a string beginning with $blackboard such as `$blackboard/output_param/my_task/my_param` if the value is not yet known and thus will be set externally at runtime (only once) depending on e.g. the outcome of a previous action or the outcome of another module."
+        .. "\nSet as $application_defined_parameter to indicate that the parameter is defined by the application and not by the skill specification.",
+        examples={"$blackboard/output_param/my_task/" .. spec.name, "$application_defined_parameter"},
     }
     
     -- If default value is specified, it is added to the schema
@@ -176,7 +179,7 @@ local function param_scalar(spec)
     local param_schema = param_generic(spec) --pre-fills generic data necessary by all types
     param_schema, tab_fields = param_numerical(spec, param_schema) -- Fills fields required for all numbers (double and integers)
     tab_fields.type = "number"
-    param_schema[spec.name].oneOf = {tab_fields, external_param}
+    param_schema[spec.name].oneOf = {tab_fields, external_param, application_defined_parameter}
     return param_schema
 end
 
@@ -197,7 +200,7 @@ local function param_int(spec)
     local param_schema = param_generic(spec) --pre-fills generic data necessary by all types
     param_schema, tab_fields = param_numerical(spec, param_schema) -- Fills fields required for all numbers (double and integers)
     tab_fields.type = "integer"
-    param_schema[spec.name].oneOf = {tab_fields, external_param}
+    param_schema[spec.name].oneOf = {tab_fields, external_param, application_defined_parameter}
     return param_schema
 end
 
@@ -216,7 +219,7 @@ local function param_bool(spec)
     if spec.default ~=nil and type(param_schema[spec.name].default) ~= "boolean" then
         error("The default value specified for parameter " .. spec.name .. " should be a boolean.")
     end    
-    param_schema[spec.name].oneOf = {{ type= "boolean" }, external_param}
+    param_schema[spec.name].oneOf = {{ type= "boolean" }, external_param, application_defined_parameter}
 
     return param_schema
 end
@@ -243,9 +246,9 @@ local function param_string(spec)
         if not success then
             error("The provided pattern for parameter `" .. spec.name .. "` is not a valid regex pattern.")
         end
-        param_schema[spec.name].oneOf = {{ type= "string", pattern = spec.pattern }, external_param}
+        param_schema[spec.name].oneOf = {{ type= "string", pattern = spec.pattern }, external_param, application_defined_parameter}
     else
-        param_schema[spec.name].oneOf = {{ type= "string" }, external_param}
+        param_schema[spec.name].oneOf = {{ type= "string" }, external_param, application_defined_parameter}
     end
 
     return param_schema
@@ -302,7 +305,7 @@ local function param_enum(spec)
         error("The specified default value of the enum " .. spec.name .. " does not correspond to one of the specified accepted_vals")
     end
     
-    param_schema[spec.name].oneOf = {{ enum= spec.accepted_vals }, external_param}
+    param_schema[spec.name].oneOf = {{ enum= spec.accepted_vals }, external_param, application_defined_parameter}
 
     return param_schema
 end
@@ -402,7 +405,7 @@ local function param_array(spec)
     end
 
 
-    param_schema[spec.name].oneOf = {tab_fields, external_param}
+    param_schema[spec.name].oneOf = {tab_fields, external_param, application_defined_parameter}
 
     return param_schema
 end
@@ -608,6 +611,8 @@ local function parameters(task_description, param_tab)
             end
             if type(value) == "string" and string.sub(value, 1, 11) == "$blackboard" then
                 error("Parameter " .. key_param .. " cannot begin with $blackboard when executing the skill. This parameter was set in a json file by indicating the location of its value within a blackboard, and has to be changed to a proper value before the task specification execution.")
+            elseif type(value) == "string" and string.sub(value, 1, 30) == "$application_defined_parameter" then
+                error("Parameter " .. key_param .. " cannot begin with $application_defined_parameter when executing the skill. This parameter was set in a json file by indicating that it should be defined at the application level, and has to be changed to a proper value before the task specification execution.")
             end
             -- if value == "external" then
             --     error("Parameter " .. key_param .. " cannot have a value of external when executing the skill. This parameter was probably set as external in the JSON file, and has to be changed to a proper value before the task specification execution.")
