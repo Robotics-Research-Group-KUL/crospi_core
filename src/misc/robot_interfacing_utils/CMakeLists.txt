@@ -29,8 +29,8 @@ include_directories(include ${LUA_INCLUDE_DIR})
 
 set(src_robot_interfacing_utils
     thread_manager.cpp
-    simulationrobotdriver.cpp
-    simulationrobotdriverfactory.cpp
+    # simulationrobotdriver.cpp
+    # simulationrobotdriverfactory.cpp
 )
 
 set(rosdependencies)

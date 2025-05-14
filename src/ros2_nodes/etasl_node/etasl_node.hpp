@@ -5,6 +5,8 @@
 #include <functional>
 #include <memory>
 #include <string>
+#include <variant>
+
 
 #include "rclcpp/rclcpp.hpp"
 #include "std_msgs/msg/string.hpp"
@@ -114,7 +116,7 @@ class etaslNode : public rclcpp_lifecycle::LifecycleNode
         void solver_configuration();
         void initialize_joints();
         void initialize_feature_variables();
-        void construct_node();
+        void construct_node(std::atomic<bool>* stopFlagPtr_p);
 
         void register_factories();
         void update_robot_status();
@@ -149,6 +151,9 @@ class etaslNode : public rclcpp_lifecycle::LifecycleNode
         boost::shared_ptr<LuaContext> LUA;
         SolverRegistry::Ptr solver_registry;
 
+        std::atomic<bool>* stopFlagPtr;
+
+
         // boost::shared_ptr<eTaSL_OutputHandler> oh;
         // boost::shared_ptr<eTaSL_InputHandler> ih;
         // boost::shared_ptr<std::ofstream > outpfile_ptr;
@@ -173,7 +178,26 @@ class etaslNode : public rclcpp_lifecycle::LifecycleNode
         boost::shared_ptr<t_manager::thread_t> thread_str_driver;
         boost::shared_ptr<etasl::JsonChecker> jsonchecker;
         
+        std::unique_ptr<etasl::FeedbackMsg> feedback_copy_ptr;
 
+        struct InputChannelsFeedback {
+            std::vector<etasl::VariableType<double>::Ptr> joint_vel;
+            std::vector<etasl::VariableType<double>::Ptr> joint_torque;
+            std::vector<etasl::VariableType<double>::Ptr> joint_current;
+            etasl::VariableType<KDL::Vector>::Ptr cartesian_pos;
+            etasl::VariableType<KDL::Rotation>::Ptr cartesian_quat;
+            etasl::VariableType<KDL::Twist>::Ptr cartesian_twist;
+            etasl::VariableType<KDL::Wrench>::Ptr cartesian_wrench;
+            etasl::VariableType<KDL::Vector>::Ptr base_pos;
+            etasl::VariableType<KDL::Rotation>::Ptr base_quat;
+            etasl::VariableType<KDL::Twist>::Ptr base_twist;
+        } input_channels_feedback;
+        
+        KDL::Vector vector_inp;
+        KDL::Rotation rotation_inp;
+        KDL::Twist twist_inp;
+        KDL::Wrench wrench_inp;
+        std::map<std::string, bool> feedback_report;
 
         // eTaSL_OutputHandler oh;
         // eTaSL_InputHandler ih;
