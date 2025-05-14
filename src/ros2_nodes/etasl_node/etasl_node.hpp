@@ -116,7 +116,7 @@ class etaslNode : public rclcpp_lifecycle::LifecycleNode
         void solver_configuration();
         void initialize_joints();
         void initialize_feature_variables();
-        void construct_node();
+        void construct_node(std::atomic<bool>* stopFlagPtr_p);
 
         void register_factories();
         void update_robot_status();
@@ -150,6 +150,9 @@ class etaslNode : public rclcpp_lifecycle::LifecycleNode
         boost::shared_ptr<solver> slv;
         boost::shared_ptr<LuaContext> LUA;
         SolverRegistry::Ptr solver_registry;
+
+        std::atomic<bool>* stopFlagPtr;
+
 
         // boost::shared_ptr<eTaSL_OutputHandler> oh;
         // boost::shared_ptr<eTaSL_InputHandler> ih;

@@ -30,6 +30,11 @@
                     "description":"Acceleration of leading joint [rad/s^2]",
                     "type":"number",
                     "default": 1.2
+                },
+                "name_expr_cartesian_wrench" : {
+                    "description":"Name of the expression that will be used to put the joint torques coming from this driver. This name can be then used in etasl with selected_name = ctx:createInputChannelWrench('selected_name')",
+                    "type":"string",
+                    "default": "task_frame_wrench"
                 }
           }
         }

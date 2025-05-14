@@ -973,8 +973,9 @@ bool etaslNode::initialize_output_handlers(){
     return true;
 }
 
-void etaslNode::construct_node(){
+void etaslNode::construct_node(std::atomic<bool>* stopFlagPtr_p){
     
+    stopFlagPtr = stopFlagPtr_p;
 
     Json::Value param = board->getPath("/robot", false);
 
@@ -1442,6 +1443,7 @@ void etaslNode::construct_node(){
     // RCUTILS_LOG_INFO_NAMED(get_name(), "Program shutting down safely.");
 
     std::cout << "Program shutting down safely." << std::endl;
+    stopFlagPtr->store(true); //Stops execution of driver_thread after executor e.g. when interrupted with ctr+c signal    
 
     if (robotdriver!=nullptr){
       robotdriver->finalize();
@@ -1520,11 +1522,11 @@ int main(int argc, char * argv[])
     std::shared_ptr<etaslNode> my_etasl_node = std::make_shared<etaslNode>("etasl_node");
     // auto my_etasl_node = std::make_shared<etaslNode>("etasl_node");
 
-
-    my_etasl_node->construct_node();
-
-
     std::atomic<bool> stopFlag(false); 
+    
+    my_etasl_node->construct_node(&stopFlag);
+
+
 
     boost::shared_ptr<t_manager::thread_t> thread_str_driver = my_etasl_node->create_thread_str(stopFlag);
 
