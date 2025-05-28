@@ -9,13 +9,13 @@
             "type": "object",
             "properties": {
                 "etasl": {
-                    "$ref": "../schema/etasl.json"
+                    "$ref": "etasl.json"
                 },
                 "robot": {
-                    "$ref": "../schema/robot.json"
+                    "$ref": "robot.json"
                 },
                 "iohandlers": {
-                    "$ref": "../schema/iohandlers.json"
+                    "$ref": "iohandlers.json"
                 }
             },
             "required": [ "etasl", "robot"]
