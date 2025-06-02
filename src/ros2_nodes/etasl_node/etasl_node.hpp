@@ -59,6 +59,7 @@
 #include "etasl_node_utils/tfoutputhandlerfactory.hpp"
 #include "etasl_node_utils/twistinputhandlerfactory.hpp"
 #include "etasl_node_utils/wrenchinputhandlerfactory.hpp"
+#include "etasl_node_utils/tfinputhandlerfactory.hpp"
 
 
 #include "robot_interfacing_utils/robotdriverfactory.hpp"

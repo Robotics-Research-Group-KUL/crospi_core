@@ -92,10 +92,20 @@ etaslNode::etaslNode(const std::string & node_name, bool intra_process_comms = f
 
   reinitialize_data_structures();
 
-  board = boost::make_shared<etasl::BlackBoard>(1);
+  board = boost::make_shared<etasl::BlackBoard>(1); //if -1, all parts of the local path in the URI are returned.  if >=0, then
+  // *                             the last path_components_used parts are retained.
   // etasl::BlackBoard board(1);
   std::cout << " loading blackboard" << std::endl;
-  board->setSearchPath("$[etasl_ros2]/scripts/schema:$[etasl_ros2]/scripts/schema/tasks");
+
+  //print parent_path
+  std::cout << "parent_path: " << path.parent_path() << std::endl;
+  // board->setSearchPath(path.parent_path());
+  // board->setSearchPath(fmt::format("{}:$[etasl_ros2]/scripts/schema", path.parent_path().c_str()));
+  // board->setSearchPath("$[etasl_ros2]/scripts/schema:$[etasl_ros2]/scripts/schema/tasks");
+  // board->setSearchPath("$[etasl_ros2]/scripts/schema");
+  // board->setSearchPath("https://gitlab.kuleuven.be/rob-expressiongraphs/ros2/etasl_json_schemas/raw/main/schemas");
+  // board->setSearchPath("$[etasl_ros2_application_template]/schemas:https://gitlab.kuleuven.be/rob-expressiongraphs/ros2/etasl_json_schemas/raw/main/schemas");
+  board->setSearchPath("$[etasl_ros2_application_template]/schemas/generated");
   // board->load_process_and_validate("$[etasl_ros2]/scripts/json/blackboard.json");
   
   board->load_process_and_validate(configFilePath); // Also checks if it is a valid JSON file
@@ -1022,15 +1032,6 @@ void etaslNode::construct_node(std::atomic<bool>* stopFlagPtr_p){
           }
         }
         robotdriver = driver_loader->createSharedInstance("etasl::" + driver_name);
-
-        // if (driver_loader->isClassAvailable("etasl::TemplateDriverEtasl"))
-        // {
-        //   robotdriver = driver_loader->createSharedInstance("etasl::TemplateDriverEtasl");
-        // }
-        // robotdriver = driver_loader->createSharedInstance("etasl::TemplateDriverEtasl");
-        // robotdriver = driver_loader->createSharedInstance("etasl::Ur10eDriverEtasl");
-        // robotdriver = driver_loader->createSharedInstance("etasl::KukaIiwaRobotDriver");
-
         
       }
       catch(pluginlib::PluginlibException& ex)
@@ -1472,6 +1473,8 @@ void etaslNode::construct_node(std::atomic<bool>* stopFlagPtr_p){
     // etasl::registerTFOutputHandlerFactory(shared_from_this());
     etasl::registerTwistInputHandlerFactory(shared_from_this());
     etasl::registerWrenchInputHandlerFactory(shared_from_this());
+    etasl::registerTFInputHandlerFactory(shared_from_this());
+
     // etasl::registerSimulationRobotDriverFactory(feedback_shared_ptr.get(), setpoint_shared_ptr.get());
     // etasl::registerKukaIiwaRobotDriverFactory(feedback_shared_ptr.get(), setpoint_shared_ptr.get());
     etasl::register_simple_kinematic_simulation_factory(feedback_shared_ptr.get(), setpoint_shared_ptr.get());

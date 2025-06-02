@@ -37,6 +37,7 @@ set( src_etasl_node_utils
     tfoutputhandler.cpp
     twistinputhandler.cpp
     wrenchinputhandler.cpp
+    tfinputhandler.cpp
 
     topicoutputhandlerfactory.cpp
     jointstateoutputhandlerfactory.cpp
@@ -45,6 +46,8 @@ set( src_etasl_node_utils
     tfoutputhandlerfactory.cpp
     twistinputhandlerfactory.cpp
     wrenchinputhandlerfactory.cpp
+    tfinputhandlerfactory.cpp
+
     #robotsimulator.cpp
     robotsimulatorfactory.cpp    
 )
