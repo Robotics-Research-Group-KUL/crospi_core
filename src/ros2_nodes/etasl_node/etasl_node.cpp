@@ -10,6 +10,7 @@
 
 #include <jsoncpp/json/json.h>
 
+#include <fmt/format.h>
 
 // For real-time control loop
 #include <chrono>
@@ -64,7 +65,21 @@ etaslNode::etaslNode(const std::string & node_name, bool intra_process_comms = f
       return;
   }
 
-
+  // Checks if the path is in the appropriate format.
+  static const std::regex pattern_file(R"(^\$\[([a-zA-Z0-9_]+)\]\/.+\.json$)");
+  std::smatch matched_package;
+  std::string package_name;
+  
+  bool matches_file_pattern = std::regex_match(configFilePath,matched_package, pattern_file);
+  if(!matches_file_pattern){
+    std::string message = "The format of the config_file:=" + configFilePath + " provided as --ros-arg: is not valid.\n It should contain a valid ROS2 package based on the etasl_ros2_application_template, and it should be a JSON file as follows: $[my_ros2_package]/applications/application_example_ur10/application_example_ur10.setup.json";
+    RCUTILS_LOG_ERROR_NAMED(get_name(), message.c_str());
+    rclcpp::shutdown();
+    return;
+  }
+  else{
+    package_name = matched_package[1];
+  }
 
  // Checks if the package exists when performing the string interpolation. It does not check if the file exists! 
 //  Necessary because BlackBoard::load called in BlackBoard::load_process_and_validate does not handle the exception thrown by string_interpolate 
@@ -86,7 +101,12 @@ etaslNode::etaslNode(const std::string & node_name, bool intra_process_comms = f
       std::string message = "The config_file:=" + file_path + " which was provided through --ros-arg is not a valid file directory.";
       RCUTILS_LOG_ERROR_NAMED(get_name(), message.c_str());
       rclcpp::shutdown();
+      return;
   } 
+
+
+
+
 
 
 
@@ -97,6 +117,8 @@ etaslNode::etaslNode(const std::string & node_name, bool intra_process_comms = f
   // etasl::BlackBoard board(1);
   std::cout << " loading blackboard" << std::endl;
 
+  std::string location_of_bundled_schema = etasl::string_interpolate(fmt::format("$[{}]/schemas/generated", package_name));
+
   //print parent_path
   std::cout << "parent_path: " << path.parent_path() << std::endl;
   // board->setSearchPath(path.parent_path());
@@ -105,7 +127,7 @@ etaslNode::etaslNode(const std::string & node_name, bool intra_process_comms = f
   // board->setSearchPath("$[etasl_ros2]/scripts/schema");
   // board->setSearchPath("https://gitlab.kuleuven.be/rob-expressiongraphs/ros2/etasl_json_schemas/raw/main/schemas");
   // board->setSearchPath("$[etasl_ros2_application_template]/schemas:https://gitlab.kuleuven.be/rob-expressiongraphs/ros2/etasl_json_schemas/raw/main/schemas");
-  board->setSearchPath("$[etasl_ros2_application_template]/schemas/generated");
+  board->setSearchPath(location_of_bundled_schema); //Selects search path based on the package provided in the config file
   // board->load_process_and_validate("$[etasl_ros2]/scripts/json/blackboard.json");
   
   board->load_process_and_validate(configFilePath); // Also checks if it is a valid JSON file
