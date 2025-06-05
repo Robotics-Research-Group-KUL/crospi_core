@@ -7,9 +7,7 @@
 #include "rclcpp_lifecycle/lifecycle_node.hpp"
 #include <jsoncpp/json/json.h>
 
-#include <geometry_msgs/msg/transform.hpp>
 
-#include <kdl/frames.hpp>
 
 namespace etasl {
 
@@ -110,73 +108,18 @@ public:
     virtual InputHandler::SharedPtr create(const Json::Value& parameters, boost::shared_ptr<etasl::JsonChecker> jsonchecker)
     {
         
-        int nroftries = jsonchecker->asInt(parameters, "number_of_tries");
-
-        std::string when_unpublished = jsonchecker->asString(parameters, "when_unpublished");
-        std::string target_frame = jsonchecker->asString(parameters, "target_frame");
-        std::string source_frame = jsonchecker->asString(parameters, "source_frame");
-
-        std::string varname = jsonchecker->asString(parameters, "varname");
-
-
-        geometry_msgs::msg::Transform def_msg;
-        def_msg.translation.x = jsonchecker->asDouble(parameters, "default_pose/origin/x");
-        def_msg.translation.y = jsonchecker->asDouble(parameters, "default_pose/origin/y");
-        def_msg.translation.z = jsonchecker->asDouble(parameters, "default_pose/origin/z");
-
-        std::string type_of_orientation = "no_valid";
-
-        for (const auto& key : parameters["default_pose"]["orientation"].getMemberNames()) {
-            if (key.rfind("is-", 0) == 0) { // Check if key starts with "is-"
-                type_of_orientation = key.substr(3);
-            }
-        }
-
-        //print type_of_orientation with cout
-        RCLCPP_INFO(node->get_logger(), "Type of orientation: %s", type_of_orientation.c_str());
-
-
-        if (type_of_orientation == "quaternion") {
-            def_msg.rotation.x = jsonchecker->asDouble(parameters, "default_pose/orientation/x");
-            def_msg.rotation.y = jsonchecker->asDouble(parameters, "default_pose/orientation/y");
-            def_msg.rotation.z = jsonchecker->asDouble(parameters, "default_pose/orientation/z");
-            def_msg.rotation.w = jsonchecker->asDouble(parameters, "default_pose/orientation/w");
-        }
-        else if (type_of_orientation == "rpy") {
-            KDL::Rotation rot = KDL::Rotation::RPY(
-                jsonchecker->asDouble(parameters, "default_pose/orientation/roll"),
-                jsonchecker->asDouble(parameters, "default_pose/orientation/pitch"),
-                jsonchecker->asDouble(parameters, "default_pose/orientation/yaw")
-            );
-            double x, y, z, w;
-            rot.GetQuaternion(x, y, z, w);
-            def_msg.rotation.x = x;
-            def_msg.rotation.y = y;
-            def_msg.rotation.z = z;
-            def_msg.rotation.w = w;
-        }
-        else if (type_of_orientation == "no_valid") {
-            throw etasl_error(etasl_error::JSON_PARSE_ERROR, "No valid orientation type specified in default_pose/orientation");
-            return nullptr;
-        }
-
-
-
-        
-        double cache_time = jsonchecker->asDouble(parameters, "cache_time");
+ 
         // for (auto n : parameters["variable-names"]) {
         //     varnames.push_back(n.asString());
         // }
 
+        // RCLCPP_INFO(node->get_logger(), "Helloooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo");
+
+
         return std::make_shared<TFInputHandler>(
             node,
-            nroftries,
-            def_msg,
-            cache_time,
-            when_unpublished,
-            target_frame,
-            source_frame,
-            varname);
+            parameters,
+            jsonchecker);
     }
 
     virtual ~TFInputHandlerFactory() { }

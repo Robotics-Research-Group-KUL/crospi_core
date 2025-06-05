@@ -13,6 +13,13 @@
 #include <tf2_ros/buffer.h>
 #include <geometry_msgs/msg/transform_stamped.hpp>
 #include <geometry_msgs/msg/transform.hpp>
+#include "geometry_msgs/msg/twist.hpp"
+
+#include <jsoncpp/json/json.h>
+#include "etasl_task_utils/json_checker.hpp"
+
+
+
 
 // #include <mutex>
 
@@ -22,6 +29,7 @@ using namespace KDL;
 class TFInputHandler : public InputHandler {
 public:
     typedef geometry_msgs::msg::Transform MsgType;
+    typedef geometry_msgs::msg::Twist MsgTypeDeriv;
     typedef std::shared_ptr<TFInputHandler> SharedPtr;
 
 private:
@@ -37,18 +45,33 @@ private:
         FlowStatus fs;
     } input_msg;
 
+    struct InputDataDeriv {
+        MsgTypeDeriv data;
+        FlowStatus fs;
+    } input_msg_deriv;
+
     rclcpp_lifecycle::LifecycleNode::SharedPtr node;
+    rclcpp::Subscription<MsgTypeDeriv>::SharedPtr deriv_sub;
+
+
     int nroftries;
-    MsgType default_msg;
-    tf2::Duration cache_time;
-    tf2_ros::Buffer tf_buffer;
-    tf2_ros::TransformListener tf_listener;
+    std::string when_unpublished;
     std::string target_frame;
     std::string source_frame;
     std::string varname;
-    std::string when_unpublished;
+    std::string feedforward_input_topic;
+    MsgType default_msg;
+    MsgTypeDeriv default_msg_deriv;
+
+    bool enable_feedforward;
+    tf2_ros::Buffer tf_buffer;
+    tf2_ros::TransformListener tf_listener;
+    std::string name;
     KDL::Frame frame;
+    KDL::Twist twist;
+    int time_ndx;
     int counter;
+    int counter_deriv;
     bool initialized;
     bool activated;
     MsgType msg;
@@ -60,13 +83,9 @@ private:
 public:
     TFInputHandler(
         rclcpp_lifecycle::LifecycleNode::SharedPtr _node,
-        int _nroftries,
-        MsgType _default_msg,
-        double cache_time_,
-        const std::string& _when_unpublished,
-        const std::string& _target_frame,
-        const std::string& _source_frame,
-        const std::string& _varname);
+        const Json::Value& parameters,
+        boost::shared_ptr<etasl::JsonChecker> jsonchecker
+    );
 
     /**
      * will only return true if it has received values for all the joints named in jnames.
@@ -78,7 +97,6 @@ public:
         Eigen::VectorXd& jpos,
         Eigen::VectorXd& fpos) override;
 
-    virtual void on_new_message(const MsgType& msg);
 
     virtual void update(
         double time,
@@ -97,6 +115,10 @@ public:
     virtual const std::string& getName() const override;
 
     void consume_data(const bool& make_old_data);
+    void consume_data_deriv(const bool& make_old_data);
+    void fetch_tf_transform();
+
+    void on_new_message_deriv(const TFInputHandler::MsgTypeDeriv& msg);
 
     virtual ~TFInputHandler();
 };

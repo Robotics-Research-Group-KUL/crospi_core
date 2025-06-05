@@ -105,11 +105,6 @@ etaslNode::etaslNode(const std::string & node_name, bool intra_process_comms = f
   } 
 
 
-
-
-
-
-
   reinitialize_data_structures();
 
   board = boost::make_shared<etasl::BlackBoard>(1); //if -1, all parts of the local path in the URI are returned.  if >=0, then

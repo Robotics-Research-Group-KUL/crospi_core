@@ -30,9 +30,7 @@ TwistInputHandler::TwistInputHandler(
     auto cb = std::bind(&TwistInputHandler::on_new_message, this, _1);
     auto qos = rclcpp::SensorDataQoS().keep_last(depth).lifespan(100ms);
     sub = node->create_subscription<MsgType>(name, qos, cb);
-    if (!sub) {
-      RCLCPP_FATAL(node->get_logger(), "Could not create subscriber associated to the twistinputhandler.");
-    }
+
 
     // cbg = node->create_callback_group()
     // sub = node->create_subscription<MsgType>(_topic_name, rclcpp::QoS(10), cb);
@@ -50,6 +48,10 @@ bool TwistInputHandler::initialize(
     Eigen::VectorXd& fpos)
 {
 
+    if (!sub) {
+        RCLCPP_FATAL(node->get_logger(), "Could not create subscriber associated to the twistinputhandler.");
+        return false;
+    }
 
     if(input_msg.fs == NoData && when_unpublished=="use_default"){
         input_msg.fs = NewData; //Fakes new Data 
