@@ -35,6 +35,6 @@ add_subdirectory(etasl_node_utils)
 add_subdirectory(etasl_task_utils)
 add_subdirectory(robot_interfacing_utils)
 # add_subdirectory(kuka_iiwa_driver)
-add_subdirectory(simple_kinematic_simulation)
+# add_subdirectory(simple_kinematic_simulation)
 
 

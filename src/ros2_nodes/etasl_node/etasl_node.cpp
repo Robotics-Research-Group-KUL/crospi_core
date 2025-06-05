@@ -1032,38 +1032,40 @@ void etaslNode::construct_node(std::atomic<bool>* stopFlagPtr_p){
     // TODO: add info about the output handler added (e.g. p[is-...] and p[topic-name])
 
     
+    std::string driver_name = "simple_kinematic_simulation";
+    Json::Value driver_params = param["simulation"];
+    driver_loader = boost::make_shared<pluginlib::ClassLoader<etasl::RobotDriver>>("etasl_ros2", "etasl::RobotDriver");
 
-    //Checks if it's in simulation, and else it loads the driver from pluginlib
-    if (simulation) {
-      robotdriver = etasl::Registry<etasl::RobotDriverFactory>::create(param["simulation"],jsonchecker);
-    }
-    else{
-      driver_loader = boost::make_shared<pluginlib::ClassLoader<etasl::RobotDriver>>("etasl_ros2", "etasl::RobotDriver");
-      std::string driver_name = "no_driver_specified_in_json";
-
-      try
-      {
-        for (const auto& key : param["robotdriver"].getMemberNames()) {
-          if (key.rfind("is-", 0) == 0) { // Check if key starts with "is-"
-              driver_name = key.substr(3);
-          }
+    if (!simulation) {
+      // robotdriver = etasl::Registry<etasl::RobotDriverFactory>::create(param["simulation"],jsonchecker);
+      for (const auto& key : param["robotdriver"].getMemberNames()) {
+        if (key.rfind("is-", 0) == 0) { // Check if key starts with "is-"
+            driver_name = key.substr(3);
         }
-        robotdriver = driver_loader->createSharedInstance("etasl::" + driver_name);
-        
       }
-      catch(pluginlib::PluginlibException& ex)
-      {
-        // printf("The plugin failed to load for some reason. Error: %s\n", ex.what());
-  
-        std::string message = "The plugin failed to load. Error: \n" + std::string(ex.what());
+      
+      if(driver_name == "simple_kinematic_simulation"){
+        std::string message = "Could not find any is- keyword in the robodriver field of the json configuration file. It must specify the type, e.g. is-ur10_e_driver_etasl = true";
         RCUTILS_LOG_ERROR_NAMED(get_name(), message.c_str());
-  
         auto transition = this->shutdown(); //calls on_shutdown() hook.
         return;
       }
-      robotdriver->construct(driver_name, feedback_shared_ptr.get(), setpoint_shared_ptr.get(), param["robotdriver"],jsonchecker);
+      driver_params = param["robotdriver"];
     }
- 
+
+    
+    try
+    {
+      robotdriver = driver_loader->createSharedInstance("etasl::" + driver_name);  
+    }
+    catch(pluginlib::PluginlibException& ex)
+    {
+      std::string message = "The plugin failed to load. Error: \n" + std::string(ex.what());
+      RCUTILS_LOG_ERROR_NAMED(get_name(), message.c_str());
+      auto transition = this->shutdown(); //calls on_shutdown() hook.
+      return;
+    }
+    robotdriver->construct(driver_name, feedback_shared_ptr.get(), setpoint_shared_ptr.get(), driver_params,jsonchecker);
     
 
 
@@ -1494,7 +1496,7 @@ void etaslNode::construct_node(std::atomic<bool>* stopFlagPtr_p){
 
     // etasl::registerSimulationRobotDriverFactory(feedback_shared_ptr.get(), setpoint_shared_ptr.get());
     // etasl::registerKukaIiwaRobotDriverFactory(feedback_shared_ptr.get(), setpoint_shared_ptr.get());
-    etasl::register_simple_kinematic_simulation_factory(feedback_shared_ptr.get(), setpoint_shared_ptr.get());
+    // etasl::register_simple_kinematic_simulation_factory(feedback_shared_ptr.get(), setpoint_shared_ptr.get());
 
   }
 

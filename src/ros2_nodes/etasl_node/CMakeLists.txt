@@ -25,7 +25,7 @@ target_link_libraries(etasl_node
         etasl_node_utils
         robot_interfacing_utils
         # kuka_iiwa_driver
-        simple_kinematic_simulation
+        # simple_kinematic_simulation
         )
 
 # ament_target_dependencies(etasl_node rclcpp std_msgs sensor_msgs)

@@ -191,5 +191,5 @@ simple_kinematic_simulation::~simple_kinematic_simulation() {
 
 
 // Uncomment this if want to make it a plugin:
-// #include <pluginlib/class_list_macros.hpp>
-// PLUGINLIB_EXPORT_CLASS(etasl::simple_kinematic_simulation, etasl::RobotDriver)
+#include <pluginlib/class_list_macros.hpp>
+PLUGINLIB_EXPORT_CLASS(etasl::simple_kinematic_simulation, etasl::RobotDriver)

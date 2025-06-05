@@ -15,6 +15,8 @@ add_definitions(-DBOOST_DISABLE_PRAGMA_MESSAGE)
 find_package(ament_cmake REQUIRED)
 find_package(std_msgs REQUIRED)
 find_package(rosidl_default_generators REQUIRED)
+# find_package(pluginlib REQUIRED)
+
 
 # uncomment the following section in order to fill in
 # further dependencies manually.
@@ -45,12 +47,6 @@ include_directories(
    include
 )
 
-
-include_directories(
-  #  src/misc/kuka_iiwa_driver
-   src/misc/simple_kinematic_simulation
-) #TODO: Remove this
-
 # TODO: Delete the following. It is only used for debug in VSCODE:
 # include_directories("/home/santiregui/etasl-cmake/standalone-cmake/install/include")
 
@@ -63,10 +59,12 @@ include_directories(
 # )
 
 add_subdirectory(src/misc)
-add_subdirectory(src/ros2_nodes/simple_etasl_node)
+
+
+# add_subdirectory(src/ros2_nodes/simple_etasl_node)
 add_subdirectory(src/ros2_nodes/etasl_node)
-add_subdirectory(src/ros2_nodes/test_publisher_node)
-add_subdirectory(src/ros2_nodes/erwin_node)
+# add_subdirectory(src/ros2_nodes/test_publisher_node)
+# add_subdirectory(src/ros2_nodes/erwin_node)
 
 
 ament_export_dependencies(ament_cmake)

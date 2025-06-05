@@ -77,13 +77,13 @@ public:
      */
     virtual RobotDriver::SharedPtr create(const Json::Value& parameters, boost::shared_ptr<etasl::JsonChecker> jsonchecker)
     {
-        double periodicity = jsonchecker->asDouble(parameters, "periodicity");
+        // double periodicity = jsonchecker->asDouble(parameters, "periodicity");
 
-        std::vector<double> init_joints;
-        // init_joints.resize(parameters["initial_joints"].size(), 0.0);
-        for (auto n : jsonchecker->asArray(parameters, "initial_joints")) {
-            init_joints.push_back(jsonchecker->asDouble(n, ""));
-        }
+        // std::vector<double> init_joints;
+        // // init_joints.resize(parameters["initial_joints"].size(), 0.0);
+        // for (auto n : jsonchecker->asArray(parameters, "initial_joints")) {
+        //     init_joints.push_back(jsonchecker->asDouble(n, ""));
+        // }
  
         std::string name = getName();
 

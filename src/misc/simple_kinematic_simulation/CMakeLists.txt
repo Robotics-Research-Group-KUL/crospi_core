@@ -21,6 +21,8 @@ find_package(jsoncpp REQUIRED)
 # find_package(tf2_geometry_msgs REQUIRED)
 # find_package(tf2_ros REQUIRED)
 #add_subdirectory( doc )
+find_package(pluginlib REQUIRED)
+
 
 set(CMAKE_CXX_STANDARD 17)
 
@@ -29,10 +31,12 @@ include_directories(include ${LUA_INCLUDE_DIR})
 
 set(src_simple_kinematic_simulation
     simple_kinematic_simulation.cpp
-    simple_kinematic_simulation_factory.cpp
 )
 
-set(rosdependencies)
+set(rosdependencies
+  "etasl_ros2"
+  "pluginlib"
+)
 
 
 set(dependencies
@@ -43,18 +47,26 @@ set(dependencies
 )
 
 
-add_library(simple_kinematic_simulation STATIC ${src_simple_kinematic_simulation})
+add_library(simple_kinematic_simulation SHARED ${src_simple_kinematic_simulation})
 
 target_include_directories(simple_kinematic_simulation 
   PUBLIC
   $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/include/simple_kinematic_simulation>
   $<INSTALL_INTERFACE:include/simple_kinematic_simulation>)
 
+ament_export_dependencies(etasl_ros2)
+
 
 ament_export_libraries(
   simple_kinematic_simulation
-)
-
+  )
+  
+  install(
+    TARGETS ur10_e_driver_etasl
+    LIBRARY DESTINATION lib
+    ARCHIVE DESTINATION lib
+    RUNTIME DESTINATION bin
+  )
 
 
 ament_target_dependencies(simple_kinematic_simulation ${rosdependencies})  
