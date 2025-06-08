@@ -4,24 +4,22 @@
 
 namespace etasl {
 
-JointStateInputHandler::JointStateInputHandler(
-    rclcpp_lifecycle::LifecycleNode::SharedPtr _node,
-    const std::string& _topic_name,
-    int _nroftries,
-    int _depth)
-    : node(_node)
-    , nroftries(_nroftries)
-    , depth(_depth)
+JointStateInputHandler::JointStateInputHandler()
 {
-    using namespace std::chrono_literals;
-    using namespace std::placeholders;
-    name = _topic_name;
-    auto cb = std::bind(&JointStateInputHandler::on_new_message, this, _1);
-    auto qos = rclcpp::SensorDataQoS().keep_last(depth).lifespan(100ms);
-    sub = node->create_subscription<MsgType>(_topic_name, qos, cb);
-    // cbg = node->create_callback_group()
-    // sub = node->create_subscription<MsgType>(_topic_name, rclcpp::QoS(10), cb);
-    it = 0;
+
+}
+
+bool JointStateInputHandler::construct(
+    std::string _name,
+    rclcpp_lifecycle::LifecycleNode::SharedPtr _node,
+    const Json::Value& parameters,
+    boost::shared_ptr<etasl::JsonChecker> jsonchecker)
+{
+    node = _node;
+    topicname = jsonchecker->asString(parameters, "topic-name");
+    name = fmt::format("{}({})",_name, topicname);
+    depth = jsonchecker->asInt(parameters, "depth");
+    nroftries = jsonchecker->asInt(parameters, "number_of_tries");
 }
 
 bool JointStateInputHandler::initialize(
@@ -31,6 +29,16 @@ bool JointStateInputHandler::initialize(
     Eigen::VectorXd& jpos,
     Eigen::VectorXd& fpos)
 {
+    using namespace std::chrono_literals;
+    using namespace std::placeholders;
+    auto cb = std::bind(&JointStateInputHandler::on_new_message, this, _1);
+    auto qos = rclcpp::SensorDataQoS().keep_last(depth).lifespan(100ms);
+    sub = node->create_subscription<MsgType>(topicname, qos, cb);
+    // cbg = node->create_callback_group()
+    // sub = node->create_subscription<MsgType>(_topic_name, rclcpp::QoS(10), cb);
+    it = 0;
+
+
     assert(jnames.size() == jpos.size());
     if (it == 0) {
         buffer.clear();

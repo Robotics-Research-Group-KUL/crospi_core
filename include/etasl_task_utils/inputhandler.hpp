@@ -2,6 +2,9 @@
 
 #include <memory>
 #include <expressiongraph/context.hpp>
+#include "rclcpp_lifecycle/lifecycle_node.hpp"
+#include "etasl_task_utils/json_checker.hpp"
+
 
 namespace etasl {
     using namespace KDL;
@@ -9,6 +12,21 @@ namespace etasl {
     class InputHandler {
         public:
             typedef std::shared_ptr< InputHandler > SharedPtr;
+
+            /** 
+             * @brief Construct the plugin. Since the constructor of a ROS2 plugin cannot have arguments, the following method is used to pass those arguments.
+             * This member function should be called right after the constructor of the super class is called.
+             * @param ih_name the name of the inputhandler
+             * @param parameters additional configuration parameters coming from the JSON configuration
+             * @param jsonchecker a pointer to the jsonchecker that can be used to check the validity of the configuration
+             * @return bool true if constructed correctly, false otherwise
+             */
+            virtual bool construct(
+                std::string name, 
+                rclcpp_lifecycle::LifecycleNode::SharedPtr _node,
+                const Json::Value& _parameters,
+                boost::shared_ptr<etasl::JsonChecker> _jsonchecker
+            ) = 0;
 
             /**
              * @brief Initialize the input handler

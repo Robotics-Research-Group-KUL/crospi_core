@@ -47,6 +47,7 @@ namespace etasl {
              * @param fb pointer to the feedback message structure where shared-memory communication occurs  
              * @param sp pointer to the setpoingt message structure where shared-memory communication occurs  
              * @param config additional configuration parameters coming from the JSON configuration
+             * @param jsonchecker a pointer to the jsonchecker that can be used to check the validity of the configuration
              * @return void
              */
             virtual void construct(std::string robot_name, 

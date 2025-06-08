@@ -35,11 +35,13 @@ private:
     rclcpp::CallbackGroup::SharedPtr cbg;
 
 public:
-    JointStateInputHandler(
-        rclcpp_lifecycle::LifecycleNode::SharedPtr node,
-        const std::string& _topic_name,
-        int nroftries,
-        int depth);
+    JointStateInputHandler();
+
+    virtual bool construct(
+        std::string name,    
+        rclcpp_lifecycle::LifecycleNode::SharedPtr _node,
+        const Json::Value& parameters,
+        boost::shared_ptr<etasl::JsonChecker> jsonchecker) override;
 
     /**
      * will only return true if it has received values for all the joints named in jnames.

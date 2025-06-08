@@ -647,6 +647,7 @@ void etaslNode::update()
         for (auto& h : inputhandlers) {
             // TODO: Check if jpos_ros or jpos_etasl should be used
             h->update(time, jnames_in_expr, jpos_ros, fnames, fpos_etasl);
+            // std::cout << h->getName() << std::endl;
         }
 
         // check monitors:
@@ -1029,8 +1030,6 @@ void etaslNode::construct_node(std::atomic<bool>* stopFlagPtr_p){
     * Adding Robot Driver
     ***************************************************/
     RCUTILS_LOG_INFO_NAMED(get_name(), "register_output_handler");
-    // TODO: add info about the output handler added (e.g. p[is-...] and p[topic-name])
-
     
     std::string driver_name = "simple_kinematic_simulation";
     Json::Value driver_params = param["simulation"];
@@ -1083,11 +1082,58 @@ void etaslNode::construct_node(std::atomic<bool>* stopFlagPtr_p){
         RCUTILS_LOG_INFO_NAMED(get_name(), "register_output_handler");
         outputhandlers.push_back(etasl::Registry<etasl::OutputHandlerFactory>::create(p, jsonchecker));
     }
-    for (const auto& p : param_iohandlers["inputhandlers"]) {
-        RCUTILS_LOG_INFO_NAMED(get_name(), "register_input_handler");
-        inputhandlers.push_back(etasl::Registry<etasl::InputHandlerFactory>::create(p, jsonchecker));
-        ih_initialized.push_back(false);
-    }  
+
+    Json::Value inputhandler_params = param["simulation"];
+    inputhandler_loader = boost::make_shared<pluginlib::ClassLoader<etasl::InputHandler>>("etasl_ros2", "etasl::InputHandler");
+    
+    for (const auto& par : param_iohandlers["inputhandlers"]) {
+        std::string ih_name = "";
+        for (const auto& key : par.getMemberNames()) {
+          if (key.rfind("is-", 0) == 0) { // Check if key starts with "is-"
+            ih_name = key.substr(3);
+          }
+        }
+        if(ih_name == ""){
+          std::string message = "Could not find any is- keyword in the inputhandler field of the json configuration file. It must specify the type, e.g. is-twistinputhandler = true";
+          RCUTILS_LOG_ERROR_NAMED(get_name(), message.c_str());
+          auto transition = this->shutdown(); //calls on_shutdown() hook.
+          return;
+        }
+
+        etasl::InputHandler::SharedPtr ih_ptr = nullptr;
+        try
+        {
+          ih_ptr = inputhandler_loader->createSharedInstance("etasl::" + ih_name);
+        }
+        catch(pluginlib::PluginlibException& ex)
+        {
+          std::string message = "The plugin failed to load. Error: \n" + std::string(ex.what());
+          RCUTILS_LOG_ERROR_NAMED(get_name(), message.c_str());
+          auto transition = this->shutdown(); //calls on_shutdown() hook.
+          return;
+        }
+
+        if (ih_ptr){
+          RCUTILS_LOG_INFO_NAMED(get_name(), "register_input_handler");
+          inputhandlers.push_back(ih_ptr);
+          ih_initialized.push_back(false); //TODO: This is not used
+          bool is_constructed = ih_ptr->construct(ih_name,shared_from_this(), par,jsonchecker);
+          if(!is_constructed){
+            std::string message = "The input handler " + ih_name + " could not be constructed. Shutting down.";
+            RCUTILS_LOG_ERROR_NAMED(get_name(), message.c_str());
+            auto transition = this->shutdown(); //calls on_shutdown() hook.
+            return;
+          }
+        }
+      }  
+      
+
+
+    // for (const auto& p : param_iohandlers["inputhandlers"]) {
+    //     RCUTILS_LOG_INFO_NAMED(get_name(), "register_input_handler");
+    //     inputhandlers.push_back(etasl::Registry<etasl::InputHandlerFactory>::create(p, jsonchecker));
+    //     ih_initialized.push_back(false);
+    // }  
 
     robotdriver->initialize();
 
@@ -1490,9 +1536,11 @@ void etaslNode::construct_node(std::atomic<bool>* stopFlagPtr_p){
     etasl::registerJointStateOutputHandlerFactory(shared_from_this());
     // etasl::registerTopicInputHandlerFactory(shared_from_this());
     // etasl::registerTFOutputHandlerFactory(shared_from_this());
-    etasl::registerTwistInputHandlerFactory(shared_from_this());
-    etasl::registerWrenchInputHandlerFactory(shared_from_this());
-    etasl::registerTFInputHandlerFactory(shared_from_this());
+
+
+    // etasl::registerTwistInputHandlerFactory(shared_from_this());
+    // etasl::registerWrenchInputHandlerFactory(shared_from_this());
+    // etasl::registerTFInputHandlerFactory(shared_from_this());
 
     // etasl::registerSimulationRobotDriverFactory(feedback_shared_ptr.get(), setpoint_shared_ptr.get());
     // etasl::registerKukaIiwaRobotDriverFactory(feedback_shared_ptr.get(), setpoint_shared_ptr.get());

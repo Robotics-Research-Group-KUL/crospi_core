@@ -27,29 +27,29 @@ include_directories(include ${LUA_INCLUDE_DIR})
 
 
 set( src_etasl_node_utils
-    rosloghandler.cpp
+    # rosloghandler.cpp
     # rostask.cpp
 
     topicoutputhandler.cpp
     jointstateoutputhandler.cpp
-    jointstateinputhandler.cpp
-    topicinputhandler.cpp
     tfoutputhandler.cpp
-    twistinputhandler.cpp
-    wrenchinputhandler.cpp
-    tfinputhandler.cpp
+    # topicinputhandler.cpp
+    # twistinputhandler.cpp
+    # wrenchinputhandler.cpp
+    # tfinputhandler.cpp
+    # jointstateinputhandler.cpp
 
     topicoutputhandlerfactory.cpp
     jointstateoutputhandlerfactory.cpp
-    jointstateinputhandlerfactory.cpp    
-    topicinputhandlerfactory.cpp
+    # jointstateinputhandlerfactory.cpp    
+    # topicinputhandlerfactory.cpp
     tfoutputhandlerfactory.cpp
-    twistinputhandlerfactory.cpp
-    wrenchinputhandlerfactory.cpp
-    tfinputhandlerfactory.cpp
+    # # twistinputhandlerfactory.cpp
+    # wrenchinputhandlerfactory.cpp
+    # tfinputhandlerfactory.cpp
 
     #robotsimulator.cpp
-    robotsimulatorfactory.cpp    
+    # robotsimulatorfactory.cpp    
 )
 
 set(rosdependencies 

@@ -48,8 +48,10 @@
 // #include "etasl_node_utils/rostask.hpp"
 #include "etasl_task_utils/blackboard.hpp"
 #include "etasl_task_utils/registry.hpp"
-#include "etasl_task_utils/inputhandlerfactory.hpp"
-#include "etasl_node_utils/topicinputhandlerfactory.hpp"
+#include <etasl_task_utils/inputhandler.hpp>
+
+// #include "etasl_task_utils/inputhandlerfactory.hpp"
+// #include "etasl_node_utils/topicinputhandlerfactory.hpp"
 
 #include "etasl_task_utils/outputhandler.hpp"
 #include "etasl_task_utils/outputhandlerfactory.hpp"
@@ -57,9 +59,9 @@
 #include "etasl_node_utils/topicoutputhandlerfactory.hpp"
 #include "etasl_task_utils/fileoutputhandlerfactory.hpp"
 #include "etasl_node_utils/tfoutputhandlerfactory.hpp"
-#include "etasl_node_utils/twistinputhandlerfactory.hpp"
-#include "etasl_node_utils/wrenchinputhandlerfactory.hpp"
-#include "etasl_node_utils/tfinputhandlerfactory.hpp"
+// #include "etasl_node_utils/twistinputhandlerfactory.hpp"
+// #include "etasl_node_utils/wrenchinputhandlerfactory.hpp"
+// #include "etasl_node_utils/tfinputhandlerfactory.hpp"
 
 
 #include "robot_interfacing_utils/robotdriverfactory.hpp"
@@ -164,6 +166,8 @@ class etaslNode : public rclcpp_lifecycle::LifecycleNode
         etasl::RobotDriver::SharedPtr               robotdriver;
 
         boost::shared_ptr<pluginlib::ClassLoader<etasl::RobotDriver>>  driver_loader;
+        boost::shared_ptr<pluginlib::ClassLoader<etasl::InputHandler>>  inputhandler_loader;
+        boost::shared_ptr<pluginlib::ClassLoader<etasl::OutputHandler>>  outputhandler_loader;
 
         std::vector<bool> ih_initialized;
 
