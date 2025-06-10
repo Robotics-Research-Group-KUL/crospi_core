@@ -109,8 +109,6 @@ class etaslNode : public rclcpp_lifecycle::LifecycleNode
         void configure_etasl();
         void update();
         void reinitialize_data_structures();
-        bool initialize_input_handlers();
-        bool initialize_output_handlers();
         void safe_shutdown();
 
         // void setJointValues(const std::vector<double>& jval, const std::vector<std::string>& jvalnames);
@@ -164,17 +162,17 @@ class etaslNode : public rclcpp_lifecycle::LifecycleNode
         // boost::shared_ptr<eTaSL_InputHandler> ih;
         // boost::shared_ptr<std::ofstream > outpfile_ptr;
 
-        std::vector<etasl::OutputHandler::SharedPtr> outputhandlers;
-        std::vector<etasl::InputHandler::SharedPtr> inputhandlers;
+        // std::vector<etasl::OutputHandler::SharedPtr> outputhandlers;
+        // std::vector<etasl::InputHandler::SharedPtr> inputhandlers;
         etasl::RobotDriver::SharedPtr               robotdriver;
 
         etasl::IOHandlerManager::SharedPtr               io_handler_manager;
 
         boost::shared_ptr<pluginlib::ClassLoader<etasl::RobotDriver>>  driver_loader;
-        boost::shared_ptr<pluginlib::ClassLoader<etasl::InputHandler>>  inputhandler_loader;
-        boost::shared_ptr<pluginlib::ClassLoader<etasl::OutputHandler>>  outputhandler_loader;
+        // boost::shared_ptr<pluginlib::ClassLoader<etasl::InputHandler>>  inputhandler_loader;
+        // boost::shared_ptr<pluginlib::ClassLoader<etasl::OutputHandler>>  outputhandler_loader;
 
-        std::vector<bool> ih_initialized;
+        // std::vector<bool> ih_initialized;
 
         std::vector< std::string > jointnames;
         std::vector<std::string> jnames_in_expr;

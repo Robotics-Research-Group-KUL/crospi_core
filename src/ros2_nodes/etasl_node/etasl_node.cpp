@@ -543,13 +543,9 @@ void etaslNode::configure_etasl(){
     // initial input (e.g. robot joints) is used for initialization.                
     this->initialize_feature_variables();
 
-      /****************************************************
-     * Update input handlers (i.e. read values for solver initialization)
+    /****************************************************
+     * Update input handlers in the configure_input_handlers (i.e. read values for solver initialization)
      ***************************************************/
-    // for (auto h : inputhandlers) {
-    //     h->update(time, jnames_in_expr, jpos_ros, fnames, fpos_etasl);
-    // }
-
     io_handler_manager->configure_input_handlers(time, jnames_in_expr, jpos_ros, fnames, fpos_etasl);
     io_handler_manager->configure_output_handlers(time, jnames_in_expr, jpos_ros, fnames, fpos_etasl);
 
@@ -647,11 +643,6 @@ void etaslNode::update()
 {       
         // gets inputs, this can includes joint values in jpos,
         // which will be overwritten if used.
-        // for (auto& h : inputhandlers) {
-        //     // TODO: Check if jpos_ros or jpos_etasl should be used
-        //     h->update(time, jnames_in_expr, jpos_ros, fnames, fpos_etasl);
-        //     // std::cout << h->getName() << std::endl;
-        // }
         io_handler_manager->update_input_handlers(time, jnames_in_expr, jpos_ros, fnames, fpos_etasl);
 
         // check monitors:
@@ -697,13 +688,7 @@ void etaslNode::update()
 
         update_robot_status();
 
-
-        // for (auto& h : outputhandlers) {
-        //     // TODO: Check if jpos_ros or jpos_etasl should be used
-        //     h->update(jnames_in_expr, jpos_ros, jvel_etasl, fnames, fvel_etasl, fpos_etasl);
-        // }
         io_handler_manager->update_output_handlers(jnames_in_expr, jpos_ros, jvel_etasl, fnames, fvel_etasl, fpos_etasl);
-        // std::cout << "jointpos:" << jpos_etasl.transpose() << std::endl;
 }
 
 void etaslNode::update_robot_status(){
@@ -966,45 +951,9 @@ void etaslNode::reinitialize_data_structures() {
     jindex.clear();
     name_ndx.clear();
     fnames.clear();
-
-    // inputhandlers.clear();
-    // outputhandlers.clear();
-    // ih_initialized.clear();
-
     
 }
 
-bool etaslNode::initialize_input_handlers(){
-
-    // RCUTILS_LOG_INFO_NAMED(get_name(), "Initializing input handlers...");
-    // for (auto& h : inputhandlers) {
-    //     std::stringstream message;
-    //     message << "Initializing input handler:" <<  h->getName();
-    //     RCUTILS_LOG_INFO_NAMED(get_name(), (message.str()).c_str());
-
-    //     h->initialize(ctx, jnames_in_expr, fnames, jpos_ros, fpos_etasl);
-    // }
-    // RCUTILS_LOG_INFO_NAMED(get_name(), "finished initializing input handlers");
-
-    return true;
-}
-
-
-bool etaslNode::initialize_output_handlers(){
-    // initialize output-handlers
-    // RCUTILS_LOG_INFO_NAMED(get_name(), "Initializing output handlers...");
-    // for (auto& h : outputhandlers) {
-    //     std::stringstream message;
-    //     message << "Initializing output handler:" <<  h->getName();
-    //     RCUTILS_LOG_INFO_NAMED(get_name(), (message.str()).c_str());
-    //     RCUTILS_LOG_INFO_NAMED(get_name(), "helloo1");
-
-    //     h->initialize(ctx, jnames_in_expr, fnames);
-    //     RCUTILS_LOG_INFO_NAMED(get_name(), "helloo2");
-    // }
-    // RCUTILS_LOG_INFO_NAMED(get_name(), "finished initializing output handlers");
-    return true;
-}
 
 void etaslNode::construct_node(std::atomic<bool>* stopFlagPtr_p){
 
@@ -1019,11 +968,6 @@ void etaslNode::construct_node(std::atomic<bool>* stopFlagPtr_p){
     std::cout << "constructing input handlers" << std::endl;
 
     Json::Value param = board->getPath("/robot", false);
-
-    // jointnames.clear();
-    // for (auto n : param["default_robot_specification"]["robot_joints"]) {
-    //     jointnames.push_back(n.asString());
-    // }
 
     jointnames.clear();
     for (auto n : jsonchecker->asArray(param, "default_robot_specification/robot_joints")) {
@@ -1080,75 +1024,11 @@ void etaslNode::construct_node(std::atomic<bool>* stopFlagPtr_p){
     robotdriver->construct(driver_name, feedback_shared_ptr.get(), setpoint_shared_ptr.get(), driver_params,jsonchecker);
     
 
-
-  
-
-    // robotdriver = etasl::Registry<etasl::RobotDriverFactory>::create(param["robotdriver"],jsonchecker);
-    
-
-
     /****************************************************
     * Adding input and output handlers from the read JSON file 
     ***************************************************/
-  //  Json::Value param_iohandlers = board->getPath("/iohandlers", false);
-  //   for (const auto& p : param_iohandlers["outputhandlers"]) {
-  //       RCUTILS_LOG_INFO_NAMED(get_name(), "register_output_handler");
-  //       outputhandlers.push_back(etasl::Registry<etasl::OutputHandlerFactory>::create(p, jsonchecker));
-  //   }
-
     io_handler_manager->construct_input_handlers();
     io_handler_manager->construct_output_handlers();
-
-    // inputhandler_loader = boost::make_shared<pluginlib::ClassLoader<etasl::InputHandler>>("etasl_ros2", "etasl::InputHandler");
-    
-    // for (const auto& par : param_iohandlers["inputhandlers"]) {
-    //     std::string ih_name = "";
-    //     for (const auto& key : par.getMemberNames()) {
-    //       if (key.rfind("is-", 0) == 0) { // Check if key starts with "is-"
-    //         ih_name = key.substr(3);
-    //       }
-    //     }
-    //     if(ih_name == ""){
-    //       std::string message = "Could not find any is- keyword in the inputhandler field of the json configuration file. It must specify the type, e.g. is-twistinputhandler = true";
-    //       RCUTILS_LOG_ERROR_NAMED(get_name(), message.c_str());
-    //       auto transition = this->shutdown(); //calls on_shutdown() hook.
-    //       return;
-    //     }
-
-    //     etasl::InputHandler::SharedPtr ih_ptr = nullptr;
-    //     try
-    //     {
-    //       ih_ptr = inputhandler_loader->createSharedInstance("etasl::" + ih_name);
-    //     }
-    //     catch(pluginlib::PluginlibException& ex)
-    //     {
-    //       std::string message = "The plugin failed to load. Error: \n" + std::string(ex.what());
-    //       RCUTILS_LOG_ERROR_NAMED(get_name(), message.c_str());
-    //       auto transition = this->shutdown(); //calls on_shutdown() hook.
-    //       return;
-    //     }
-
-    //     if (ih_ptr){
-    //       RCUTILS_LOG_INFO_NAMED(get_name(), "register_input_handler");
-    //       inputhandlers.push_back(ih_ptr);
-    //       ih_initialized.push_back(false); //TODO: This is not used
-    //       bool is_constructed = ih_ptr->construct(ih_name,shared_from_this(), par,jsonchecker);
-    //       if(!is_constructed){
-    //         std::string message = "The input handler " + ih_name + " could not be constructed. Shutting down.";
-    //         RCUTILS_LOG_ERROR_NAMED(get_name(), message.c_str());
-    //         auto transition = this->shutdown(); //calls on_shutdown() hook.
-    //         return;
-    //       }
-    //     }
-    //   }  
-      
-
-
-    // for (const auto& p : param_iohandlers["inputhandlers"]) {
-    //     RCUTILS_LOG_INFO_NAMED(get_name(), "register_input_handler");
-    //     inputhandlers.push_back(etasl::Registry<etasl::InputHandlerFactory>::create(p, jsonchecker));
-    //     ih_initialized.push_back(false);
-    // }  
 
     robotdriver->initialize();
 
@@ -1240,23 +1120,6 @@ void etaslNode::construct_node(std::atomic<bool>* stopFlagPtr_p){
       input_channels_feedback.joint_vel.resize(jpos_init_vec.size(), nullptr);
       input_channels_feedback.joint_torque.resize(jpos_init_vec.size(),nullptr);
       input_channels_feedback.joint_current.resize(jpos_init_vec.size(),nullptr);
-
-      // if(jsonchecker->is_member(param_robot, "robotdriver/name_expr_joint_vel")){
-      //   if(!feedback_copy_ptr->joint.vel.is_available){
-      //     std::string message = "The requested joint.vel feedback is not available in the used robot driver. Delete the input value name_expr_joint_vel from the setup.json file or fix the robot driver to report it.";
-      //     RCUTILS_LOG_ERROR_NAMED(get_name(), message.c_str());
-      //     auto transition = this->shutdown(); //calls on_shutdown() hook.
-      //     return;
-      //   }
-      //   for (const auto& input_h : param_iohandlers["inputhandlers"]){ //Check that the user is not requesting a topic with the same name as the expression variable for the driver
-      //     if(input_h["varname"].asString() == jsonchecker->asString(param_robot, "robotdriver/name_expr_joint_vel")){
-      //       std::string message = "The name `" + input_h["varname"].asString() + "` cannot be used within the setup.json file for both the name_expr_joint_vel of robotdriver field and the an input handler.";
-      //       RCUTILS_LOG_ERROR_NAMED(get_name(), message.c_str());
-      //       auto transition = this->shutdown(); //calls on_shutdown() hook.
-      //       return;
-      //     } 
-      //   }
-      // }
 
       for (const auto& pair : feedback_report) {
         std::string key = pair.first;
@@ -1352,33 +1215,13 @@ void etaslNode::construct_node(std::atomic<bool>* stopFlagPtr_p){
     timer_->reset();
 
     robotdriver->on_activate();
-    // RCUTILS_LOG_INFO_NAMED(get_name(), "Entering on activate for input handlers.");
-    // for (auto& h : inputhandlers) {
-    //     h->on_activate(ctx, jnames_in_expr, fnames);
-    // }
+
+    // TODO: Handle erros in activate and return lifecycle_return::FAILURE instead
     io_handler_manager->activate_input_handlers(ctx, jnames_in_expr, fnames);
     io_handler_manager->activate_output_handlers(ctx, jnames_in_expr, fnames);
 
 
-    // RCUTILS_LOG_INFO_NAMED(get_name(), "Entering on activate for output handlers.");
-    // for (auto& h : outputhandlers) {
-    //     h->on_activate(ctx, jnames_in_expr, fnames);
-    // }
-
-    //     std::cout << "hello2" << std::endl;
-    // std::cout <<"The current state label is:" << state.label() << std::endl;
-    // std::cout <<"The current state id is:" << state.id() << std::endl;
-
-    // etaslNode::on_activate(state);
-
-    // std::cout << "hello3" << std::endl;
-
     RCUTILS_LOG_INFO_NAMED(get_name(), "on_activate() is called.");
-
-    // Let's sleep for 2 seconds.
-    // We emulate we are doing important
-    // work in the activating phase.
-    // std::this_thread::sleep_for(2s);
 
 
     // We return a success and hence invoke the transition to the next
@@ -1415,22 +1258,8 @@ void etaslNode::construct_node(std::atomic<bool>* stopFlagPtr_p){
     update_robot_status(); //Updates structures that the robot thread reads from shared memory, ensuring zero velocities
 
     robotdriver->on_deactivate();
-    // for (auto& h : inputhandlers) {
-    //     h->on_deactivate(ctx);
-    // }
     io_handler_manager->deactivate_input_handlers(ctx);
     io_handler_manager->deactivate_output_handlers(ctx);
-    // for (auto& h : outputhandlers) {
-    //     h->on_deactivate(ctx);
-    // }
-
-    // for (auto& h : inputhandlers) {
-    //     h->finalize();
-    // }
-    // for (auto& h : outputhandlers) {
-    //     h->finalize();
-    // }
-
 
     RCUTILS_LOG_INFO_NAMED(get_name(), "on_deactivate() is called.");
 
@@ -1465,14 +1294,9 @@ void etaslNode::construct_node(std::atomic<bool>* stopFlagPtr_p){
     fvel_etasl.setZero(); //Sets feature variables to zero
 
     robotdriver->on_cleanup();
-    // for (auto& h : inputhandlers) {
-    //     h->on_cleanup(ctx);
-    // }
+
     io_handler_manager->cleanup_input_handlers(ctx);
     io_handler_manager->cleanup_output_handlers(ctx);
-    // for (auto& h : outputhandlers) {
-    //     h->on_cleanup(ctx);
-    // }
 
     timer_->cancel();
     this->reinitialize_data_structures();
@@ -1539,15 +1363,9 @@ void etaslNode::construct_node(std::atomic<bool>* stopFlagPtr_p){
     if (robotdriver!=nullptr){
       robotdriver->finalize();
     }
-    // for (auto& h : inputhandlers) {
-    //     h->finalize();
-    // }
+
     io_handler_manager->finalize_input_handlers();
     io_handler_manager->finalize_output_handlers();
-
-    // for (auto& h : outputhandlers) {
-    //     h->finalize();
-    // }
     
 
     // std::this_thread::sleep_for(std::chrono::milliseconds(1000));
@@ -1565,15 +1383,6 @@ void etaslNode::construct_node(std::atomic<bool>* stopFlagPtr_p){
     // etasl::registerTopicInputHandlerFactory(shared_from_this());
     // etasl::registerTFOutputHandlerFactory(shared_from_this());
 
-
-    // etasl::registerTwistInputHandlerFactory(shared_from_this());
-    // etasl::registerWrenchInputHandlerFactory(shared_from_this());
-    // etasl::registerTFInputHandlerFactory(shared_from_this());
-
-    // etasl::registerSimulationRobotDriverFactory(feedback_shared_ptr.get(), setpoint_shared_ptr.get());
-    // etasl::registerKukaIiwaRobotDriverFactory(feedback_shared_ptr.get(), setpoint_shared_ptr.get());
-    // etasl::register_simple_kinematic_simulation_factory(feedback_shared_ptr.get(), setpoint_shared_ptr.get());
-
   }
 
   boost::shared_ptr<t_manager::thread_t> etaslNode::create_thread_str(std::atomic<bool> & stopFlag){
@@ -1587,9 +1396,6 @@ void etaslNode::construct_node(std::atomic<bool>* stopFlagPtr_p){
       periodicity = jsonchecker->asDouble(param, "robotdriver/periodicity");
     }
     
-
-    // double periodicity = jsonchecker->asDouble(param, "robotdriver/periodicity");
-
     thread_str_driver = boost::make_shared<t_manager::thread_t>();
 
     
