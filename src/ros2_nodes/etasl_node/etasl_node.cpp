@@ -551,6 +551,7 @@ void etaslNode::configure_etasl(){
     // }
 
     io_handler_manager->configure_input_handlers(time, jnames_in_expr, jpos_ros, fnames, fpos_etasl);
+    io_handler_manager->configure_output_handlers(time, jnames_in_expr, jpos_ros, fnames, fpos_etasl);
 
 
     // Prepare the solver for execution, define output variables for both robot joints and feature states: 
@@ -697,10 +698,11 @@ void etaslNode::update()
         update_robot_status();
 
 
-        for (auto& h : outputhandlers) {
-            // TODO: Check if jpos_ros or jpos_etasl should be used
-            h->update(jnames_in_expr, jpos_ros, jvel_etasl, fnames, fpos_etasl, fvel_etasl);
-        }
+        // for (auto& h : outputhandlers) {
+        //     // TODO: Check if jpos_ros or jpos_etasl should be used
+        //     h->update(jnames_in_expr, jpos_ros, jvel_etasl, fnames, fvel_etasl, fpos_etasl);
+        // }
+        io_handler_manager->update_output_handlers(jnames_in_expr, jpos_ros, jvel_etasl, fnames, fvel_etasl, fpos_etasl);
         // std::cout << "jointpos:" << jpos_etasl.transpose() << std::endl;
 }
 
@@ -990,17 +992,17 @@ bool etaslNode::initialize_input_handlers(){
 
 bool etaslNode::initialize_output_handlers(){
     // initialize output-handlers
-    RCUTILS_LOG_INFO_NAMED(get_name(), "Initializing output handlers...");
-    for (auto& h : outputhandlers) {
-        std::stringstream message;
-        message << "Initializing output handler:" <<  h->getName();
-        RCUTILS_LOG_INFO_NAMED(get_name(), (message.str()).c_str());
-        RCUTILS_LOG_INFO_NAMED(get_name(), "helloo1");
+    // RCUTILS_LOG_INFO_NAMED(get_name(), "Initializing output handlers...");
+    // for (auto& h : outputhandlers) {
+    //     std::stringstream message;
+    //     message << "Initializing output handler:" <<  h->getName();
+    //     RCUTILS_LOG_INFO_NAMED(get_name(), (message.str()).c_str());
+    //     RCUTILS_LOG_INFO_NAMED(get_name(), "helloo1");
 
-        h->initialize(ctx, jnames_in_expr, fnames);
-        RCUTILS_LOG_INFO_NAMED(get_name(), "helloo2");
-    }
-    RCUTILS_LOG_INFO_NAMED(get_name(), "finished initializing output handlers");
+    //     h->initialize(ctx, jnames_in_expr, fnames);
+    //     RCUTILS_LOG_INFO_NAMED(get_name(), "helloo2");
+    // }
+    // RCUTILS_LOG_INFO_NAMED(get_name(), "finished initializing output handlers");
     return true;
 }
 
@@ -1088,13 +1090,14 @@ void etaslNode::construct_node(std::atomic<bool>* stopFlagPtr_p){
     /****************************************************
     * Adding input and output handlers from the read JSON file 
     ***************************************************/
-   Json::Value param_iohandlers = board->getPath("/iohandlers", false);
-    for (const auto& p : param_iohandlers["outputhandlers"]) {
-        RCUTILS_LOG_INFO_NAMED(get_name(), "register_output_handler");
-        outputhandlers.push_back(etasl::Registry<etasl::OutputHandlerFactory>::create(p, jsonchecker));
-    }
+  //  Json::Value param_iohandlers = board->getPath("/iohandlers", false);
+  //   for (const auto& p : param_iohandlers["outputhandlers"]) {
+  //       RCUTILS_LOG_INFO_NAMED(get_name(), "register_output_handler");
+  //       outputhandlers.push_back(etasl::Registry<etasl::OutputHandlerFactory>::create(p, jsonchecker));
+  //   }
 
     io_handler_manager->construct_input_handlers();
+    io_handler_manager->construct_output_handlers();
 
     // inputhandler_loader = boost::make_shared<pluginlib::ClassLoader<etasl::InputHandler>>("etasl_ros2", "etasl::InputHandler");
     
@@ -1285,8 +1288,9 @@ void etaslNode::construct_node(std::atomic<bool>* stopFlagPtr_p){
       // jpos_init << 180.0/180.0*3.1416, -90.0/180.0*3.1416, 90.0/180.0*3.1416, -90.0/180.0*3.1416, -90.0/180.0*3.1416, 0.0/180.0*3.1416;
       
       // this->initialize_input_handlers();
+      // this->initialize_output_handlers();
       io_handler_manager->initialize_input_handlers(ctx, jnames_in_expr, fnames, jpos_ros, fpos_etasl);
-      this->initialize_output_handlers();
+      io_handler_manager->initialize_output_handlers(ctx, jnames_in_expr, fnames);
 
     }
     else{
@@ -1353,12 +1357,13 @@ void etaslNode::construct_node(std::atomic<bool>* stopFlagPtr_p){
     //     h->on_activate(ctx, jnames_in_expr, fnames);
     // }
     io_handler_manager->activate_input_handlers(ctx, jnames_in_expr, fnames);
+    io_handler_manager->activate_output_handlers(ctx, jnames_in_expr, fnames);
 
 
-    RCUTILS_LOG_INFO_NAMED(get_name(), "Entering on activate for output handlers.");
-    for (auto& h : outputhandlers) {
-        h->on_activate(ctx, jnames_in_expr, fnames);
-    }
+    // RCUTILS_LOG_INFO_NAMED(get_name(), "Entering on activate for output handlers.");
+    // for (auto& h : outputhandlers) {
+    //     h->on_activate(ctx, jnames_in_expr, fnames);
+    // }
 
     //     std::cout << "hello2" << std::endl;
     // std::cout <<"The current state label is:" << state.label() << std::endl;
@@ -1414,9 +1419,10 @@ void etaslNode::construct_node(std::atomic<bool>* stopFlagPtr_p){
     //     h->on_deactivate(ctx);
     // }
     io_handler_manager->deactivate_input_handlers(ctx);
-    for (auto& h : outputhandlers) {
-        h->on_deactivate(ctx);
-    }
+    io_handler_manager->deactivate_output_handlers(ctx);
+    // for (auto& h : outputhandlers) {
+    //     h->on_deactivate(ctx);
+    // }
 
     // for (auto& h : inputhandlers) {
     //     h->finalize();
@@ -1463,9 +1469,10 @@ void etaslNode::construct_node(std::atomic<bool>* stopFlagPtr_p){
     //     h->on_cleanup(ctx);
     // }
     io_handler_manager->cleanup_input_handlers(ctx);
-    for (auto& h : outputhandlers) {
-        h->on_cleanup(ctx);
-    }
+    io_handler_manager->cleanup_output_handlers(ctx);
+    // for (auto& h : outputhandlers) {
+    //     h->on_cleanup(ctx);
+    // }
 
     timer_->cancel();
     this->reinitialize_data_structures();
@@ -1536,10 +1543,11 @@ void etaslNode::construct_node(std::atomic<bool>* stopFlagPtr_p){
     //     h->finalize();
     // }
     io_handler_manager->finalize_input_handlers();
+    io_handler_manager->finalize_output_handlers();
 
-    for (auto& h : outputhandlers) {
-        h->finalize();
-    }
+    // for (auto& h : outputhandlers) {
+    //     h->finalize();
+    // }
     
 
     // std::this_thread::sleep_for(std::chrono::milliseconds(1000));

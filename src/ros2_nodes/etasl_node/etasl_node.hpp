@@ -245,14 +245,6 @@ class etaslNode : public rclcpp_lifecycle::LifecycleNode
         rclcpp::Service<etasl_interfaces::srv::TaskSpecificationString>::SharedPtr srv_readTaskParameters_;
 
 
-
-
-        
-
-
-
-
-
 };
 
 

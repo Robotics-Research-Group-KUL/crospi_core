@@ -102,7 +102,12 @@
  
  void IOHandlerManager::construct_output_handlers()
  {
-    //  TODO
+    Json::Value param_iohandlers = parameters["iohandlers"];
+
+    for (const auto& p : param_iohandlers["outputhandlers"]) {
+        RCLCPP_INFO(node->get_logger(), "register_output_handler");
+        outputhandlers.push_back(etasl::Registry<etasl::OutputHandlerFactory>::create(p, jsonchecker));
+    }
  }
 
  void IOHandlerManager::initialize_input_handlers(
@@ -129,11 +134,17 @@
 void IOHandlerManager::initialize_output_handlers(
   Context::Ptr ctx,
   const std::vector<std::string>& jnames,
-  const std::vector<std::string>& fnames,
-  Eigen::VectorXd& jpos,
-  Eigen::VectorXd& fpos)
+  const std::vector<std::string>& fnames)
   {
     // TODO
+    RCLCPP_INFO(node->get_logger(), "Initializing output handlers...");
+    for (auto& h : outputhandlers) {
+        std::stringstream message;
+        message << "Initializing output handler:" <<  h->getName();
+        RCLCPP_INFO(node->get_logger(), (message.str()).c_str());
+        h->initialize(ctx, jnames, fnames);
+    }
+    RCLCPP_INFO(node->get_logger(), "finished initializing output handlers");
   }
 
 void IOHandlerManager::configure_input_handlers(
@@ -159,7 +170,12 @@ void IOHandlerManager::configure_output_handlers(
   const std::vector<std::string>& fnames,
   Eigen::VectorXd& fpos)
   {
-    // TODO
+    //TODO: For now it only updates, but I should inplement an on_configure method in OutputHandler class and call all with a for loop
+    // for (auto h : outputhandlers) {
+    //   h->configure(time, jnames, jpos, fnames, fpos);
+    // }
+
+    //No need to update output handlers at configuration (only input handlers!)
   }
 
 void IOHandlerManager::update_input_handlers(
@@ -175,13 +191,17 @@ void IOHandlerManager::update_input_handlers(
   }
 
 void IOHandlerManager::update_output_handlers(
-  double time,
   const std::vector<std::string>& jnames,
-  Eigen::VectorXd& jpos,
+  const Eigen::VectorXd& jpos,
+  const Eigen::VectorXd& jvel,
   const std::vector<std::string>& fnames,
-  Eigen::VectorXd& fpos)
+  const Eigen::VectorXd& fvel,
+  const Eigen::VectorXd& fpos)
   {
-    // TODO
+    for (auto& h : outputhandlers) {
+      // TODO: Check if jpos or jvel should be used
+      h->update(jnames, jpos, jvel, fnames, fvel, fpos);
+    }
   }
 
 void IOHandlerManager::activate_input_handlers(
@@ -192,7 +212,11 @@ void IOHandlerManager::activate_input_handlers(
     RCLCPP_INFO(node->get_logger(), "Entering on activate for input handlers.");
     for (auto& h : inputhandlers) {
         h->on_activate(ctx, jnames, fnames);
+        //TODO: Handle boolean output of on_activate
+
     }
+    RCLCPP_INFO(node->get_logger(), "Activated input handlers.");
+
   }
 
 void IOHandlerManager::activate_output_handlers(
@@ -200,7 +224,13 @@ void IOHandlerManager::activate_output_handlers(
   const std::vector<std::string>& jnames,
   const std::vector<std::string>& fnames)
   {
-    // TODO
+    RCLCPP_INFO(node->get_logger(), "Entering on activate for output handlers.");
+    for (auto& h : outputhandlers) {
+        h->on_activate(ctx, jnames, fnames);
+        //TODO: Handle boolean output of on_activate
+    }
+    RCLCPP_INFO(node->get_logger(), "Activated output handlers.");
+
   }
 
 
@@ -212,7 +242,9 @@ void IOHandlerManager::deactivate_input_handlers(Context::Ptr ctx)
 }
 void IOHandlerManager::deactivate_output_handlers(Context::Ptr ctx)
 {
-  // TODO
+    for (auto& h : outputhandlers) {
+        h->on_deactivate(ctx);
+    }
 }
 
 
@@ -224,7 +256,9 @@ void IOHandlerManager::cleanup_input_handlers(Context::Ptr ctx)
 }
 void IOHandlerManager::cleanup_output_handlers(Context::Ptr ctx)
 {
-  // TODO
+  for (auto& h : outputhandlers) {
+    h->on_cleanup(ctx);
+}
 }
 
 void IOHandlerManager::finalize_input_handlers()
@@ -235,7 +269,9 @@ void IOHandlerManager::finalize_input_handlers()
 }
 void IOHandlerManager::finalize_output_handlers()
 {
-  // TODO
+  for (auto& h : outputhandlers) {
+    h->finalize();
+  }
 }
  
  // void IOHandlerManager::startLoop() {

@@ -22,6 +22,14 @@
 #include <pluginlib/class_loader.hpp> //For plugins such as robot drivers
 
 
+// TODO: Remove these:
+#include "etasl_task_utils/registry.hpp"
+#include "etasl_task_utils/outputhandler.hpp"
+#include "etasl_task_utils/outputhandlerfactory.hpp"
+#include "etasl_node_utils/jointstateoutputhandlerfactory.hpp"
+#include "etasl_node_utils/topicoutputhandlerfactory.hpp"
+#include "etasl_task_utils/fileoutputhandlerfactory.hpp"
+#include "etasl_node_utils/tfoutputhandlerfactory.hpp"
 
 namespace etasl {
 // using namespace KDL;
@@ -63,9 +71,7 @@ public:
     void initialize_output_handlers(
         Context::Ptr ctx,
         const std::vector<std::string>& jnames,
-        const std::vector<std::string>& fnames,
-        Eigen::VectorXd& jpos,
-        Eigen::VectorXd& fpos);
+        const std::vector<std::string>& fnames);
 
     void configure_input_handlers(
         double time,
@@ -89,11 +95,12 @@ public:
         Eigen::VectorXd& fpos);
 
     void update_output_handlers(
-        double time,
         const std::vector<std::string>& jnames,
-        Eigen::VectorXd& jpos,
+        const Eigen::VectorXd& jpos,
+        const Eigen::VectorXd& jvel,
         const std::vector<std::string>& fnames,
-        Eigen::VectorXd& fpos);
+        const Eigen::VectorXd& fvel,
+        const Eigen::VectorXd& fpos);
 
     void activate_input_handlers(
         Context::Ptr ctx,    
