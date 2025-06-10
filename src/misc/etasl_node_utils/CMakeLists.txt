@@ -19,6 +19,8 @@ find_package(jsoncpp REQUIRED)
 find_package(tf2 REQUIRED)
 find_package(tf2_geometry_msgs REQUIRED)
 find_package(tf2_ros REQUIRED)
+find_package(pluginlib REQUIRED)
+
 #add_subdirectory( doc )
 
 set(CMAKE_CXX_STANDARD 17)
@@ -29,6 +31,8 @@ include_directories(include ${LUA_INCLUDE_DIR})
 set( src_etasl_node_utils
     # rosloghandler.cpp
     # rostask.cpp
+
+    io_handler_manager.cpp
 
     topicoutputhandler.cpp
     jointstateoutputhandler.cpp
@@ -65,6 +69,7 @@ set(rosdependencies
     tf2
     tf2_geometry_msgs
     tf2_ros
+    pluginlib
 )
 
 set(dependencies

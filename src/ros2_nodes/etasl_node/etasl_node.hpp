@@ -53,6 +53,9 @@
 // #include "etasl_task_utils/inputhandlerfactory.hpp"
 // #include "etasl_node_utils/topicinputhandlerfactory.hpp"
 
+#include "etasl_node_utils/io_handler_manager.hpp"
+
+
 #include "etasl_task_utils/outputhandler.hpp"
 #include "etasl_task_utils/outputhandlerfactory.hpp"
 #include "etasl_node_utils/jointstateoutputhandlerfactory.hpp"
@@ -164,6 +167,8 @@ class etaslNode : public rclcpp_lifecycle::LifecycleNode
         std::vector<etasl::OutputHandler::SharedPtr> outputhandlers;
         std::vector<etasl::InputHandler::SharedPtr> inputhandlers;
         etasl::RobotDriver::SharedPtr               robotdriver;
+
+        etasl::IOHandlerManager::SharedPtr               io_handler_manager;
 
         boost::shared_ptr<pluginlib::ClassLoader<etasl::RobotDriver>>  driver_loader;
         boost::shared_ptr<pluginlib::ClassLoader<etasl::InputHandler>>  inputhandler_loader;
