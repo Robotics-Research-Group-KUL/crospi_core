@@ -30,7 +30,7 @@
     std::cout << "IOHandlerManager constructor called" << std::endl;
     
     inputhandler_loader = boost::make_shared<pluginlib::ClassLoader<etasl::InputHandler>>("etasl_ros2", "etasl::InputHandler");
-    // outputhandler_loader = boost::make_shared<pluginlib::ClassLoader<etasl::OutputHandler>>("etasl_ros2", "etasl::OutputHandler");
+    outputhandler_loader = boost::make_shared<pluginlib::ClassLoader<etasl::OutputHandler>>("etasl_ros2", "etasl::OutputHandler");
     // std::cout << "param_root: " << parameters.toStyledString() << std::endl;
 
  }
@@ -47,26 +47,26 @@
       
       Json::Value param_iohandlers = parameters["iohandlers"];
       for (const auto& par : param_iohandlers["inputhandlers"]) {
-          std::string ih_name = "";
+          std::string handler_name = "";
           for (const auto& key : par.getMemberNames()) {
             if (key.rfind("is-", 0) == 0) { // Check if key starts with "is-"
-              ih_name = key.substr(3);
+              handler_name = key.substr(3);
             }
           }
-          // std::string message = "ih_name: " + ih_name;
+          // std::string message = "handler_name: " + handler_name;
           // RCLCPP_INFO(node->get_logger(), message.c_str());
 
-          if(ih_name == ""){
-            std::string message = "Could not find any is- keyword in the inputhandler field of the json configuration file. It must specify the type, e.g. is-twistinputhandler = true";
+          if(handler_name == ""){
+            std::string message = "Could not find any is- keyword in the inputhandler field of the json configuration file. It must specify the type, e.g. is-TwistInputHandler = true";
             RCLCPP_ERROR(node->get_logger(), message.c_str());
             auto transition = node->shutdown(); //calls on_shutdown() hook.
             return;
           }
   
-          etasl::InputHandler::SharedPtr ih_ptr = nullptr;
+          etasl::InputHandler::SharedPtr handler_ptr = nullptr;
           try
           {
-            ih_ptr = inputhandler_loader->createSharedInstance("etasl::" + ih_name);
+            handler_ptr = inputhandler_loader->createSharedInstance("etasl::" + handler_name);
           }
           catch(pluginlib::PluginlibException& ex)
           {
@@ -76,17 +76,17 @@
             return;
           }
   
-          if (ih_ptr){
+          if (handler_ptr){
             RCLCPP_INFO(node->get_logger(), "register_input_handler");
-            inputhandlers.push_back(ih_ptr);
-            bool is_constructed = ih_ptr->construct(ih_name, node, par, jsonchecker);
+            inputhandlers.push_back(handler_ptr);
+            bool is_constructed = handler_ptr->construct(handler_name, node, par, jsonchecker);
             if(!is_constructed){
-              std::string message = "The input handler " + ih_name + " could not be constructed. Shutting down.";
+              std::string message = "The input handler " + handler_name + " could not be constructed. Shutting down.";
               RCLCPP_ERROR(node->get_logger(), message.c_str());
               auto transition = node->shutdown(); //calls on_shutdown() hook.
               return;
             }
-            RCLCPP_INFO(node->get_logger(), "Input handler %s constructed successfully.", ih_name.c_str());
+            RCLCPP_INFO(node->get_logger(), "Input handler %s constructed successfully.", handler_name.c_str());
           }
         }  
         RCLCPP_INFO(node->get_logger(), "Constructed Input Handlers successfully.");
@@ -102,11 +102,69 @@
  
  void IOHandlerManager::construct_output_handlers()
  {
-    Json::Value param_iohandlers = parameters["iohandlers"];
+    // Json::Value param_iohandlers = parameters["iohandlers"];
 
-    for (const auto& p : param_iohandlers["outputhandlers"]) {
-        RCLCPP_INFO(node->get_logger(), "register_output_handler");
-        outputhandlers.push_back(etasl::Registry<etasl::OutputHandlerFactory>::create(p, jsonchecker));
+    // for (const auto& p : param_iohandlers["outputhandlers"]) {
+    //     RCLCPP_INFO(node->get_logger(), "register_output_handler");
+    //     outputhandlers.push_back(etasl::Registry<etasl::OutputHandlerFactory>::create(p, jsonchecker));
+    // }
+
+    // TODO: Check that none of the varnames are repeated, otherwise shutdown and inform
+    if (jsonchecker->is_member(parameters, "iohandlers/outputhandlers")) //outputhandlers field is optional
+    {
+      // RCLCPP_INFO(node->get_logger(), "json param detected^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^");
+      
+      Json::Value param_iohandlers = parameters["iohandlers"];
+      for (const auto& par : param_iohandlers["outputhandlers"]) {
+          std::string handler_name = "";
+          for (const auto& key : par.getMemberNames()) {
+            if (key.rfind("is-", 0) == 0) { // Check if key starts with "is-"
+              handler_name = key.substr(3);
+            }
+          }
+          // std::string message = "handler_name: " + handler_name;
+          // RCLCPP_INFO(node->get_logger(), message.c_str());
+
+          if(handler_name == ""){
+            std::string message = "Could not find any is- keyword in the outputhandler field of the json configuration file. It must specify the type, e.g. is-JointStateOutputHandler = true";
+            RCLCPP_ERROR(node->get_logger(), message.c_str());
+            auto transition = node->shutdown(); //calls on_shutdown() hook.
+            return;
+          }
+  
+          etasl::OutputHandler::SharedPtr handler_ptr = nullptr;
+          try
+          {
+            handler_ptr = outputhandler_loader->createSharedInstance("etasl::" + handler_name);
+          }
+          catch(pluginlib::PluginlibException& ex)
+          {
+            std::string message = "The plugin failed to load. Error: \n" + std::string(ex.what());
+            RCLCPP_ERROR(node->get_logger(), message.c_str());
+            auto transition = node->shutdown(); //calls on_shutdown() hook.
+            return;
+          }
+  
+          if (handler_ptr){
+            RCLCPP_INFO(node->get_logger(), "register_output_handler");
+            outputhandlers.push_back(handler_ptr);
+            bool is_constructed = handler_ptr->construct(handler_name, node, par, jsonchecker);
+            if(!is_constructed){
+              std::string message = "The output handler " + handler_name + " could not be constructed. Shutting down.";
+              RCLCPP_ERROR(node->get_logger(), message.c_str());
+              auto transition = node->shutdown(); //calls on_shutdown() hook.
+              return;
+            }
+            RCLCPP_INFO(node->get_logger(), "Output handler %s constructed successfully.", handler_name.c_str());
+          }
+        }  
+        RCLCPP_INFO(node->get_logger(), "Constructed Output Handlers successfully.");
+
+    }
+    else{
+      std::string message = "The iohandlers/outputhandlers field is not present in the json configuration file.";
+      RCLCPP_WARN(node->get_logger(), message.c_str());
+      return;
     }
  }
 

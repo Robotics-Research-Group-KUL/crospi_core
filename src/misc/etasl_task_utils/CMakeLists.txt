@@ -4,11 +4,13 @@ message("Compiling misc/etasl_task_utils libraries ${CMAKE_CURRENT_SOURCE_DIR}")
 find_package(ament_cmake REQUIRED)
 find_package(ament_index_cpp REQUIRED)
 find_package(rclcpp REQUIRED)
+find_package(rclcpp_lifecycle REQUIRED)
 find_package(rclcpp_action REQUIRED)
 find_package(etasl REQUIRED)
 find_package(resource_retriever REQUIRED)
 find_package(etasl_interfaces REQUIRED)
 find_package(sensor_msgs REQUIRED)
+find_package(geometry_msgs REQUIRED)
 find_package(std_msgs REQUIRED)
 find_package(Lua51 REQUIRED)
 find_package(Eigen3 REQUIRED)
@@ -18,6 +20,8 @@ find_package(jsoncpp REQUIRED)
 find_package(tf2 REQUIRED)
 find_package(tf2_geometry_msgs REQUIRED)
 find_package(tf2_ros REQUIRED)
+find_package(pluginlib REQUIRED)
+
 #add_subdirectory( doc )
 
 set(CMAKE_CXX_STANDARD 17)
@@ -27,7 +31,7 @@ include_directories(include ${LUA_INCLUDE_DIR})
 
 set(src_etasl_task_utils
     featurevariableinitializer.cpp
-    outputhandler.cpp
+    outputhandler.cpp #TODO: Remove after pasing cut_global method somewhere else
     # task.cpp
     blackboard.cpp
     printobserver.cpp
@@ -35,22 +39,25 @@ set(src_etasl_task_utils
     #solverregistry.cpp
     #solverfactory_qpoases.cpp
     qpoasessolverfactory.cpp
-    fileoutputhandler.cpp
-    fileoutputhandlerfactory.cpp
+    # fileoutputhandler.cpp
+    # fileoutputhandlerfactory.cpp
     json_checker.cpp
 )
 
 set(rosdependencies 
     rclcpp
+    rclcpp_lifecycle
     rclcpp_action
     etasl_interfaces
     resource_retriever
     ament_index_cpp
     Eigen3
     sensor_msgs
+    geometry_msgs
     tf2
     tf2_geometry_msgs
     tf2_ros
+    pluginlib
 )
 
 set(dependencies

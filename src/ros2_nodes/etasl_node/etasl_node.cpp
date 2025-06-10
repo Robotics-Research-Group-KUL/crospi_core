@@ -981,13 +981,11 @@ void etaslNode::construct_node(std::atomic<bool>* stopFlagPtr_p){
     /****************************************************
     * Registering factories
     ***************************************************/
-   register_factories();
+    //  register_factories();
 
     /****************************************************
     * Adding Robot Driver
-    ***************************************************/
-    RCUTILS_LOG_INFO_NAMED(get_name(), "register_output_handler");
-    
+    ***************************************************/    
     std::string driver_name = "simple_kinematic_simulation";
     Json::Value driver_params = param["simulation"];
     driver_loader = boost::make_shared<pluginlib::ClassLoader<etasl::RobotDriver>>("etasl_ros2", "etasl::RobotDriver");
@@ -1166,11 +1164,6 @@ void etaslNode::construct_node(std::atomic<bool>* stopFlagPtr_p){
 
 
     this->configure_etasl();
-
-    // std::cout << "The time is:" << std::endl;
-    // auto timeee = ctx->getOutputExpression<double>("time");
-    // std::cout << timeee->value() << std::endl;
-
 
 
     RCUTILS_LOG_INFO_NAMED(get_name(), "on_configure() is called.");
@@ -1373,17 +1366,17 @@ void etaslNode::construct_node(std::atomic<bool>* stopFlagPtr_p){
     // rclcpp::shutdown(); 
   }
 
-  void etaslNode::register_factories(){
-        // The following registers each factory. If you don't declare this, the program will not be able to create objects from
-    // such factory when specified in the JSON files.
-    // etasl::registerQPOasesSolverFactory();
-    etasl::registerTopicOutputHandlerFactory(shared_from_this()); 
-    // etasl::registerFileOutputHandlerFactory();
-    etasl::registerJointStateOutputHandlerFactory(shared_from_this());
-    // etasl::registerTopicInputHandlerFactory(shared_from_this());
-    // etasl::registerTFOutputHandlerFactory(shared_from_this());
+  // void etaslNode::register_factories(){
+  //       // The following registers each factory. If you don't declare this, the program will not be able to create objects from
+  //   // such factory when specified in the JSON files.
+  //   // etasl::registerQPOasesSolverFactory();
+  //   etasl::registerTopicOutputHandlerFactory(shared_from_this()); 
+  //   // etasl::registerFileOutputHandlerFactory();
+  //   etasl::registerJointStateOutputHandlerFactory(shared_from_this());
+  //   // etasl::registerTopicInputHandlerFactory(shared_from_this());
+  //   // etasl::registerTFOutputHandlerFactory(shared_from_this());
 
-  }
+  // }
 
   boost::shared_ptr<t_manager::thread_t> etaslNode::create_thread_str(std::atomic<bool> & stopFlag){
     

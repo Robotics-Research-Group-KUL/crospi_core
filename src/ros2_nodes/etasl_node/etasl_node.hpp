@@ -56,17 +56,6 @@
 #include "etasl_node_utils/io_handler_manager.hpp"
 
 
-#include "etasl_task_utils/outputhandler.hpp"
-#include "etasl_task_utils/outputhandlerfactory.hpp"
-#include "etasl_node_utils/jointstateoutputhandlerfactory.hpp"
-#include "etasl_node_utils/topicoutputhandlerfactory.hpp"
-#include "etasl_task_utils/fileoutputhandlerfactory.hpp"
-#include "etasl_node_utils/tfoutputhandlerfactory.hpp"
-// #include "etasl_node_utils/twistinputhandlerfactory.hpp"
-// #include "etasl_node_utils/wrenchinputhandlerfactory.hpp"
-// #include "etasl_node_utils/tfinputhandlerfactory.hpp"
-
-
 #include "robot_interfacing_utils/robotdriverfactory.hpp"
 // #include "simple_kinematic_simulation/simple_kinematic_simulation_factory.hpp"
 // #include "robot_interfacing_utils/simulationrobotdriverfactory.hpp"
@@ -78,11 +67,6 @@
 #include "robot_interfacing_utils/thread_manager.hpp"
 
 #include "etasl_task_utils/json_checker.hpp"
-
-
-
-
-
 
 
 using namespace KDL;
@@ -122,7 +106,7 @@ class etaslNode : public rclcpp_lifecycle::LifecycleNode
         void initialize_feature_variables();
         void construct_node(std::atomic<bool>* stopFlagPtr_p);
 
-        void register_factories();
+        // void register_factories();
         void update_robot_status();
         boost::shared_ptr<t_manager::thread_t> create_thread_str(std::atomic<bool> & stopFlag);
         
@@ -157,22 +141,12 @@ class etaslNode : public rclcpp_lifecycle::LifecycleNode
 
         std::atomic<bool>* stopFlagPtr;
 
-
-        // boost::shared_ptr<eTaSL_OutputHandler> oh;
-        // boost::shared_ptr<eTaSL_InputHandler> ih;
-        // boost::shared_ptr<std::ofstream > outpfile_ptr;
-
-        // std::vector<etasl::OutputHandler::SharedPtr> outputhandlers;
-        // std::vector<etasl::InputHandler::SharedPtr> inputhandlers;
         etasl::RobotDriver::SharedPtr               robotdriver;
 
         etasl::IOHandlerManager::SharedPtr               io_handler_manager;
 
         boost::shared_ptr<pluginlib::ClassLoader<etasl::RobotDriver>>  driver_loader;
-        // boost::shared_ptr<pluginlib::ClassLoader<etasl::InputHandler>>  inputhandler_loader;
-        // boost::shared_ptr<pluginlib::ClassLoader<etasl::OutputHandler>>  outputhandler_loader;
 
-        // std::vector<bool> ih_initialized;
 
         std::vector< std::string > jointnames;
         std::vector<std::string> jnames_in_expr;
@@ -206,9 +180,6 @@ class etaslNode : public rclcpp_lifecycle::LifecycleNode
         KDL::Twist twist_inp;
         KDL::Wrench wrench_inp;
         std::map<std::string, bool> feedback_report;
-
-        // eTaSL_OutputHandler oh;
-        // eTaSL_InputHandler ih;
 
         VectorXd fpos_etasl;
         VectorXd jpos_etasl;

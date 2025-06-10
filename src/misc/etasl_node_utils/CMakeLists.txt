@@ -10,6 +10,7 @@ find_package(etasl REQUIRED)
 find_package(resource_retriever REQUIRED)
 find_package(etasl_interfaces REQUIRED)
 find_package(sensor_msgs REQUIRED)
+find_package(geometry_msgs REQUIRED)
 find_package(std_msgs REQUIRED)
 find_package(Lua51 REQUIRED)
 find_package(Eigen3 REQUIRED)
@@ -34,20 +35,20 @@ set( src_etasl_node_utils
 
     io_handler_manager.cpp
 
-    topicoutputhandler.cpp
-    jointstateoutputhandler.cpp
-    tfoutputhandler.cpp
+    # topicoutputhandler.cpp
+    # jointstateoutputhandler.cpp
+    # tfoutputhandler.cpp
     # topicinputhandler.cpp
     # twistinputhandler.cpp
     # wrenchinputhandler.cpp
     # tfinputhandler.cpp
     # jointstateinputhandler.cpp
 
-    topicoutputhandlerfactory.cpp
-    jointstateoutputhandlerfactory.cpp
+    # topicoutputhandlerfactory.cpp
+    # jointstateoutputhandlerfactory.cpp
     # jointstateinputhandlerfactory.cpp    
     # topicinputhandlerfactory.cpp
-    tfoutputhandlerfactory.cpp
+    # tfoutputhandlerfactory.cpp
     # # twistinputhandlerfactory.cpp
     # wrenchinputhandlerfactory.cpp
     # tfinputhandlerfactory.cpp
