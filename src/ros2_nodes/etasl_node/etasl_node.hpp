@@ -108,7 +108,7 @@ class etaslNode : public rclcpp_lifecycle::LifecycleNode
 
         // void register_factories();
         void update_robot_status();
-        boost::shared_ptr<t_manager::thread_t> create_thread_str(std::atomic<bool> & stopFlag);
+        std::shared_ptr<t_manager::thread_t> create_thread_str(std::atomic<bool> & stopFlag);
         
 
 
@@ -136,7 +136,7 @@ class etaslNode : public rclcpp_lifecycle::LifecycleNode
 
         Context::Ptr ctx;
         boost::shared_ptr<solver> slv;
-        boost::shared_ptr<LuaContext> LUA;
+        std::shared_ptr<LuaContext> LUA;
         SolverRegistry::Ptr solver_registry;
 
         std::atomic<bool>* stopFlagPtr;
@@ -145,20 +145,20 @@ class etaslNode : public rclcpp_lifecycle::LifecycleNode
 
         etasl::IOHandlerManager::SharedPtr               io_handler_manager;
 
-        boost::shared_ptr<pluginlib::ClassLoader<etasl::RobotDriver>>  driver_loader;
+        std::shared_ptr<pluginlib::ClassLoader<etasl::RobotDriver>>  driver_loader;
 
 
         std::vector< std::string > jointnames;
         std::vector<std::string> jnames_in_expr;
         std::vector< std::string > fnames;
 
-        boost::shared_ptr<etasl::BlackBoard> board;
+        std::shared_ptr<etasl::BlackBoard> board;
 
 
-        boost::shared_ptr<etasl::FeedbackMsg> feedback_shared_ptr;
-        boost::shared_ptr<etasl::SetpointMsg> setpoint_shared_ptr;
-        boost::shared_ptr<t_manager::thread_t> thread_str_driver;
-        boost::shared_ptr<etasl::JsonChecker> jsonchecker;
+        std::shared_ptr<etasl::FeedbackMsg> feedback_shared_ptr;
+        std::shared_ptr<etasl::SetpointMsg> setpoint_shared_ptr;
+        std::shared_ptr<t_manager::thread_t> thread_str_driver;
+        std::shared_ptr<etasl::JsonChecker> jsonchecker;
         
         std::unique_ptr<etasl::FeedbackMsg> feedback_copy_ptr;
 

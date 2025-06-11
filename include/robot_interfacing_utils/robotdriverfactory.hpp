@@ -38,7 +38,7 @@ public:
      * @brief create the solver with the given parameters
      *
      */
-    virtual RobotDriver::SharedPtr create(const Json::Value& parameters, boost::shared_ptr<JsonChecker> jsonchecker) = 0;
+    virtual RobotDriver::SharedPtr create(const Json::Value& parameters, std::shared_ptr<JsonChecker> jsonchecker) = 0;
 
     virtual ~RobotDriverFactory() { }
 };

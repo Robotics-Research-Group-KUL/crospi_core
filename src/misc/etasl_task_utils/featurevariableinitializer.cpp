@@ -240,7 +240,7 @@ createFeatureVariableInitializer(solver::Ptr _slvr, Context::Ptr _ctx, const Jso
     double duration = param["duration"].asDouble();
     double convergence_criterion = param["convergence_criterion"].asDouble();
     double weight_factor = param["weightfactor"].asDouble();
-    return boost::make_shared<FeatureVariableInitializerImpl>(
+    return std::make_shared<FeatureVariableInitializerImpl>(
         _slvr,
         _ctx,
         full,

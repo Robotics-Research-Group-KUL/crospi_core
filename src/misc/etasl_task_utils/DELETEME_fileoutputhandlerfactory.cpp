@@ -72,7 +72,7 @@ public:
      * @brief create the solver with the given parameters
      *
      */
-    virtual FileOutputHandler::SharedPtr create(const Json::Value& parameters, boost::shared_ptr<etasl::JsonChecker> jsonchecker)
+    virtual FileOutputHandler::SharedPtr create(const Json::Value& parameters, std::shared_ptr<etasl::JsonChecker> jsonchecker)
     {
         std::string filename = jsonchecker->asString(parameters, "filename");
         bool header = jsonchecker->asBool(parameters, "header");

@@ -27,7 +27,7 @@ namespace etasl {
                 std::string _name, 
                 rclcpp_lifecycle::LifecycleNode::SharedPtr _node,
                 const Json::Value& _parameters,
-                boost::shared_ptr<etasl::JsonChecker> _jsonchecker
+                std::shared_ptr<etasl::JsonChecker> _jsonchecker
             ) = 0;
             
             /**

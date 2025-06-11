@@ -41,12 +41,12 @@ public:
 private:
     rclcpp_lifecycle::LifecycleNode::SharedPtr node;
     const Json::Value& parameters;
-    boost::shared_ptr<etasl::JsonChecker> jsonchecker;
+    std::shared_ptr<etasl::JsonChecker> jsonchecker;
 
     std::vector<etasl::OutputHandler::SharedPtr> outputhandlers;
     std::vector<etasl::InputHandler::SharedPtr> inputhandlers;
-    boost::shared_ptr<pluginlib::ClassLoader<etasl::InputHandler>>  inputhandler_loader;
-    boost::shared_ptr<pluginlib::ClassLoader<etasl::OutputHandler>>  outputhandler_loader;
+    std::shared_ptr<pluginlib::ClassLoader<etasl::InputHandler>>  inputhandler_loader;
+    std::shared_ptr<pluginlib::ClassLoader<etasl::OutputHandler>>  outputhandler_loader;
 
     std::vector<bool> input_h_initialized;
     std::vector<bool> otput_h_initialized;
@@ -56,7 +56,7 @@ public:
     IOHandlerManager(
         rclcpp_lifecycle::LifecycleNode::SharedPtr _node, 
         const Json::Value& _param,
-        boost::shared_ptr<etasl::JsonChecker> _jsonchecker);
+        std::shared_ptr<etasl::JsonChecker> _jsonchecker);
 
     void construct_input_handlers();
     void construct_output_handlers();

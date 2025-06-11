@@ -39,7 +39,7 @@ public:
      * @brief create the solver with the given parameters
      *
      */
-    virtual InputHandler::SharedPtr create(const Json::Value& parameters, boost::shared_ptr<JsonChecker> jsonchecker) = 0;
+    virtual InputHandler::SharedPtr create(const Json::Value& parameters, std::shared_ptr<JsonChecker> jsonchecker) = 0;
 
     virtual ~InputHandlerFactory() { }
 };

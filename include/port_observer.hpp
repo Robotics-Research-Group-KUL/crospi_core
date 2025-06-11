@@ -29,7 +29,7 @@ Observer::Ptr create_port_observer(
     const std::string& _event_postfix,
     bool  exit_when_triggered,
     bool _activate_console,
-    boost::shared_ptr<LuaContext> _LUA,
+    std::shared_ptr<LuaContext> _LUA,
     Observer::Ptr _next = Observer::Ptr() 
 );
 

@@ -56,7 +56,7 @@ public:
      * @brief create the solver with the given parameters
      *
      */
-    virtual OutputHandler::SharedPtr create(const Json::Value& parameters, boost::shared_ptr<JsonChecker> jsonchecker) = 0;
+    virtual OutputHandler::SharedPtr create(const Json::Value& parameters, std::shared_ptr<JsonChecker> jsonchecker) = 0;
 
     virtual ~OutputHandlerFactory() { }
 };

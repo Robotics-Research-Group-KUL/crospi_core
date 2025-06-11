@@ -43,9 +43,9 @@ class etaslNode : public rclcpp::Node
         // void setJointValues(const std::vector<double>& jval, const std::vector<std::string>& jvalnames);
 
         Context::Ptr get_ctx();
-        boost::shared_ptr<solver> get_slv();
-        boost::shared_ptr<eTaSL_OutputHandler>  get_output_handler();
-        boost::shared_ptr<eTaSL_InputHandler> get_input_handler();
+        std::shared_ptr<solver> get_slv();
+        std::shared_ptr<eTaSL_OutputHandler>  get_output_handler();
+        std::shared_ptr<eTaSL_InputHandler> get_input_handler();
         int get_periodicity_param();
         VectorXd get_fpos_etasl();
         VectorXd get_jpos_etasl();
@@ -73,12 +73,12 @@ class etaslNode : public rclcpp::Node
         double time;
         sensor_msgs::msg::JointState joint_state_msg;
         Context::Ptr ctx;
-        boost::shared_ptr<solver> slv;
+        std::shared_ptr<solver> slv;
         SolverRegistry::Ptr solver_registry;
 
-        boost::shared_ptr<eTaSL_OutputHandler> oh;
-        boost::shared_ptr<eTaSL_InputHandler> ih;
-        boost::shared_ptr<std::ofstream > outpfile_ptr;
+        std::shared_ptr<eTaSL_OutputHandler> oh;
+        std::shared_ptr<eTaSL_InputHandler> ih;
+        std::shared_ptr<std::ofstream > outpfile_ptr;
 
         std::vector< std::string > jointnames;
         std::vector<std::string> jnames_in_expr;

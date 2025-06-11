@@ -42,7 +42,7 @@ etaslNode::etaslNode(const std::string & node_name, bool intra_process_comms = f
     rclcpp::shutdown(); 
     exit(1); //1 indicates It indicates abnormal termination of a program as a result a minor problem.
   };
-  jsonchecker = boost::make_shared<etasl::JsonChecker>(error_callback);
+  jsonchecker = std::make_shared<etasl::JsonChecker>(error_callback);
 
   srv_etasl_console_ = create_service<std_srvs::srv::Empty>("etasl_node/etasl_console", std::bind(&etaslNode::etasl_console, this, std::placeholders::_1, std::placeholders::_2));
 
@@ -107,7 +107,7 @@ etaslNode::etaslNode(const std::string & node_name, bool intra_process_comms = f
 
   reinitialize_data_structures();
 
-  board = boost::make_shared<etasl::BlackBoard>(1); //if -1, all parts of the local path in the URI are returned.  if >=0, then
+  board = std::make_shared<etasl::BlackBoard>(1); //if -1, all parts of the local path in the URI are returned.  if >=0, then
   // *                             the last path_components_used parts are retained.
   // etasl::BlackBoard board(1);
   std::cout << " loading blackboard" << std::endl;
@@ -932,7 +932,7 @@ void etaslNode::reinitialize_data_structures() {
     slv.reset();
     ctx->addType("robot");
     ctx->addType("feature");
-    LUA = boost::make_shared<LuaContext>();
+    LUA = std::make_shared<LuaContext>();
     // define a variable that only depends on time
     LUA->initContext(ctx);
 
@@ -974,8 +974,8 @@ void etaslNode::construct_node(std::atomic<bool>* stopFlagPtr_p){
         jointnames.push_back(jsonchecker->asString(n, ""));
     }
 
-    feedback_shared_ptr = boost::make_shared<etasl::FeedbackMsg>(jointnames.size());
-    setpoint_shared_ptr = boost::make_shared<etasl::SetpointMsg>(jointnames.size());
+    feedback_shared_ptr = std::make_shared<etasl::FeedbackMsg>(jointnames.size());
+    setpoint_shared_ptr = std::make_shared<etasl::SetpointMsg>(jointnames.size());
 
     feedback_copy_ptr = std::make_unique<etasl::FeedbackMsg>(jointnames.size());
     /****************************************************
@@ -988,7 +988,7 @@ void etaslNode::construct_node(std::atomic<bool>* stopFlagPtr_p){
     ***************************************************/    
     std::string driver_name = "simple_kinematic_simulation";
     Json::Value driver_params = param["simulation"];
-    driver_loader = boost::make_shared<pluginlib::ClassLoader<etasl::RobotDriver>>("etasl_ros2", "etasl::RobotDriver");
+    driver_loader = std::make_shared<pluginlib::ClassLoader<etasl::RobotDriver>>("etasl_ros2", "etasl::RobotDriver");
 
     if (!simulation) {
       // robotdriver = etasl::Registry<etasl::RobotDriverFactory>::create(param["simulation"],jsonchecker);
@@ -1378,7 +1378,7 @@ void etaslNode::construct_node(std::atomic<bool>* stopFlagPtr_p){
 
   // }
 
-  boost::shared_ptr<t_manager::thread_t> etaslNode::create_thread_str(std::atomic<bool> & stopFlag){
+  std::shared_ptr<t_manager::thread_t> etaslNode::create_thread_str(std::atomic<bool> & stopFlag){
     
     double periodicity;
     Json::Value param = board->getPath("/robot", false);
@@ -1389,7 +1389,7 @@ void etaslNode::construct_node(std::atomic<bool>* stopFlagPtr_p){
       periodicity = jsonchecker->asDouble(param, "robotdriver/periodicity");
     }
     
-    thread_str_driver = boost::make_shared<t_manager::thread_t>();
+    thread_str_driver = std::make_shared<t_manager::thread_t>();
 
     
       thread_str_driver->periodicity = std::chrono::nanoseconds(static_cast<long long>(periodicity * 1E9)); //*1E9 to convert seconds to nanoseconds
@@ -1425,7 +1425,7 @@ int main(int argc, char * argv[])
 
 
 
-    boost::shared_ptr<t_manager::thread_t> thread_str_driver = my_etasl_node->create_thread_str(stopFlag);
+    std::shared_ptr<t_manager::thread_t> thread_str_driver = my_etasl_node->create_thread_str(stopFlag);
 
     std::thread driver_thread(t_manager::do_thread_loop, thread_str_driver, std::ref(stopFlag));
     driver_thread.detach();// Avoids the main thread to block. See spin() + stopFlag mechanism below.

@@ -22,7 +22,7 @@ class Task : public AbstractTask {
 protected:
     Context::Ptr ctx;
     LuaContext LUA;
-    boost::shared_ptr<solver> slv;
+    std::shared_ptr<solver> slv;
     std::vector<std::string> jnames;
     std::vector<std::string> fnames;
     Eigen::VectorXd jpos;

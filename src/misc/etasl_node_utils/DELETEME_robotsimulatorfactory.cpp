@@ -32,7 +32,7 @@ public:
         return "robotsimulator";
     }
 
-    virtual Robot::SharedPtr create(const Json::Value& parameters, boost::shared_ptr<etasl::JsonChecker> jsonchecker) override
+    virtual Robot::SharedPtr create(const Json::Value& parameters, std::shared_ptr<etasl::JsonChecker> jsonchecker) override
     {
         double sample_time = jsonchecker->asDouble(parameters, "sample_time");
         std::string name = jsonchecker->asString(parameters, "name");

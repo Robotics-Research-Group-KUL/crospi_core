@@ -23,7 +23,7 @@ public:
 
     virtual const char* getName() = 0;
 
-    virtual Robot::SharedPtr create(const Json::Value& parameters,  boost::shared_ptr<etasl::JsonChecker> jsonchecker) = 0;
+    virtual Robot::SharedPtr create(const Json::Value& parameters,  std::shared_ptr<etasl::JsonChecker> jsonchecker) = 0;
 
     virtual ~RobotFactory() { }
 };

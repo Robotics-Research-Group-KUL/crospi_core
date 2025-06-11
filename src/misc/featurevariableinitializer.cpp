@@ -300,7 +300,7 @@ createFeatureVariableInitializer(solver::Ptr _slvr, Context::Ptr _ctx, Parameter
             weight_factor = it->second;
         }
     }
-    return boost::make_shared<FeatureVariableInitializerImpl>(
+    return std::make_shared<FeatureVariableInitializerImpl>(
             _slvr, 
             _ctx,
             full, 

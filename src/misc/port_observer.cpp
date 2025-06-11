@@ -17,11 +17,11 @@ class PortObserver: public Observer {
     const std::string event_postfix;
     bool  exit_when_triggered;
     bool activate_console;
-    boost::shared_ptr<LuaContext> LUA;
+    std::shared_ptr<LuaContext> LUA;
     std::string            ename;
  
 public:
-    typedef boost::shared_ptr< PortObserver > Ptr;
+    typedef boost::shared_ptr< PortObserver > Ptr; //Not compatible with std::shared_ptr, so we use boost::shared_ptr here
 
     PortObserver(
             Context::Ptr _ctx,
@@ -30,7 +30,7 @@ public:
             const std::string& _event_postfix,
             bool  _exit_when_triggered,
             bool _activate_console,
-            boost::shared_ptr<LuaContext> _LUA,
+            std::shared_ptr<LuaContext> _LUA,
             Observer::Ptr _next 
     ):   ctx(_ctx),
          outp(_outp),
@@ -88,7 +88,7 @@ Observer::Ptr create_port_observer(
     const std::string& _event_postfix,
     bool  _exit_when_triggered,
     bool _activate_console,
-    boost::shared_ptr<LuaContext> _LUA,
+    std::shared_ptr<LuaContext> _LUA,
     Observer::Ptr _next
 ) {
     

@@ -34,7 +34,7 @@ set(src_etasl_task_utils
     outputhandler.cpp #TODO: Remove after pasing cut_global method somewhere else
     # task.cpp
     blackboard.cpp
-    printobserver.cpp
+    # printobserver.cpp
     string_interpolate.cpp
     #solverregistry.cpp
     #solverfactory_qpoases.cpp

@@ -54,7 +54,7 @@ namespace etasl {
                                     FeedbackMsg* fb, 
                                     SetpointMsg* sp,
                                     const Json::Value& config,
-                                    boost::shared_ptr<etasl::JsonChecker> jsonchecker) = 0;
+                                    std::shared_ptr<etasl::JsonChecker> jsonchecker) = 0;
 
             /**
              * @brief Initialize the communication with the Robot

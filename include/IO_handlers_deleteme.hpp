@@ -108,14 +108,14 @@ class eTaSL_InputHandler
 class PrintObserver: public Observer {
 
     public:
-        typedef boost::shared_ptr< PrintObserver > Ptr;
+        typedef std::shared_ptr< PrintObserver > Ptr;
 
         /**
         * \param _slv  solver, where we will get joint and feature values 
         * \param _message  an additional message to pass.
         * \param _next next observer to check.  
         */
-        PrintObserver(boost::shared_ptr<solver> _slv, const std::string& _action_name, const std::string& _message, Observer::Ptr _next );
+        PrintObserver(std::shared_ptr<solver> _slv, const std::string& _action_name, const std::string& _message, Observer::Ptr _next );
 
         virtual void monitor_activated(const  MonitorScalar& mon) {
             if (mon.action_name.compare(action_name)==0) {
@@ -138,7 +138,7 @@ class PrintObserver: public Observer {
             // destruction when using base class pointers.
         }
     private:
-        boost::shared_ptr<solver> slv;
+        std::shared_ptr<solver> slv;
         Observer::Ptr next;
         Eigen::VectorXd jpos;
         Eigen::VectorXd fpos;

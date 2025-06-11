@@ -46,7 +46,7 @@ class KukaIiwaRobotDriver : public RobotDriver {
                         FeedbackMsg* fb, 
                         SetpointMsg* sp,
                         const Json::Value& config,
-                        boost::shared_ptr<etasl::JsonChecker> jsonchecker) override;
+                        std::shared_ptr<etasl::JsonChecker> jsonchecker) override;
         /**
          * will only return true if it has received values for all the joints named in jnames.
         */

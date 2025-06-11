@@ -23,7 +23,7 @@ namespace t_manager {
  * When all the registered activities reach the dead state, the loop is interrupted.
  * @param[in] thread thread data structure of type thread_t
  * */
-void do_thread_loop(boost::shared_ptr<thread_t> thread, volatile std::atomic<bool>& stopFlag){
+void do_thread_loop(std::shared_ptr<thread_t> thread, volatile std::atomic<bool>& stopFlag){
 
     std::chrono::steady_clock::time_point  start_time = std::chrono::steady_clock::now();
     std::chrono::steady_clock::time_point  end_time = std::chrono::steady_clock::now();
@@ -52,7 +52,7 @@ void do_thread_loop(boost::shared_ptr<thread_t> thread, volatile std::atomic<boo
     
 }
 
-void do_thread_loop_std_sleep_until(boost::shared_ptr<thread_t> thread, volatile std::atomic<bool>& stopFlag){
+void do_thread_loop_std_sleep_until(std::shared_ptr<thread_t> thread, volatile std::atomic<bool>& stopFlag){
 
    std::chrono::nanoseconds periodicity = thread->periodicity;
    std::chrono::steady_clock::time_point  end_time_sleep = std::chrono::steady_clock::now() + periodicity;
@@ -71,7 +71,7 @@ void do_thread_loop_std_sleep_until(boost::shared_ptr<thread_t> thread, volatile
    
 }
 
-void do_thread_loop_std_sleep_for(boost::shared_ptr<thread_t> thread, volatile std::atomic<bool>& stopFlag){
+void do_thread_loop_std_sleep_for(std::shared_ptr<thread_t> thread, volatile std::atomic<bool>& stopFlag){
 
    std::chrono::nanoseconds periodicity = thread->periodicity;
    std::chrono::steady_clock::time_point  time_start = std::chrono::steady_clock::now();
@@ -91,7 +91,7 @@ void do_thread_loop_std_sleep_for(boost::shared_ptr<thread_t> thread, volatile s
 
 }
 
-void do_thread_loop_posix_usleep(boost::shared_ptr<thread_t> thread, volatile std::atomic<bool>& stopFlag){
+void do_thread_loop_posix_usleep(std::shared_ptr<thread_t> thread, volatile std::atomic<bool>& stopFlag){
 
    std::chrono::nanoseconds periodicity = thread->periodicity;
    struct timespec start, end;
@@ -110,7 +110,7 @@ void do_thread_loop_posix_usleep(boost::shared_ptr<thread_t> thread, volatile st
     }
 }
 
-void do_thread_loop_posix_clock_nanosleep(boost::shared_ptr<thread_t> thread, volatile std::atomic<bool>& stopFlag){
+void do_thread_loop_posix_clock_nanosleep(std::shared_ptr<thread_t> thread, volatile std::atomic<bool>& stopFlag){
         
     struct timespec next_wakeup_time_;
     std::chrono::nanoseconds periodicity = thread->periodicity;

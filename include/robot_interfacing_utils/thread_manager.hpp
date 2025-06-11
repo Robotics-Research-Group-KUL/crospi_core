@@ -28,12 +28,12 @@ typedef struct thread_s {
  * When all the registered activities reach the dead state, the loop is interrupted.
  * @param[in] thread thread data structure of type thread_t
  * */
-void do_thread_loop(boost::shared_ptr<thread_t> thread, volatile std::atomic<bool>& stopFlag);
+void do_thread_loop(std::shared_ptr<thread_t> thread, volatile std::atomic<bool>& stopFlag);
 
-void do_thread_loop_std_sleep_until(boost::shared_ptr<thread_t> thread, volatile std::atomic<bool>& stopFlag);
-void do_thread_loop_std_sleep_for(boost::shared_ptr<thread_t> thread, volatile std::atomic<bool>& stopFlag);
-void do_thread_loop_posix_usleep(boost::shared_ptr<thread_t> thread, volatile std::atomic<bool>& stopFlag);
-void do_thread_loop_posix_clock_nanosleep(boost::shared_ptr<thread_t> thread, volatile std::atomic<bool>& stopFlag);
+void do_thread_loop_std_sleep_until(std::shared_ptr<thread_t> thread, volatile std::atomic<bool>& stopFlag);
+void do_thread_loop_std_sleep_for(std::shared_ptr<thread_t> thread, volatile std::atomic<bool>& stopFlag);
+void do_thread_loop_posix_usleep(std::shared_ptr<thread_t> thread, volatile std::atomic<bool>& stopFlag);
+void do_thread_loop_posix_clock_nanosleep(std::shared_ptr<thread_t> thread, volatile std::atomic<bool>& stopFlag);
 
 
 bool sleep_clock_nanosleep(const struct timespec& next_wakeup_time, int& err_int);

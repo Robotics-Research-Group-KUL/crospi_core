@@ -22,15 +22,15 @@
  IOHandlerManager::IOHandlerManager(
     rclcpp_lifecycle::LifecycleNode::SharedPtr _node, 
     const Json::Value& _param,
-    boost::shared_ptr<etasl::JsonChecker> _jsonchecker)
+    std::shared_ptr<etasl::JsonChecker> _jsonchecker)
      : node(_node)
      , parameters(_param)
      , jsonchecker(_jsonchecker)
  {
     std::cout << "IOHandlerManager constructor called" << std::endl;
     
-    inputhandler_loader = boost::make_shared<pluginlib::ClassLoader<etasl::InputHandler>>("etasl_ros2", "etasl::InputHandler");
-    outputhandler_loader = boost::make_shared<pluginlib::ClassLoader<etasl::OutputHandler>>("etasl_ros2", "etasl::OutputHandler");
+    inputhandler_loader = std::make_shared<pluginlib::ClassLoader<etasl::InputHandler>>("etasl_ros2", "etasl::InputHandler");
+    outputhandler_loader = std::make_shared<pluginlib::ClassLoader<etasl::OutputHandler>>("etasl_ros2", "etasl::OutputHandler");
     // std::cout << "param_root: " << parameters.toStyledString() << std::endl;
 
  }

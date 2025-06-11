@@ -79,7 +79,7 @@ public:
      * @brief create the solver with the given parameters
      *
      */
-    virtual RobotDriver::SharedPtr create(const Json::Value& parameters, boost::shared_ptr<JsonChecker> jsonchecker)
+    virtual RobotDriver::SharedPtr create(const Json::Value& parameters, std::shared_ptr<JsonChecker> jsonchecker)
     {
         std::string p_ip_address = parameters["ip_address"].asString();
         

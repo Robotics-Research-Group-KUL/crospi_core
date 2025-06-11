@@ -23,7 +23,7 @@ using namespace KDL;
  * This class has to have Observer as a base-class
  */
 class PrintObserver : public Observer {
-    boost::shared_ptr<solver> slv;
+    std::shared_ptr<solver> slv;
     Observer::Ptr next;
     Eigen::VectorXd jpos;
     Eigen::VectorXd fpos;
@@ -37,7 +37,7 @@ public:
      * \param _message  an additional message to pass.
      * \param _next next observer to check.
      */
-    PrintObserver(boost::shared_ptr<solver> _slv,
+    PrintObserver(std::shared_ptr<solver> _slv,
         const std::string& _action_name,
         const std::string& _message,
         Observer::Ptr _next);
@@ -49,7 +49,7 @@ public:
 
 typename Observer::Ptr
 create_PrintObserver(
-    typename boost::shared_ptr<solver> _slv,
+    typename std::shared_ptr<solver> _slv,
     const std::string& _action_name,
     const std::string& _message,
     typename Observer::Ptr _next);
