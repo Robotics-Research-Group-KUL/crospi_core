@@ -986,25 +986,30 @@ void etaslNode::construct_node(std::atomic<bool>* stopFlagPtr_p){
     /****************************************************
     * Adding Robot Driver
     ***************************************************/    
-    std::string driver_name = "simple_kinematic_simulation";
-    Json::Value driver_params = param["simulation"];
-    driver_loader = std::make_shared<pluginlib::ClassLoader<etasl::RobotDriver>>("etasl_ros2", "etasl::RobotDriver");
-
-    if (!simulation) {
-      // robotdriver = etasl::Registry<etasl::RobotDriverFactory>::create(param["simulation"],jsonchecker);
-      for (const auto& key : param["robotdriver"].getMemberNames()) {
-        if (key.rfind("is-", 0) == 0) { // Check if key starts with "is-"
-            driver_name = key.substr(3);
-        }
+    std::string driver_name = "";
+    std::string robotplugintype = "";
+    
+    if (simulation){
+      driver_loader = std::make_shared<pluginlib::ClassLoader<etasl::RobotDriver>>("etasl_ros2", "etasl::RobotSimulator"); //This works because etasl::RobotSimulator inherits from etasl::RobotDriver
+      robotplugintype = "robotsimulator";
+    }
+    else{
+      driver_loader = std::make_shared<pluginlib::ClassLoader<etasl::RobotDriver>>("etasl_ros2", "etasl::RobotDriver");
+      robotplugintype = "robotdriver";
+    }
+    
+    Json::Value driver_params = param[robotplugintype];
+    // robotdriver = etasl::Registry<etasl::RobotDriverFactory>::create(param["robotsimulator"],jsonchecker);
+    for (const auto& key : driver_params.getMemberNames()) {
+      if (key.rfind("is-", 0) == 0) { // Check if key starts with "is-"
+          driver_name = key.substr(3);
       }
-      
-      if(driver_name == "simple_kinematic_simulation"){
-        std::string message = "Could not find any is- keyword in the robodriver field of the json configuration file. It must specify the type, e.g. is-ur10_e_driver_etasl = true";
-        RCUTILS_LOG_ERROR_NAMED(get_name(), message.c_str());
-        auto transition = this->shutdown(); //calls on_shutdown() hook.
-        return;
-      }
-      driver_params = param["robotdriver"];
+    }
+    
+    if(driver_name == ""){
+      RCUTILS_LOG_ERROR_NAMED(get_name(), "Could not find any is- keyword in the %s field of the json configuration file. It must specify the type, e.g. is-ur10_e_driver_etasl = true or is-simple_kinematic_simulator = true", robotplugintype.c_str());
+      auto transition = this->shutdown(); //calls on_shutdown() hook.
+      return;
     }
 
     
@@ -1383,7 +1388,7 @@ void etaslNode::construct_node(std::atomic<bool>* stopFlagPtr_p){
     double periodicity;
     Json::Value param = board->getPath("/robot", false);
     if(simulation){
-      periodicity = jsonchecker->asDouble(param, "simulation/periodicity");
+      periodicity = jsonchecker->asDouble(param, "robotsimulator/periodicity");
     }
     else{
       periodicity = jsonchecker->asDouble(param, "robotdriver/periodicity");
@@ -1396,7 +1401,6 @@ void etaslNode::construct_node(std::atomic<bool>* stopFlagPtr_p){
       thread_str_driver->update_hook = std::bind(&etasl::RobotDriver::update, robotdriver, std::ref(stopFlag));
       thread_str_driver->finalize_hook = std::bind(&etasl::RobotDriver::finalize, robotdriver);
     
-
 
     return thread_str_driver;
 
