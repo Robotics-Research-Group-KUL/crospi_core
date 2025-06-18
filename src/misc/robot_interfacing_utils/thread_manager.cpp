@@ -169,6 +169,10 @@ void setScheduling(std::thread &th, int sched_policy, int priority) {
     if(pthread_setschedparam(th.native_handle(), sched_policy, &sch_params)) {
         std::cerr << "Failed to set Thread scheduling : " << std::strerror(errno) << std::endl;
     }
+    else{
+        std::cout << "########################################################### " << std::endl;
+        std::cout << "The priority of the thread was changed succesfully to " << priority << std::endl;
+    }
 }
 
 bool operator <(const timespec& lhs, const timespec& rhs)
