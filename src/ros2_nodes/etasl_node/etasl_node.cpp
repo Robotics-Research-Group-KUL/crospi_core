@@ -641,6 +641,12 @@ void etaslNode::configure_etasl(){
 
 void etaslNode::update()
 {       
+
+        // if(stopFlagPtr->load()) //This checks if the stopFlag has been triggered, e.g. by an error in the robot driver
+        // {
+        //   rclcpp::shutdown();
+        //   return;
+        // }
         // gets inputs, this can includes joint values in jpos,
         // which will be overwritten if used.
         io_handler_manager->update_input_handlers(time, jnames_in_expr, jpos_ros, fnames, fpos_etasl);
@@ -817,6 +823,14 @@ void etaslNode::update_robot_status(){
 
     feedback_shared_ptr->mtx.unlock();
     setpoint_shared_ptr->mtx.unlock();
+
+
+    // std::cout << jpos_etasl[6] << std::endl;
+
+    // for (unsigned int i=0; i<jpos_etasl.size(); ++i) {
+    //   std::cout << jpos_etasl[i] << " , ";
+    // }
+    // std::endl;
 
         // Write in the input handler the joint velocities
         if (feedback_report["joint_vel"]){
@@ -1432,7 +1446,7 @@ int main(int argc, char * argv[])
     std::shared_ptr<t_manager::thread_t> thread_str_driver = my_etasl_node->create_thread_str(stopFlag);
 
     std::thread driver_thread(t_manager::do_thread_loop, thread_str_driver, std::ref(stopFlag));
-    t_manager::setScheduling(driver_thread, SCHED_FIFO, 90);
+    // t_manager::setScheduling(driver_thread, SCHED_FIFO, 90);
     driver_thread.detach();// Avoids the main thread to block. See spin() + stopFlag mechanism below.
 
 
@@ -1444,7 +1458,7 @@ int main(int argc, char * argv[])
 
     stopFlag.store(true); //Stops execution of driver_thread after executor is interrupted with ctr+c signal
 
-    std::this_thread::sleep_for(std::chrono::milliseconds(200)); //Needed for the robotdriver thread to stop properly before calling shutdown. Otherwise segmentation fault is observed. This is because shutdown deletes something from the robotdriver as now ros2 pluginlib is being used.
+    std::this_thread::sleep_for(std::chrono::milliseconds(1000)); //Needed for the robotdriver thread to stop properly before calling shutdown. Otherwise segmentation fault is observed. This is because shutdown deletes something from the robotdriver as now ros2 pluginlib is being used.
     
     executor.remove_node(my_etasl_node->get_node_base_interface());
 
