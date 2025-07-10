@@ -133,7 +133,15 @@ etaslNode::etaslNode(const std::string & node_name, bool intra_process_comms = f
   periodicity_ms = 1000*jsonchecker->asDouble(etasl_param, "general/sample_time"); //Expressed in milliseconds
 
   // TODO: change the quality of service to transient local and reliable:
-  events_pub_ = this->create_publisher<std_msgs::msg::String>(jsonchecker->asString(etasl_param, "general/event_topic"), 10); 
+  rclcpp::QoS qos_profile( rclcpp::QoSInitialization::from_rmw(rmw_qos_profile_default));
+
+  qos_profile
+    .reliability(rmw_qos_reliability_policy_t::RMW_QOS_POLICY_RELIABILITY_RELIABLE) //Uses TCP for reliability instead of UDP
+    .durability(rmw_qos_durability_policy_t::RMW_QOS_POLICY_DURABILITY_VOLATILE)
+    .history(rmw_qos_history_policy_t::RMW_QOS_POLICY_HISTORY_KEEP_LAST) //Keeps the last msgs received in case buffer is fulll
+    .keep_last(20); //Buffer size
+
+  events_pub_ = this->create_publisher<std_msgs::msg::String>(jsonchecker->asString(etasl_param, "general/event_topic"), qos_profile); 
 
   std::string message = "\n+++++++++++++++++++++++++++++++++++++++++++++++++\nThe following configuration file was loaded correctly:" + file_path + "\n+++++++++++++++++++++++++++++++++++++++++++++++++";
   RCUTILS_LOG_INFO_NAMED(get_name(), message.c_str());
@@ -323,6 +331,10 @@ bool etaslNode::readTaskParameters(const std::shared_ptr<etasl_interfaces::srv::
 	try{
 		// Read eTaSL specification:
     std::string param_request = "_JSON_TASK_SPECIFICATION_PARAMETERS_STRING='" + request->str + "'"; 
+    
+    std::cout << "The received parameters are:" << std::endl;
+    std::cout << request->str << std::endl;
+
 		int retval = LUA->executeString(param_request);
 		// int retval = LUA->executeFile("/workspaces/colcon_ws/install/etasl_ros2/share/etasl_ros2/etasl/move_cartesianspace.lua");
 		if (retval !=0) {
@@ -1101,7 +1113,7 @@ void etaslNode::construct_node(std::atomic<bool>* stopFlagPtr_p){
         RCUTILS_LOG_ERROR_NAMED(get_name(), message.c_str());
         auto transition = this->shutdown(); //calls on_shutdown() hook.
       }
-
+      
       jpos_init_vec.resize(feedback_shared_ptr->joint.pos.data.size(),0.0);
       for(unsigned int i = 0; i < feedback_shared_ptr->joint.pos.data.size(); ++i){
         jpos_init_vec[i] = feedback_shared_ptr->joint.pos.data[i];
@@ -1174,7 +1186,24 @@ void etaslNode::construct_node(std::atomic<bool>* stopFlagPtr_p){
 
     }
     else{
-      jpos_init = jpos_etasl;
+      // jpos_init = jpos_etasl;
+
+      std::vector<double> jpos_init_vec;
+
+      feedback_shared_ptr->mtx.lock();
+      jpos_init_vec.resize(feedback_shared_ptr->joint.pos.data.size(),0.0);
+      for(unsigned int i = 0; i < feedback_shared_ptr->joint.pos.data.size(); ++i){
+        jpos_init_vec[i] = feedback_shared_ptr->joint.pos.data[i];
+      }
+      feedback_shared_ptr->mtx.unlock();
+
+      // jpos_init = VectorXd::Zero(jpos_init_vec.size());
+      assert(jpos_init_vec.size() == jpos_init.size());
+
+      for (unsigned int i = 0; i < jpos_init_vec.size(); ++i) {
+        jpos_init[i] = jpos_init_vec[i];
+      }
+
     }
 
   
