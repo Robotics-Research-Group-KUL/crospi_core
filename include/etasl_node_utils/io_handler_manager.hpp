@@ -40,7 +40,7 @@ public:
 
 private:
     rclcpp_lifecycle::LifecycleNode::SharedPtr node;
-    const Json::Value& parameters;
+    const Json::Value parameters;
     std::shared_ptr<etasl::JsonChecker> jsonchecker;
 
     std::vector<etasl::OutputHandler::SharedPtr> outputhandlers;
@@ -55,7 +55,7 @@ private:
 public:
     IOHandlerManager(
         rclcpp_lifecycle::LifecycleNode::SharedPtr _node, 
-        const Json::Value& _param,
+        const Json::Value _param,
         std::shared_ptr<etasl::JsonChecker> _jsonchecker);
 
     void construct_input_handlers();

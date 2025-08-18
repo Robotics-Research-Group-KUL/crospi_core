@@ -63,6 +63,10 @@ add_subdirectory(src/misc)
 
 # add_subdirectory(src/ros2_nodes/simple_etasl_node)
 add_subdirectory(src/ros2_nodes/etasl_node)
+add_subdirectory(src/ros2_nodes/shared_memory_test_mutex)
+add_subdirectory(src/ros2_nodes/shared_memory_test)
+add_subdirectory(src/ros2_nodes/shared_memory_test_boost)
+# add_subdirectory(src/ros2_nodes/shared_memory_test_new_drivers)
 # add_subdirectory(src/ros2_nodes/test_publisher_node)
 # add_subdirectory(src/ros2_nodes/erwin_node)
 

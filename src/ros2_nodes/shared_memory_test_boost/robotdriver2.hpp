@@ -5,8 +5,8 @@
 // #include <boost/chrono.hpp>
 #include <boost/shared_ptr.hpp>
 
-#include "feedback_struct.hpp"
-// #include "robot_data_structures.hpp"
+// #include "feedback_struct.hpp"
+#include "robot_data_structures.hpp"
 #include <jsoncpp/json/json.h>
 #include "etasl_task_utils/json_checker.hpp"
 
@@ -18,17 +18,17 @@ namespace etasl {
     
     class RobotDriver {
         protected:
-        /**
-         * @brief Pointer to FeedbackMsg structure that stores feedback message
-         * 
-         */
-        FeedbackMsg* feedback_ptr;
+        // /**
+        //  * @brief Pointer to FeedbackMsg structure that stores feedback message
+        //  * 
+        //  */
+        // FeedbackMsg* feedback_ptr;
 
-        /**
-         * @brief Pointer to SetpointMsg structure that stores feedback message
-         * 
-         */
-        SetpointMsg* setpoint_ptr;
+        // /**
+        //  * @brief Pointer to SetpointMsg structure that stores feedback message
+        //  * 
+        //  */
+        // SetpointMsg* setpoint_ptr;
 
         /**
          * @brief name of the robot
@@ -59,8 +59,6 @@ namespace etasl {
              * @return void
              */
             virtual void construct(std::string robot_name, 
-                                    FeedbackMsg* fb, 
-                                    SetpointMsg* sp,
                                     const Json::Value& config,
                                     std::shared_ptr<etasl::JsonChecker> jsonchecker) = 0;
 

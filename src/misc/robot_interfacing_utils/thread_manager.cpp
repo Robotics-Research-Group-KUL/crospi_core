@@ -48,7 +48,7 @@ void do_thread_loop(std::shared_ptr<thread_t> thread, volatile std::atomic<bool>
 
 
     if ( thread->finalize_hook != nullptr)   {thread->finalize_hook();}
-    if(stopFlag.load())    {std::cout << "stopFlag=true" << std::endl;}
+    // if(stopFlag.load(std::memory_order_relaxed))    {std::cout << "stopFlag=true" << std::endl;}
     
 }
 
@@ -57,7 +57,7 @@ void do_thread_loop_std_sleep_until(std::shared_ptr<thread_t> thread, volatile s
    std::chrono::nanoseconds periodicity = thread->periodicity;
    std::chrono::steady_clock::time_point  end_time_sleep = std::chrono::steady_clock::now() + periodicity;
 
-   while (!stopFlag.load()){
+   while (!stopFlag.load(std::memory_order_relaxed)){
        thread->update_hook(); //Function that I want to execute periodically
        // Using std library to sleep
        std::this_thread::sleep_until(end_time_sleep);
@@ -78,7 +78,7 @@ void do_thread_loop_std_sleep_for(std::shared_ptr<thread_t> thread, volatile std
    std::chrono::steady_clock::time_point  time_end = std::chrono::steady_clock::now();
    std::chrono::duration<double>  elapsed_time = time_end - time_start;
 
-   while (!stopFlag.load()){
+   while (!stopFlag.load(std::memory_order_relaxed)){
        time_start = std::chrono::steady_clock::now();
        thread->update_hook(); //Function that I want to execute periodically
        time_end = std::chrono::steady_clock::now();
@@ -98,7 +98,7 @@ void do_thread_loop_posix_usleep(std::shared_ptr<thread_t> thread, volatile std:
    uint64_t elapsed_time_us;
    useconds_t periodicity_us = periodicity.count()/1000.0;
 
-   while (!stopFlag.load()){
+   while (!stopFlag.load(std::memory_order_relaxed)){
        clock_gettime(CLOCK_MONOTONIC_RAW, &start);
        thread->update_hook(); //Function that I want to execute periodically
        clock_gettime(CLOCK_MONOTONIC_RAW, &end);
@@ -118,7 +118,7 @@ void do_thread_loop_posix_clock_nanosleep(std::shared_ptr<thread_t> thread, vola
     int err_int = 0;
     clock_gettime(CLOCK_MONOTONIC, &next_wakeup_time_);
     
-    while (!stopFlag.load()){
+    while (!stopFlag.load(std::memory_order_relaxed)){
         thread->update_hook();
         clock_gettime(CLOCK_MONOTONIC, &next_wakeup_time_);//Remove to compensate for accumulated extra slept time, but we can get times between cyles 
         //... with errors in the order of magnitude of tenths of a millisecond below the specified cycle time. With it we always get erros above the specified cycle time that will accumulate over time. 

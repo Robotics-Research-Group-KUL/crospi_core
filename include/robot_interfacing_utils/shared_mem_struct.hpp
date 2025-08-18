@@ -3,7 +3,10 @@
 // #include <std>
 
 #include <vector>
+#include <array>
 #include <mutex>
+#include <chrono>
+
 
 #include "etasl_task_utils/flowstatus.hpp"
 
@@ -22,7 +25,7 @@ namespace etasl {
 
     struct JointData { 
         bool is_available = false; //To indicate if the robot has that type of data available
-        std::vector<double> data; // std::vector of joint values
+        std::vector<float> data; // std::vector of joint values
 
         JointData(int num_of_joints){
             data.resize(num_of_joints,0.0);
@@ -31,19 +34,19 @@ namespace etasl {
 
     struct PositionField { 
         bool is_available = false; //To indicate if the robot has that type of data available
-        double x;
-        double y;
-        double z;
+        float x;
+        float y;
+        float z;
         PositionField(): x(0.0), y(0.0), z(0.0)
         {}
     }; 
 
     struct QuaternionField { 
         bool is_available = false; //To indicate if the robot has that type of data available
-        double qx;
-        double qy;
-        double qz;
-        double qw;
+        float qx;
+        float qy;
+        float qz;
+        float qw;
         QuaternionField(): qx(0.0), qy(0.0), qz(0.0), qw(1.0)
         {}
     }; 
@@ -54,17 +57,17 @@ namespace etasl {
     struct ScrewField { 
         bool is_available = false; //To indicate if the robot has that type of data available
         struct ForceField { 
-            double x;
-            double y;
-            double z;
+            float x;
+            float y;
+            float z;
             ForceField(): x(0.0), y(0.0), z(0.0)
             {}
         } linear; 
     
         struct TorqueField { 
-            double x;
-            double y;
-            double z;
+            float x;
+            float y;
+            float z;
             TorqueField(): x(0.0), y(0.0), z(0.0)
             {}
         } angular; 
@@ -143,22 +146,54 @@ namespace etasl {
     /** @struct SetpointMsg
      *  @brief This structure defines the supported setpoint data types coming from a robot...
      */
+    // struct SetpointMsg {
+
+    //     struct Setpoint_s { 
+    //         FlowStatus fs;
+    //         std::vector<float> data; // std::vector of joint values
+            
+    //         Setpoint_s(int num_of_joints): fs(NoData){
+    //             data.resize(num_of_joints,0.0);
+    //         }
+    //     } velocity; 
+        
+    //     std::mutex mtx; // Mutex to protect the data
+        
+    //     std::chrono::steady_clock::time_point timestamp;
+    //     SetpointMsg(int num_of_dofs): velocity(num_of_dofs)
+    //     {}
+    // };
+
+    struct Setpoint_s { 
+        FlowStatus fs;
+        std::array<float, 7 > data; // std::vector of joint values
+        
+        Setpoint_s(): fs(NoData){
+            data.fill(0.0f);
+        }
+    };
+
+
     struct SetpointMsg {
 
-        struct Setpoint_s { 
-            FlowStatus fs;
-            std::vector<double> data; // std::vector of joint values
-
-            Setpoint_s(int num_of_joints): fs(NoData){
-                data.resize(num_of_joints,0.0);
-            }
-        } velocity; 
-
-        std::mutex mtx; // Mutex to protect the data
-
-        SetpointMsg(int num_of_dofs): velocity(num_of_dofs)
+        struct Setpoint_s velocity; 
+        struct Setpoint_s load1; 
+        struct Setpoint_s load2; 
+        struct Setpoint_s load3; 
+        struct Setpoint_s load4; 
+        struct Setpoint_s load5; 
+        struct Setpoint_s load6; 
+        struct Setpoint_s load7; 
+        struct Setpoint_s load8; 
+        struct Setpoint_s load9; 
+        struct Setpoint_s load10; 
+        
+        
+        std::chrono::steady_clock::time_point timestamp;
+        SetpointMsg(): velocity(), load1(), load2(), load3(), load4(), load5(), load6(), load7(), load8(), load9(), load10()
         {}
     };
+    
     
 
 } // namespace etasl

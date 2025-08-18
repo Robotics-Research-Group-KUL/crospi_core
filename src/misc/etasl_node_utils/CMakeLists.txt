@@ -34,6 +34,7 @@ set( src_etasl_node_utils
     # rostask.cpp
 
     io_handler_manager.cpp
+    robot_driver_manager.cpp
 
     # topicoutputhandler.cpp
     # jointstateoutputhandler.cpp

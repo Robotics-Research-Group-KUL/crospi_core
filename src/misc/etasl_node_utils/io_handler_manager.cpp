@@ -21,7 +21,7 @@
  
  IOHandlerManager::IOHandlerManager(
     rclcpp_lifecycle::LifecycleNode::SharedPtr _node, 
-    const Json::Value& _param,
+    const Json::Value _param,
     std::shared_ptr<etasl::JsonChecker> _jsonchecker)
      : node(_node)
      , parameters(_param)
