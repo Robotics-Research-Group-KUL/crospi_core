@@ -51,7 +51,8 @@
 
 
 #include "etasl_node_utils/io_handler_manager.hpp"
-#include "etasl_node_utils/robot_driver_manager.hpp"
+// #include "etasl_node_utils/robot_driver_manager.hpp"
+#include "etasl_node_utils/robot_driver_manager_lockfree.hpp"
 
 
 #include "robot_interfacing_utils/feedback_struct.hpp"
@@ -126,7 +127,7 @@ class etaslNode : public rclcpp_lifecycle::LifecycleNode
         etasl::IOHandlerManager::SharedPtr               io_handler_manager;
 
 
-        etasl::RobotDriverManager::SharedPtr robotdriver_manager;
+        etasl::RobotDriverManagerLockFree::SharedPtr robotdriver_manager;
 
         std::vector< std::string > jointnames;
         std::vector<std::string> jnames_in_expr;
@@ -150,8 +151,6 @@ class etaslNode : public rclcpp_lifecycle::LifecycleNode
         VectorXd jpos_init;
 
 
-
-          
         std::string outpfilename;
         std::string fname;
 

@@ -22,7 +22,7 @@ namespace etasl {
 
     struct JointData { 
         bool is_available = false; //To indicate if the robot has that type of data available
-        std::vector<double> data; // std::vector of joint values
+        std::vector<float> data; // std::vector of joint values
 
         JointData(int num_of_joints){
             data.resize(num_of_joints,0.0);
@@ -31,19 +31,19 @@ namespace etasl {
 
     struct PositionField { 
         bool is_available = false; //To indicate if the robot has that type of data available
-        double x;
-        double y;
-        double z;
+        float x;
+        float y;
+        float z;
         PositionField(): x(0.0), y(0.0), z(0.0)
         {}
     }; 
 
     struct QuaternionField { 
         bool is_available = false; //To indicate if the robot has that type of data available
-        double qx;
-        double qy;
-        double qz;
-        double qw;
+        float qx;
+        float qy;
+        float qz;
+        float qw;
         QuaternionField(): qx(0.0), qy(0.0), qz(0.0), qw(1.0)
         {}
     }; 
@@ -54,17 +54,17 @@ namespace etasl {
     struct ScrewField { 
         bool is_available = false; //To indicate if the robot has that type of data available
         struct ForceField { 
-            double x;
-            double y;
-            double z;
+            float x;
+            float y;
+            float z;
             ForceField(): x(0.0), y(0.0), z(0.0)
             {}
         } linear; 
     
         struct TorqueField { 
-            double x;
-            double y;
-            double z;
+            float x;
+            float y;
+            float z;
             TorqueField(): x(0.0), y(0.0), z(0.0)
             {}
         } angular; 
@@ -147,7 +147,7 @@ namespace etasl {
 
         struct Setpoint_s { 
             FlowStatus fs;
-            std::vector<double> data; // std::vector of joint values
+            std::vector<float> data; // std::vector of joint values
 
             Setpoint_s(int num_of_joints): fs(NoData){
                 data.resize(num_of_joints,0.0);

@@ -30,7 +30,7 @@ namespace robotdrivers {
 
 
     template<std::size_t NJOINTS>
-    struct JointData { 
+    struct FixedJointDataField { 
         // bool is_available = false; //To indicate if the robot has that type of data available
         std::array<float, NJOINTS> data; // std::vector of joint values
 
@@ -38,14 +38,23 @@ namespace robotdrivers {
         SteadyTimePoint timestamp;
         #endif
 
-        JointData() {
+        FixedJointDataField() {
             data.fill(0.0f);
             
             #ifdef INCLUDE_TIMESTAMP_IN_DATA_STRUCTURE
             timestamp = std::chrono::steady_clock::now();
             #endif
         }
-    }; 
+    };
+    
+    // struct VariableJointDataField { 
+
+    //     std::vector<double> data; // std::vector of joint values
+
+    //     VariableJointDataField(int num_of_joints){
+    //         data.resize(num_of_joints,0.0);
+    //     }
+    // }; 
 
     struct Vector3Field { 
         float x;
@@ -63,7 +72,7 @@ namespace robotdrivers {
         }
     }; 
 
-    struct QuaternionField { 
+    struct QuaternionField2 { 
         float qx;
         float qy;
         float qz;
@@ -71,7 +80,7 @@ namespace robotdrivers {
         #ifdef INCLUDE_TIMESTAMP_IN_DATA_STRUCTURE
         SteadyTimePoint timestamp;
         #endif
-        QuaternionField(): qx(0.0), qy(0.0), qz(0.0), qw(1.0)
+        QuaternionField2(): qx(0.0), qy(0.0), qz(0.0), qw(1.0)
         {
             #ifdef INCLUDE_TIMESTAMP_IN_DATA_STRUCTURE
             SteadyTimePoint timestamp;
@@ -79,11 +88,11 @@ namespace robotdrivers {
         }
     }; 
 
-    struct ScrewField { 
+    struct ScrewField2 { 
         struct Vector3Field linear; 
         struct Vector3Field angular; 
 
-        ScrewField(): linear(), angular()
+        ScrewField2(): linear(), angular()
         {}
     }; 
 
@@ -98,10 +107,10 @@ namespace robotdrivers {
     // struct FeedbackMsg {
 
     //     struct JointFeedback { 
-    //         JointData<NJOINTS>          pos;
-    //         JointData<NJOINTS>          vel;
-    //         JointData<NJOINTS>          torque;
-    //         JointData<NJOINTS>          current;
+    //         FixedJointDataField<NJOINTS>          pos;
+    //         FixedJointDataField<NJOINTS>          vel;
+    //         FixedJointDataField<NJOINTS>          torque;
+    //         FixedJointDataField<NJOINTS>          current;
 
     //         JointFeedback(): pos(), vel(), torque(), current()
     //         {}
@@ -110,9 +119,9 @@ namespace robotdrivers {
 
     //     struct CartesianFeedback { 
     //         PositionField       pos;
-    //         QuaternionField     quat;
-    //         ScrewField          twist;
-    //         ScrewField          wrench;
+    //         QuaternionField2     quat;
+    //         ScrewField2          twist;
+    //         ScrewField2          wrench;
 
     //         CartesianFeedback(): pos(), quat(), twist(), wrench()
     //         {}
@@ -121,8 +130,8 @@ namespace robotdrivers {
 
     //     struct BaseFeedback { 
     //         PositionField       pos;
-    //         QuaternionField     quat;
-    //         ScrewField          twist;
+    //         QuaternionField2     quat;
+    //         ScrewField2          twist;
 
     //         BaseFeedback(): pos(), quat(), twist()
     //         {}

@@ -727,7 +727,7 @@ void etaslNode::construct_node(std::atomic<bool>* stopFlagPtr_p){
     /****************************************************
     * Adding Robot Driver
     ***************************************************/  
-    robotdriver_manager = std::make_shared<etasl::RobotDriverManager>(shared_from_this(), param_root, jsonchecker, simulation, stopFlagPtr);
+    robotdriver_manager = std::make_shared<etasl::RobotDriverManagerLockFree>(shared_from_this(), param_root, jsonchecker, simulation, stopFlagPtr);
     robotdriver_manager->construct_driver(jointnames.size());  //constructs and initializes communication with the robot
 
     /****************************************************
@@ -795,7 +795,7 @@ void etaslNode::construct_node(std::atomic<bool>* stopFlagPtr_p){
     else{
       // jpos_init = jpos_etasl;
 
-      std::vector<double> jpos_init_vec = robotdriver_manager->get_position_feedback();
+      std::vector<float> jpos_init_vec = robotdriver_manager->get_position_feedback();
 
       // jpos_init = VectorXd::Zero(jpos_init_vec.size());
       assert(jpos_init_vec.size() == jpos_init.size());

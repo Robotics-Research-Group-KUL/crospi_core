@@ -2,6 +2,8 @@
 
 #include <memory>
 #include <atomic>
+#include <vector>
+#include <array>
 // #include <boost/chrono.hpp>
 #include <boost/shared_ptr.hpp>
 
@@ -10,11 +12,15 @@
 #include <jsoncpp/json/json.h>
 #include "etasl_task_utils/json_checker.hpp"
 
+#include <boost/lockfree/spsc_value.hpp>
+
+
 
 // #include <expressiongraph/context.hpp>
 
 
 namespace etasl {
+    
     
     class RobotDriver {
         protected:
@@ -114,9 +120,11 @@ namespace etasl {
 
 
             // virtual void* getSetpointJointPositionTripleBufferPtr() { return nullptr; }
-            virtual void* getSetpointJointVelocityBufferPtr() { return nullptr; }
+            // virtual void* getSetpointJointVelocityBufferPtr() { return nullptr; }
+            // virtual void* getJointPositionBufferPtr() { return nullptr; }
 
-            virtual void* getJointPositionBufferPtr() { return nullptr; }
+            virtual void writeSetpointJointVelocity(const std::vector<float>& sp ) noexcept = 0;
+            virtual bool readFeedbackJointPosition(std::vector<float>& fb ) noexcept = 0;
 
             /**
              * @brief Get the name of the robot
