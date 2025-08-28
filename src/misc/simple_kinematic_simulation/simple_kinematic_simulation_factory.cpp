@@ -3,7 +3,8 @@
 #include "robot_interfacing_utils/robotdriverfactory.hpp"
 #include "simple_kinematic_simulation/simple_kinematic_simulation.hpp"
 #include "etasl_task_utils/registry.hpp"
-#include "robot_interfacing_utils/feedback_struct.hpp"
+// #include "robot_interfacing_utils/feedback_struct.hpp"
+#include "robot_interfacing_utils/robot_data_structures.hpp"
 #include <jsoncpp/json/json.h>
 
 namespace etasl {

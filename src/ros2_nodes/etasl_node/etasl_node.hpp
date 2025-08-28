@@ -55,7 +55,8 @@
 #include "etasl_node_utils/robot_driver_manager_lockfree.hpp"
 
 
-#include "robot_interfacing_utils/feedback_struct.hpp"
+// #include "robot_interfacing_utils/feedback_struct.hpp"
+#include "robot_interfacing_utils/robot_data_structures.hpp"
 
 // #include "robot_interfacing_utils/thread_manager.hpp"
 
@@ -138,7 +139,7 @@ class etaslNode : public rclcpp_lifecycle::LifecycleNode
 
         std::shared_ptr<etasl::JsonChecker> jsonchecker;
         
-        std::shared_ptr<etasl::FeedbackMsg> feedback_copy_ptr;
+        std::shared_ptr<robotdrivers::FeedbackMsg> feedback_copy_ptr;
 
 
         VectorXd fpos_etasl;

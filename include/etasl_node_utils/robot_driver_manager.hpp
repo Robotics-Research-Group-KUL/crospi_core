@@ -5,7 +5,8 @@
 // #include <boost/chrono.hpp>
 #include <boost/shared_ptr.hpp>
 
-#include "robot_interfacing_utils/feedback_struct.hpp"
+// #include "robot_interfacing_utils/feedback_struct.hpp"
+#include "robot_interfacing_utils/robot_data_structures.hpp"
 // #include "robot_data_structures.hpp"
 #include <jsoncpp/json/json.h>
 #include "etasl_task_utils/json_checker.hpp"
@@ -46,8 +47,8 @@ namespace etasl {
         std::shared_ptr<etasl::JsonChecker> jsonchecker_;
         std::atomic<bool>* stopFlagPtr_;
 
-        std::shared_ptr<etasl::FeedbackMsg> feedback_shared_ptr;
-        std::shared_ptr<etasl::SetpointMsg> setpoint_shared_ptr;
+        std::shared_ptr<robotdrivers::FeedbackMsg> feedback_shared_ptr;
+        std::shared_ptr<robotdrivers::SetpointMsg> setpoint_shared_ptr;
 
         std::map<std::string, bool> feedback_report;
 
@@ -113,11 +114,11 @@ namespace etasl {
              *          in the initialization phase of eTaSL (e.g. specifying the initial value of the
              *           feature variables)
              */
-            [[nodiscard]] bool initialize(std::shared_ptr<etasl::FeedbackMsg> feedback_copy_ptr, Context::Ptr ctx);
+            [[nodiscard]] bool initialize(std::shared_ptr<robotdrivers::FeedbackMsg> feedback_copy_ptr, Context::Ptr ctx);
 
             
 
-            void update( std::shared_ptr<etasl::FeedbackMsg> feedback_copy_ptr, const Eigen::VectorXd& jvel_etasl);
+            void update( std::shared_ptr<robotdrivers::FeedbackMsg> feedback_copy_ptr, const Eigen::VectorXd& jvel_etasl);
 
 
             /**

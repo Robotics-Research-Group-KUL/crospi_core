@@ -37,8 +37,10 @@ namespace etasl {
 
     void RobotDriverManagerLockFree::construct_driver(int num_joints){
 
-        feedback_shared_ptr = std::make_shared<etasl::FeedbackMsg>(num_joints);
-        setpoint_shared_ptr = std::make_shared<etasl::SetpointMsg>(num_joints);
+        feedback_shared_ptr = std::make_shared<robotdrivers::FeedbackMsg>(num_joints);
+        setpoint_shared_ptr = std::make_shared<robotdrivers::SetpointMsg>(num_joints);
+
+        jvel_etasl_copy.data.resize(num_joints,0.0);
 
         std::string driver_name = "";
         std::string robotplugintype = "";
@@ -84,26 +86,39 @@ namespace etasl {
     }
 
 
-    bool RobotDriverManagerLockFree::initialize(std::shared_ptr<etasl::FeedbackMsg> feedback_copy_ptr, Context::Ptr ctx){
+    bool RobotDriverManagerLockFree::initialize(std::shared_ptr<robotdrivers::FeedbackMsg> feedback_copy_ptr, Context::Ptr ctx){
             
 
             // feedback_shared_ptr->mtx.lock();
       
-            feedback_copy_ptr->joint.pos.is_available = true;
-            // feedback_copy_ptr->joint.vel.is_available = feedback_shared_ptr->joint.vel.is_available;
-            // feedback_copy_ptr->joint.torque.is_available = feedback_shared_ptr->joint.torque.is_available;
-            // feedback_copy_ptr->joint.current.is_available = feedback_shared_ptr->joint.current.is_available;
+            feedback_copy_ptr->joint.is_pos_available = robotdriver_->isJointPosAvailable();
+            feedback_copy_ptr->joint.is_vel_available = robotdriver_->isJointVelAvailable();
+            feedback_copy_ptr->joint.is_torque_available = robotdriver_->isJointTorqueAvailable();
+            feedback_copy_ptr->joint.is_current_available = robotdriver_->isJointCurrentAvailable();
+
+            feedback_copy_ptr->cartesian.is_pos_available = robotdriver_->isCartesianPosAvailable();
+            feedback_copy_ptr->cartesian.is_quat_available = robotdriver_->isCartesianQuatAvailable();
+            feedback_copy_ptr->cartesian.is_twist_available = robotdriver_->isCartesianTwistAvailable();
+            feedback_copy_ptr->cartesian.is_wrench_available = robotdriver_->isCartesianWrenchAvailable();
+            feedback_copy_ptr->base.is_pos_available = robotdriver_->isBasePosAvailable();
+            feedback_copy_ptr->base.is_quat_available = robotdriver_->isBaseQuatAvailable();
+            feedback_copy_ptr->base.is_twist_available = robotdriver_->isBaseTwistAvailable();
+
+
+            // feedback_copy_ptr->joint.is_vel_available = feedback_shared_ptr->joint.is_vel_available;
+            // feedback_copy_ptr->joint.is_torque_available = feedback_shared_ptr->joint.is_torque_available;
+            // feedback_copy_ptr->joint.is_current_available = feedback_shared_ptr->joint.is_current_available;
       
-            // feedback_copy_ptr->cartesian.pos.is_available = feedback_shared_ptr->cartesian.pos.is_available;
-            // feedback_copy_ptr->cartesian.quat.is_available = feedback_shared_ptr->cartesian.quat.is_available;
-            // feedback_copy_ptr->cartesian.twist.is_available = feedback_shared_ptr->cartesian.twist.is_available;
-            // feedback_copy_ptr->cartesian.wrench.is_available = feedback_shared_ptr->cartesian.wrench.is_available;
+            // feedback_copy_ptr->cartesian.is_pos_available = feedback_shared_ptr->cartesian.is_pos_available;
+            // feedback_copy_ptr->cartesian.is_quat_available = feedback_shared_ptr->cartesian.is_quat_available;
+            // feedback_copy_ptr->cartesian.is_twist_available = feedback_shared_ptr->cartesian.is_twist_available;
+            // feedback_copy_ptr->cartesian.is_wrench_available = feedback_shared_ptr->cartesian.is_wrench_available;
             
-            // feedback_copy_ptr->base.pos.is_available = feedback_shared_ptr->base.pos.is_available;
-            // feedback_copy_ptr->base.quat.is_available = feedback_shared_ptr->base.quat.is_available;
-            // feedback_copy_ptr->base.twist.is_available = feedback_shared_ptr->base.twist.is_available;
+            // feedback_copy_ptr->base.is_pos_available = feedback_shared_ptr->base.is_pos_available;
+            // feedback_copy_ptr->base.is_quat_available = feedback_shared_ptr->base.is_quat_available;
+            // feedback_copy_ptr->base.is_twist_available = feedback_shared_ptr->base.is_twist_available;
       
-            if (!feedback_copy_ptr->joint.pos.is_available){
+            if (!feedback_copy_ptr->joint.is_pos_available){
               std::string message = "The position feedback is not available in the used robot driver. This is required to run eTaSL.";
               RCLCPP_ERROR(node_->get_logger(), message.c_str());
               auto transition = node_->shutdown(); //calls on_shutdown() hook.
@@ -114,7 +129,7 @@ namespace etasl {
             //   feedback_copy_ptr->joint.pos.data[i] = feedback_shared_ptr->joint.pos.data[i];
             // }
 
-            robotdriver_->readFeedbackJointPosition(feedback_copy_ptr->joint.pos.data);
+            robotdriver_->readFeedbackJointPosition(feedback_copy_ptr->joint.pos);
       
             // feedback_shared_ptr->mtx.unlock();
 
@@ -122,18 +137,39 @@ namespace etasl {
             // Json::Value param_robot = board->getPath("/robot", false);
             Json::Value param_robot = parameters_["robot"];
 
-            feedback_report["joint_vel"] = jsonchecker_->is_member(param_robot, "robotdriver/name_expr_joint_vel") && feedback_copy_ptr->joint.vel.is_available;
-            feedback_report["joint_torque"] = jsonchecker_->is_member(param_robot, "robotdriver/name_expr_joint_torque") && feedback_copy_ptr->joint.torque.is_available;
-            feedback_report["joint_current"] = jsonchecker_->is_member(param_robot, "robotdriver/name_expr_joint_current") && feedback_copy_ptr->joint.current.is_available;
-            feedback_report["cartesian_pos"] = jsonchecker_->is_member(param_robot, "robotdriver/name_expr_cartesian_pos") && feedback_copy_ptr->cartesian.pos.is_available;
-            feedback_report["cartesian_quat"] = jsonchecker_->is_member(param_robot, "robotdriver/name_expr_cartesian_quat") && feedback_copy_ptr->cartesian.quat.is_available;
-            feedback_report["cartesian_twist"] = jsonchecker_->is_member(param_robot, "robotdriver/name_expr_cartesian_twist") && feedback_copy_ptr->cartesian.twist.is_available;
-            feedback_report["cartesian_wrench"] = jsonchecker_->is_member(param_robot, "robotdriver/name_expr_cartesian_wrench") && feedback_copy_ptr->cartesian.wrench.is_available;
-            feedback_report["base_pos"] = jsonchecker_->is_member(param_robot, "robotdriver/name_expr_base_pos") && feedback_copy_ptr->base.pos.is_available;
-            feedback_report["base_quat"] = jsonchecker_->is_member(param_robot, "robotdriver/name_expr_base_quat") && feedback_copy_ptr->base.quat.is_available;
-            feedback_report["base_twist"] = jsonchecker_->is_member(param_robot, "robotdriver/name_expr_base_twist") && feedback_copy_ptr->base.twist.is_available;
-      
+            if(simulation_){
+              feedback_report["joint_vel"] = jsonchecker_->is_member(param_robot, "robotsimulator/name_expr_joint_vel") && feedback_copy_ptr->joint.is_vel_available;
+              feedback_report["joint_torque"] = jsonchecker_->is_member(param_robot, "robotsimulator/name_expr_joint_torque") && feedback_copy_ptr->joint.is_torque_available;
+              feedback_report["joint_current"] = jsonchecker_->is_member(param_robot, "robotsimulator/name_expr_joint_current") && feedback_copy_ptr->joint.is_current_available;
+              feedback_report["cartesian_pos"] = jsonchecker_->is_member(param_robot, "robotsimulator/name_expr_cartesian_pos") && feedback_copy_ptr->cartesian.is_pos_available;
+              feedback_report["cartesian_quat"] = jsonchecker_->is_member(param_robot, "robotsimulator/name_expr_cartesian_quat") && feedback_copy_ptr->cartesian.is_quat_available;
+              feedback_report["cartesian_twist"] = jsonchecker_->is_member(param_robot, "robotsimulator/name_expr_cartesian_twist") && feedback_copy_ptr->cartesian.is_twist_available;
+              feedback_report["cartesian_wrench"] = jsonchecker_->is_member(param_robot, "robotsimulator/name_expr_cartesian_wrench") && feedback_copy_ptr->cartesian.is_wrench_available;
+              feedback_report["base_pos"] = jsonchecker_->is_member(param_robot, "robotsimulator/name_expr_base_pos") && feedback_copy_ptr->base.is_pos_available;
+              feedback_report["base_quat"] = jsonchecker_->is_member(param_robot, "robotsimulator/name_expr_base_quat") && feedback_copy_ptr->base.is_quat_available;
+              feedback_report["base_twist"] = jsonchecker_->is_member(param_robot, "robotsimulator/name_expr_base_twist") && feedback_copy_ptr->base.is_twist_available;
+            }
+            else{
+              feedback_report["joint_vel"] = jsonchecker_->is_member(param_robot, "robotdriver/name_expr_joint_vel") && feedback_copy_ptr->joint.is_vel_available;
+              feedback_report["joint_torque"] = jsonchecker_->is_member(param_robot, "robotdriver/name_expr_joint_torque") && feedback_copy_ptr->joint.is_torque_available;
+              feedback_report["joint_current"] = jsonchecker_->is_member(param_robot, "robotdriver/name_expr_joint_current") && feedback_copy_ptr->joint.is_current_available;
+              feedback_report["cartesian_pos"] = jsonchecker_->is_member(param_robot, "robotdriver/name_expr_cartesian_pos") && feedback_copy_ptr->cartesian.is_pos_available;
+              feedback_report["cartesian_quat"] = jsonchecker_->is_member(param_robot, "robotdriver/name_expr_cartesian_quat") && feedback_copy_ptr->cartesian.is_quat_available;
+              feedback_report["cartesian_twist"] = jsonchecker_->is_member(param_robot, "robotdriver/name_expr_cartesian_twist") && feedback_copy_ptr->cartesian.is_twist_available;
+              feedback_report["cartesian_wrench"] = jsonchecker_->is_member(param_robot, "robotdriver/name_expr_cartesian_wrench") && feedback_copy_ptr->cartesian.is_wrench_available;
+              feedback_report["base_pos"] = jsonchecker_->is_member(param_robot, "robotdriver/name_expr_base_pos") && feedback_copy_ptr->base.is_pos_available;
+              feedback_report["base_quat"] = jsonchecker_->is_member(param_robot, "robotdriver/name_expr_base_quat") && feedback_copy_ptr->base.is_quat_available;
+              feedback_report["base_twist"] = jsonchecker_->is_member(param_robot, "robotdriver/name_expr_base_twist") && feedback_copy_ptr->base.is_twist_available;
+            }
+            
 
+            if(feedback_report["cartesian_wrench"]){
+              std::cout << "+++++++++++++++++++++++++++++++++++++++++WREEEENCHHHH AVAILABLEEEEE"<< std::endl;
+            }
+            else{
+              std::cout << "+++++++++++++++++++++++++++++++++++++++++WREEEENCHHHH NOOOOOOOT AVAILABLEEEEE"<< std::endl;
+            }
+      
 
             input_channels_feedback.joint_vel.clear();
             input_channels_feedback.joint_torque.clear();
@@ -175,7 +211,7 @@ namespace etasl {
     }
                 
 
-    void RobotDriverManagerLockFree::update( std::shared_ptr<etasl::FeedbackMsg> feedback_copy_ptr, const Eigen::VectorXd& jvel_etasl){
+    void RobotDriverManagerLockFree::update( std::shared_ptr<robotdrivers::FeedbackMsg> feedback_copy_ptr, const Eigen::VectorXd& jvel_etasl){
 
         // feedback_shared_ptr->mtx.lock();
         // setpoint_shared_ptr->mtx.lock();
@@ -189,103 +225,78 @@ namespace etasl {
         //   setpoint_shared_ptr->velocity.data[i] = jvel_etasl[i];
         // }
 
-        static std::vector<float> jvel_etasl_copy(jvel_etasl.size(), 0.0);
+        // static std::vector<float> jvel_etasl_copy(jvel_etasl.size(), 0.0);
         for (unsigned int i=0; i<jvel_etasl.size(); ++i) {
-          jvel_etasl_copy[i] = jvel_etasl[i];
+          jvel_etasl_copy.data[i] = jvel_etasl[i];
         }
         
         robotdriver_->writeSetpointJointVelocity(jvel_etasl_copy);
-        robotdriver_->readFeedbackJointPosition(feedback_copy_ptr->joint.pos.data);
     
-        // if (feedback_copy_ptr->joint.pos.is_available){
-        //   for (unsigned int i=0; i<jvel_etasl.size(); ++i) {
-        //     feedback_copy_ptr->joint.pos.data[i] = feedback_shared_ptr->joint.pos.data[i];
-        //   }
-        // }
+        if (feedback_copy_ptr->joint.is_pos_available){
+          robotdriver_->readFeedbackJointPosition(feedback_copy_ptr->joint.pos);
+        }
+        else{
+          RCLCPP_ERROR(node_->get_logger(), "The position feedback is not available in the used robot driver. This is required to run eTaSL.");
+          auto transition = node_->shutdown();
+        }
     
     
-        // //Copy joint velocities
-        // if (feedback_report["joint_vel"]){
-        //   for (unsigned int i=0; i<jvel_etasl.size(); ++i) {
-        //     feedback_copy_ptr->joint.vel.data[i] = feedback_shared_ptr->joint.vel.data[i];
-        //   }
-        // }
+        //Read joint velocities
+        if (feedback_report["joint_vel"]){
+          robotdriver_->readFeedbackJointVelocity(feedback_copy_ptr->joint.vel);
+          for (unsigned int i=0; i<feedback_copy_ptr->joint.vel.data.size(); ++i) { //Check that the input channel exists (i.e. was declared in the task specification)
+            if(input_channels_feedback.joint_vel[i]){      
+                input_channels_feedback.joint_vel[i]->setValue(feedback_copy_ptr->joint.vel.data[i]);
+            }
+          }
+        }
     
-        // //Copy joint torques
-        // if (feedback_report["joint_torque"]){
-        //   for (unsigned int i=0; i<jvel_etasl.size(); ++i) {
-        //     feedback_copy_ptr->joint.torque.data[i] = feedback_shared_ptr->joint.torque.data[i];
-        //   }
-        // }
+        //Read joint torques
+        if (feedback_report["joint_torque"]){
+          robotdriver_->readFeedbackJointTorque(feedback_copy_ptr->joint.torque);
+        }
     
-        // //Copy joint currents
-        // if (feedback_report["joint_current"]){
-        //   for (unsigned int i=0; i<jvel_etasl.size(); ++i) {
-        //     feedback_copy_ptr->joint.current.data[i] = feedback_shared_ptr->joint.current.data[i];
-        //   }
-        // }
+        //Read joint currents
+        if (feedback_report["joint_current"]){
+          robotdriver_->readFeedbackJointCurrent(feedback_copy_ptr->joint.current);
+        }
     
-        // // -------- Cartesian feedback -----------------
+        // -------- Cartesian feedback -----------------
     
-        // //Copy Cartesian position
-        // if (feedback_report["cartesian_pos"]){
-        //   feedback_copy_ptr->cartesian.pos.x = feedback_shared_ptr->cartesian.pos.x;
-        //   feedback_copy_ptr->cartesian.pos.y = feedback_shared_ptr->cartesian.pos.y;
-        //   feedback_copy_ptr->cartesian.pos.z = feedback_shared_ptr->cartesian.pos.z;
-        // }
+        //Read Cartesian position
+        if (feedback_report["cartesian_pos"]){
+          robotdriver_->readFeedbackCartesianPosition(feedback_copy_ptr->cartesian.pos);
+        }
     
-        // //Copy Cartesian orientation in quaternion format
-        // if (feedback_report["cartesian_quat"]){
-        //   feedback_copy_ptr->cartesian.quat.qx = feedback_shared_ptr->cartesian.quat.qx;
-        //   feedback_copy_ptr->cartesian.quat.qy = feedback_shared_ptr->cartesian.quat.qy;
-        //   feedback_copy_ptr->cartesian.quat.qz = feedback_shared_ptr->cartesian.quat.qz;
-        //   feedback_copy_ptr->cartesian.quat.qw = feedback_shared_ptr->cartesian.quat.qw;
-        // }
+        //Read Cartesian orientation in quaternion format
+        if (feedback_report["cartesian_quat"]){
+          robotdriver_->readFeedbackCartesianQuaternion(feedback_copy_ptr->cartesian.quat);
+        }
     
-        // //Copy Cartesian twist
-        // if (feedback_report["cartesian_twist"]){
-        //   feedback_copy_ptr->cartesian.twist.linear.x = feedback_shared_ptr->cartesian.twist.linear.x;
-        //   feedback_copy_ptr->cartesian.twist.linear.y = feedback_shared_ptr->cartesian.twist.linear.y;
-        //   feedback_copy_ptr->cartesian.twist.linear.z = feedback_shared_ptr->cartesian.twist.linear.z;
-        //   feedback_copy_ptr->cartesian.twist.angular.x = feedback_shared_ptr->cartesian.twist.angular.x;
-        //   feedback_copy_ptr->cartesian.twist.angular.y = feedback_shared_ptr->cartesian.twist.angular.y;
-        //   feedback_copy_ptr->cartesian.twist.angular.z = feedback_shared_ptr->cartesian.twist.angular.z;
-        // }
+        //Read Cartesian twist
+        if (feedback_report["cartesian_twist"]){
+          robotdriver_->readFeedbackCartesianTwist(feedback_copy_ptr->cartesian.twist);
+        }
     
-        // //Copy Cartesian wrench
-        // if (feedback_report["cartesian_wrench"]){
-        //   feedback_copy_ptr->cartesian.wrench.linear.x = feedback_shared_ptr->cartesian.wrench.linear.x;
-        //   feedback_copy_ptr->cartesian.wrench.linear.y = feedback_shared_ptr->cartesian.wrench.linear.y;
-        //   feedback_copy_ptr->cartesian.wrench.linear.z = feedback_shared_ptr->cartesian.wrench.linear.z;
-        //   feedback_copy_ptr->cartesian.wrench.angular.x = feedback_shared_ptr->cartesian.wrench.angular.x;
-        //   feedback_copy_ptr->cartesian.wrench.angular.y = feedback_shared_ptr->cartesian.wrench.angular.y;
-        //   feedback_copy_ptr->cartesian.wrench.angular.z = feedback_shared_ptr->cartesian.wrench.angular.z;
-        // }
+        //Read Cartesian wrench
+        if (feedback_report["cartesian_wrench"]){
+          robotdriver_->readFeedbackCartesianWrench(feedback_copy_ptr->cartesian.wrench);
+        }
     
-        // //Copy base position
-        // if (feedback_report["base_pos"]){
-        //   feedback_copy_ptr->base.pos.x = feedback_shared_ptr->base.pos.x;
-        //   feedback_copy_ptr->base.pos.y = feedback_shared_ptr->base.pos.y;
-        //   feedback_copy_ptr->base.pos.z = feedback_shared_ptr->base.pos.z;
-        // }
+        //Read base position
+        if (feedback_report["base_pos"]){
+          robotdriver_->readFeedbackBasePosition(feedback_copy_ptr->base.pos);
+        }
     
-        // //Copy base orientation in quaternion format
-        // if (feedback_report["base_quat"]){
-        //   feedback_copy_ptr->base.quat.qx = feedback_shared_ptr->base.quat.qx;
-        //   feedback_copy_ptr->base.quat.qy = feedback_shared_ptr->base.quat.qy;
-        //   feedback_copy_ptr->base.quat.qz = feedback_shared_ptr->base.quat.qz;
-        //   feedback_copy_ptr->base.quat.qw = feedback_shared_ptr->base.quat.qw;
-        // }
+        //Read base orientation in quaternion format
+        if (feedback_report["base_quat"]){
+          robotdriver_->readFeedbackBaseQuaternion(feedback_copy_ptr->base.quat);
+        }
     
-        // //Copy base twist
-        // if (feedback_report["base_twist"]){
-        //   feedback_copy_ptr->base.twist.linear.x = feedback_shared_ptr->base.twist.linear.x;
-        //   feedback_copy_ptr->base.twist.linear.y = feedback_shared_ptr->base.twist.linear.y;
-        //   feedback_copy_ptr->base.twist.linear.z = feedback_shared_ptr->base.twist.linear.z;
-        //   feedback_copy_ptr->base.twist.angular.x = feedback_shared_ptr->base.twist.angular.x;
-        //   feedback_copy_ptr->base.twist.angular.y = feedback_shared_ptr->base.twist.angular.y;
-        //   feedback_copy_ptr->base.twist.angular.z = feedback_shared_ptr->base.twist.angular.z;
-        // }
+        //Read base twist
+        if (feedback_report["base_twist"]){
+          robotdriver_->readFeedbackBaseTwist(feedback_copy_ptr->base.twist);
+        }
     
         // feedback_shared_ptr->mtx.unlock();
         // setpoint_shared_ptr->mtx.unlock();
@@ -300,13 +311,13 @@ namespace etasl {
     
         //TODO: Delete feedback_copy_ptr and instead write directly to input_channels_feedback pointers as below:
         // Write in the input handler the joint velocities
-        if (feedback_report["joint_vel"]){
-            for (unsigned int i=0; i<jvel_etasl.size(); ++i) { //Check that the input channel exists (i.e. was declared in the task specification)
-                if(input_channels_feedback.joint_vel[i]){      
-                    input_channels_feedback.joint_vel[i]->setValue(feedback_copy_ptr->joint.vel.data[i]);
-                }
-            }
-        }
+        // if (feedback_report["joint_vel"]){
+        //     for (unsigned int i=0; i<jvel_etasl.size(); ++i) { //Check that the input channel exists (i.e. was declared in the task specification)
+        //         if(input_channels_feedback.joint_vel[i]){      
+        //             input_channels_feedback.joint_vel[i]->setValue(feedback_copy_ptr->joint.vel.data[i]);
+        //         }
+        //     }
+        // }
     
         //Write in the input handler the joint torques
         if (feedback_report["joint_torque"]){
@@ -412,6 +423,11 @@ namespace etasl {
 
         Json::Value param_robot = parameters_["robot"];
 
+        std::string robotdrivertype = "robotdriver/";
+        if(simulation_){
+          robotdrivertype = "robotsimulator/";
+        }
+
         for (const auto& pair : feedback_report) {
             std::string key = pair.first;
             bool value = pair.second;
@@ -420,39 +436,39 @@ namespace etasl {
               //Check types and get Input Channels accordingly. Joint values are vectors of pointers, and the rest are pointers. Careful!
               if (key == "joint_vel") {
                 for (unsigned int i = 0; i < input_channels_feedback.joint_vel.size(); ++i) {
-                  input_channels_feedback.joint_vel[i] = ctx->getInputChannel<float>(jsonchecker_->asString(param_robot, "robotdriver/name_expr_" + key) + "_" + std::to_string(i));
+                  input_channels_feedback.joint_vel[i] = ctx->getInputChannel<float>(jsonchecker_->asString(param_robot, robotdrivertype + "name_expr_" + key) + "_" + std::to_string(i));
                 }
               } 
               else if (key == "joint_torque") {
                 for (unsigned int i = 0; i < input_channels_feedback.joint_torque.size(); ++i) {
-                  input_channels_feedback.joint_torque[i] = ctx->getInputChannel<float>(jsonchecker_->asString(param_robot, "robotdriver/name_expr_" + key) + "_" + std::to_string(i));
+                  input_channels_feedback.joint_torque[i] = ctx->getInputChannel<float>(jsonchecker_->asString(param_robot, robotdrivertype + "name_expr_" + key) + "_" + std::to_string(i));
                 }
               }
               else if (key == "joint_current") {
                 for (unsigned int i = 0; i < input_channels_feedback.joint_current.size(); ++i) {
-                  input_channels_feedback.joint_current[i] = ctx->getInputChannel<float>(jsonchecker_->asString(param_robot, "robotdriver/name_expr_" + key) + "_" + std::to_string(i));
+                  input_channels_feedback.joint_current[i] = ctx->getInputChannel<float>(jsonchecker_->asString(param_robot, robotdrivertype + "name_expr_" + key) + "_" + std::to_string(i));
                 }
               }
               else if (key == "cartesian_pos") {
-                  input_channels_feedback.cartesian_pos = ctx->getInputChannel<KDL::Vector>(jsonchecker_->asString(param_robot, "robotdriver/name_expr_" + key));
+                  input_channels_feedback.cartesian_pos = ctx->getInputChannel<KDL::Vector>(jsonchecker_->asString(param_robot, robotdrivertype + "name_expr_" + key));
               }
               else if (key == "cartesian_quat") {
-                  input_channels_feedback.cartesian_quat = ctx->getInputChannel<KDL::Rotation>(jsonchecker_->asString(param_robot, "robotdriver/name_expr_" + key));
+                  input_channels_feedback.cartesian_quat = ctx->getInputChannel<KDL::Rotation>(jsonchecker_->asString(param_robot, robotdrivertype + "name_expr_" + key));
               }
               else if (key == "cartesian_twist") {
-                  input_channels_feedback.cartesian_twist = ctx->getInputChannel<KDL::Twist>(jsonchecker_->asString(param_robot, "robotdriver/name_expr_" + key));
+                  input_channels_feedback.cartesian_twist = ctx->getInputChannel<KDL::Twist>(jsonchecker_->asString(param_robot, robotdrivertype + "name_expr_" + key));
               }
               else if (key == "cartesian_wrench") {
-                  input_channels_feedback.cartesian_wrench = ctx->getInputChannel<KDL::Wrench>(jsonchecker_->asString(param_robot, "robotdriver/name_expr_" + key));
+                  input_channels_feedback.cartesian_wrench = ctx->getInputChannel<KDL::Wrench>(jsonchecker_->asString(param_robot, robotdrivertype + "name_expr_" + key));
               }
               else if (key == "base_pos") {
-                  input_channels_feedback.base_pos = ctx->getInputChannel<KDL::Vector>(jsonchecker_->asString(param_robot, "robotdriver/name_expr_" + key));
+                  input_channels_feedback.base_pos = ctx->getInputChannel<KDL::Vector>(jsonchecker_->asString(param_robot, robotdrivertype + "name_expr_" + key));
               }
               else if (key == "base_quat") {
-                  input_channels_feedback.base_quat = ctx->getInputChannel<KDL::Rotation>(jsonchecker_->asString(param_robot, "robotdriver/name_expr_" + key));
+                  input_channels_feedback.base_quat = ctx->getInputChannel<KDL::Rotation>(jsonchecker_->asString(param_robot, robotdrivertype + "name_expr_" + key));
               }
               else if (key == "base_twist") {
-                  input_channels_feedback.base_twist = ctx->getInputChannel<KDL::Twist>(jsonchecker_->asString(param_robot, "robotdriver/name_expr_" + key));
+                  input_channels_feedback.base_twist = ctx->getInputChannel<KDL::Twist>(jsonchecker_->asString(param_robot, robotdrivertype + "name_expr_" + key));
               }
             }
       
@@ -461,17 +477,17 @@ namespace etasl {
     }
 
     std::vector<float> RobotDriverManagerLockFree::get_position_feedback(){
-        std::vector<float> jpos_init_vec;
+        robotdrivers::DynamicJointDataField jpos_current_vec;
         // feedback_shared_ptr->mtx.lock();
-        jpos_init_vec.resize(6,0.0);
+        // jpos_current_vec.resize(6,0.0);
         // for(unsigned int i = 0; i < feedback_shared_ptr->joint.pos.data.size(); ++i){
-        //   jpos_init_vec[i] = feedback_shared_ptr->joint.pos.data[i];
+        //   jpos_current_vec[i] = feedback_shared_ptr->joint.pos.data[i];
         // }
-        robotdriver_->readFeedbackJointPosition(jpos_init_vec);
+        robotdriver_->readFeedbackJointPosition(jpos_current_vec);
 
         // feedback_shared_ptr->mtx.unlock();
 
-        return jpos_init_vec;
+        return jpos_current_vec.data;
     }
 
     void RobotDriverManagerLockFree::on_activate(){

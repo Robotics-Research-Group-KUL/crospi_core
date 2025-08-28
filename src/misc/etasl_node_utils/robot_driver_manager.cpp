@@ -37,8 +37,8 @@ namespace etasl {
 
     void RobotDriverManager::construct_driver(int num_joints){
 
-        feedback_shared_ptr = std::make_shared<etasl::FeedbackMsg>(num_joints);
-        setpoint_shared_ptr = std::make_shared<etasl::SetpointMsg>(num_joints);
+        feedback_shared_ptr = std::make_shared<robotdrivers::FeedbackMsg>(num_joints);
+        setpoint_shared_ptr = std::make_shared<robotdrivers::SetpointMsg>(num_joints);
 
         std::string driver_name = "";
         std::string robotplugintype = "";
@@ -84,7 +84,7 @@ namespace etasl {
     }
 
 
-    bool RobotDriverManager::initialize(std::shared_ptr<etasl::FeedbackMsg> feedback_copy_ptr, Context::Ptr ctx){
+    bool RobotDriverManager::initialize(std::shared_ptr<robotdrivers::FeedbackMsg> feedback_copy_ptr, Context::Ptr ctx){
             
 
             feedback_shared_ptr->mtx.lock();
@@ -173,7 +173,7 @@ namespace etasl {
     }
                 
 
-    void RobotDriverManager::update( std::shared_ptr<etasl::FeedbackMsg> feedback_copy_ptr, const Eigen::VectorXd& jvel_etasl){
+    void RobotDriverManager::update( std::shared_ptr<robotdrivers::FeedbackMsg> feedback_copy_ptr, const Eigen::VectorXd& jvel_etasl){
 
         feedback_shared_ptr->mtx.lock();
         // setpoint_shared_ptr->mtx.lock();

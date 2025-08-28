@@ -2,7 +2,8 @@
 #include "etasl_task_utils/etasl_error.hpp"
 #include "robot_interfacing_utils/robotdriverfactory.hpp"
 #include "etasl_task_utils/registry.hpp"
-#include "robot_interfacing_utils/feedback_struct.hpp"
+// #include "robot_interfacing_utils/feedback_struct.hpp"
+#include "robot_interfacing_utils/robot_data_structures.hpp"
 #include <jsoncpp/json/json.h>
 
 #include "kuka_iiwa_driver/kukaiiwa_robotdriver.hpp"

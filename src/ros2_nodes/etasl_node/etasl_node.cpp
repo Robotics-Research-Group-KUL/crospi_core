@@ -665,7 +665,7 @@ void etaslNode::update_robot_status(){
 
     robotdriver_manager->update(feedback_copy_ptr, jvel_etasl);
     
-    if (feedback_copy_ptr->joint.pos.is_available){
+    if (feedback_copy_ptr->joint.is_pos_available){
       for (unsigned int i=0; i<jvel_etasl.size(); ++i) {
         jpos_etasl[i] = feedback_copy_ptr->joint.pos.data[i]; //required only for positions
       }
@@ -722,7 +722,7 @@ void etaslNode::construct_node(std::atomic<bool>* stopFlagPtr_p){
 
 
 
-    feedback_copy_ptr = std::make_shared<etasl::FeedbackMsg>(jointnames.size());
+    feedback_copy_ptr = std::make_shared<robotdrivers::FeedbackMsg>(jointnames.size());
 
     /****************************************************
     * Adding Robot Driver
