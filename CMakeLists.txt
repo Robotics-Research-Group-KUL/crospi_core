@@ -9,6 +9,13 @@ if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
   # add_compile_options( -Wno-deprecated -Wno-unused-but-set-variable -Wno-unused-parameter -Wno-unused-variable -Wno-reorder)
 endif()
 
+# -- start --Stuff for triple buffer implementation of boost 1.88
+set(BOOST_ROOT "/opt/boost/1.88.0")
+set(CMAKE_PREFIX_PATH "/opt/boost/1.88.0" ${CMAKE_PREFIX_PATH})
+find_package(Boost 1.88 REQUIRED)
+message(STATUS "Using Boost version ${Boost_VERSION}")
+# -- end -- Stuff for triple buffer implementation of boost 1.88
+
 add_definitions(-DBOOST_DISABLE_PRAGMA_MESSAGE)
 
 # find dependencies

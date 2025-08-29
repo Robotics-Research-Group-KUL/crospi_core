@@ -31,8 +31,8 @@ target_link_libraries(etasl_node
         etasl_task_utils
         etasl_node_utils
         robot_interfacing_utils
-        buffer_utils
-        triple_buffer
+        # buffer_utils
+        # triple_buffer
         # kuka_iiwa_driver
         # simple_kinematic_simulation
         )
