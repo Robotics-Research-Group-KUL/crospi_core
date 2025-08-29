@@ -1043,7 +1043,7 @@ int main(int argc, char * argv[])
     std::shared_ptr<t_manager::thread_t> thread_str_driver = my_etasl_node->create_thread_str(stopFlag);
 
     std::thread driver_thread(t_manager::do_thread_loop, thread_str_driver, std::ref(stopFlag));
-    // t_manager::setScheduling(driver_thread, SCHED_FIFO, 90);
+    t_manager::setScheduling(driver_thread, SCHED_FIFO, 90);
     // driver_thread.detach();// Avoids the main thread to block. See spin() + stopFlag mechanism below.
 
 

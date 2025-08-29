@@ -25,12 +25,12 @@ find_package(jsoncpp REQUIRED)
 
 set(CMAKE_CXX_STANDARD 17)
 
-# -- start --Stuff for triple buffer implementation of boost 1.88
-set(BOOST_ROOT "/opt/boost/1.88.0")
-set(CMAKE_PREFIX_PATH "/opt/boost/1.88.0" ${CMAKE_PREFIX_PATH})
-find_package(Boost 1.88 REQUIRED)
+# -- start --Stuff for triple buffer implementation of boost 1.89
+set(BOOST_ROOT "/opt/boost/1.89.0")
+set(CMAKE_PREFIX_PATH "/opt/boost/1.89.0" ${CMAKE_PREFIX_PATH})
+find_package(Boost 1.89 REQUIRED)
 message(STATUS "Using Boost version ${Boost_VERSION}")
-# -- end -- Stuff for triple buffer implementation of boost 1.88
+# -- end -- Stuff for triple buffer implementation of boost 1.89
 
 
 include_directories(include ${LUA_INCLUDE_DIR})
@@ -48,8 +48,6 @@ set(dependencies
     fmt   
     # pugixml
     jsoncpp
-    buffer_utils
-    triple_buffer
 )
 
 

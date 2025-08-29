@@ -27,10 +27,6 @@ target_link_libraries(shared_memory_test_mutex
         robot_interfacing_utils
         # kuka_iiwa_driver
         # simple_kinematic_simulation
-        buffer_utils
-        triple_buffer
-        # ${buffer_utils_LIBRARIES}
-        # ${triple_buffer_LIBRARIES}
         )
 
 
