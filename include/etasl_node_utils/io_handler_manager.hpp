@@ -4,6 +4,7 @@
 #include "etasl_task_utils/outputhandler.hpp"
 
 #include <expressiongraph/context.hpp>
+#include <expressiongraph/solver.hpp>
 // #include <memory>
 #include <rclcpp/rclcpp.hpp>
 #include "rclcpp_lifecycle/lifecycle_node.hpp"
@@ -105,12 +106,14 @@ public:
     void activate_input_handlers(
         Context::Ptr ctx,    
         const std::vector<std::string>& jnames,
-        const std::vector<std::string>& fnames);
+        const std::vector<std::string>& fnames,
+        boost::shared_ptr<solver> slv);
 
     void activate_output_handlers(
         Context::Ptr ctx,    
         const std::vector<std::string>& jnames,
-        const std::vector<std::string>& fnames);
+        const std::vector<std::string>& fnames,
+        boost::shared_ptr<solver> slv);
 
 
     void deactivate_input_handlers(Context::Ptr ctx);

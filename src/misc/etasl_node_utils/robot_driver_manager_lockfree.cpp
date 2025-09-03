@@ -216,7 +216,7 @@ namespace etasl {
         // feedback_shared_ptr->mtx.lock();
         // setpoint_shared_ptr->mtx.lock();
     
-        assert(feedback_shared_ptr->joint.pos.data.size() == jvel_etasl.size());
+        assert(jvel_etasl_copy.data.size() == jvel_etasl.size());
         // assert(setpoint_shared_ptr->velocity.data.size() == jvel_etasl.size());
 
         

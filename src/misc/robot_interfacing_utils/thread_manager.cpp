@@ -127,7 +127,7 @@ void do_thread_loop_posix_clock_nanosleep(std::shared_ptr<thread_t> thread, vola
         if(!sleep_clock_nanosleep(next_wakeup_time_, err_int)){
             stopFlag.store(true); //Stops execution of the loop
         }
-        if ( thread->benchmark_hook != nullptr)   {thread->benchmark_hook();}
+        if ( thread->benchmark_hook != nullptr)   {thread->benchmark_hook();} //Modify benchmark hook e.g. to measure time between executions
     }
 }
 

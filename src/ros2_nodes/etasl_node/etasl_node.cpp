@@ -860,8 +860,9 @@ void etaslNode::construct_node(std::atomic<bool>* stopFlagPtr_p){
     robotdriver_manager->on_activate();
 
     // TODO: Handle erros in activate and return lifecycle_return::FAILURE instead
-    io_handler_manager->activate_input_handlers(ctx, jnames_in_expr, fnames);
-    io_handler_manager->activate_output_handlers(ctx, jnames_in_expr, fnames);
+    io_handler_manager->activate_input_handlers(ctx, jnames_in_expr, fnames, slv);
+    io_handler_manager->activate_output_handlers(ctx, jnames_in_expr, fnames, slv);
+
 
 
     RCUTILS_LOG_INFO_NAMED(get_name(), "on_activate() is called.");

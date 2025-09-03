@@ -2,6 +2,7 @@
 
 #include <memory>
 #include <expressiongraph/context.hpp>
+#include <expressiongraph/solver.hpp>
 #include "etasl_task_utils/etasl_error.hpp"
 #include "rclcpp_lifecycle/lifecycle_node.hpp"
 #include "etasl_task_utils/json_checker.hpp"
@@ -69,7 +70,8 @@ namespace etasl {
              */
             virtual void on_activate(Context::Ptr ctx,    
                                     const std::vector<std::string>& jnames,
-                                    const std::vector<std::string>& fnames) {};
+                                    const std::vector<std::string>& fnames,
+                                    boost::shared_ptr<solver> slv) {};
 
             /**
              * @brief on_deactivate

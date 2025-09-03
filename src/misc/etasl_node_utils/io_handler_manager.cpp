@@ -265,11 +265,13 @@ void IOHandlerManager::update_output_handlers(
 void IOHandlerManager::activate_input_handlers(
   Context::Ptr ctx,    
   const std::vector<std::string>& jnames,
-  const std::vector<std::string>& fnames)
+  const std::vector<std::string>& fnames,
+  boost::shared_ptr<solver> slv)
   {
     RCLCPP_INFO(node->get_logger(), "Entering on activate for input handlers.");
     for (auto& h : inputhandlers) {
-        h->on_activate(ctx, jnames, fnames);
+        // h->on_activate(ctx, jnames, fnames);
+        h->on_activate(ctx, jnames, fnames, slv);
         //TODO: Handle boolean output of on_activate
 
     }
@@ -280,11 +282,13 @@ void IOHandlerManager::activate_input_handlers(
 void IOHandlerManager::activate_output_handlers(
   Context::Ptr ctx,    
   const std::vector<std::string>& jnames,
-  const std::vector<std::string>& fnames)
+  const std::vector<std::string>& fnames,
+  boost::shared_ptr<solver> slv)
   {
     RCLCPP_INFO(node->get_logger(), "Entering on activate for output handlers.");
     for (auto& h : outputhandlers) {
-        h->on_activate(ctx, jnames, fnames);
+        // h->on_activate(ctx, jnames, fnames);
+        h->on_activate(ctx, jnames, fnames, slv);
         //TODO: Handle boolean output of on_activate
     }
     RCLCPP_INFO(node->get_logger(), "Activated output handlers.");
