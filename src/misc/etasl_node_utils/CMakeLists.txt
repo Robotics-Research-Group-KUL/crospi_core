@@ -36,6 +36,7 @@ set( src_etasl_node_utils
     io_handler_manager.cpp
     # robot_driver_manager.cpp
     robot_driver_manager_lockfree.cpp
+    multiple_drivers_manager.cpp
 
     # topicoutputhandler.cpp
     # jointstateoutputhandler.cpp

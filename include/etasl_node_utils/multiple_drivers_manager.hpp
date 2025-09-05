@@ -24,7 +24,10 @@
 #include <expressiongraph/context_scripting.hpp>
 
 #include "robot_interfacing_utils/thread_manager.hpp"
-#include "robot_interfacing_utils/robotdriver.hpp"
+// #include "robot_interfacing_utils/robotdriver.hpp"
+
+#include "etasl_node_utils/robot_driver_manager_lockfree.hpp"
+
 
 
 // using namespace KDL;
@@ -32,19 +35,40 @@
 namespace etasl {
     using namespace KDL;
     
-    class RobotDriverManagerLockFree {
-
+    class MultipleDriversManager {
+        
         private: 
-
+        
         rclcpp_lifecycle::LifecycleNode::SharedPtr node_;
-
+        
         bool simulation_;
+        
+        // etasl::RobotDriver::SharedPtr               robotdriver_;
+        std::vector<etasl::RobotDriverManagerLockFree::SharedPtr>   robotdriver_manager_vector_;
+        std::vector<std::shared_ptr<t_manager::thread_t>> thread_str_drivers_vector_;
+        std::shared_ptr<pluginlib::ClassLoader<etasl::RobotDriver>>  driver_loader_;
+        std::vector<std::shared_ptr<robotdrivers::FeedbackMsg>> feedback_copies_vec;
 
-        etasl::RobotDriver::SharedPtr               robotdriver_;
+        std::vector<Eigen::VectorXd> jvel_etasl_copies_vec;
 
         const Json::Value parameters_;
+        Json::Value driver_params_;
         std::shared_ptr<etasl::JsonChecker> jsonchecker_;
         std::atomic<bool>* stopFlagPtr_;
+        Json::Value param_robotdrivers_;
+        // std::map<std::string,int> name_ndx_; //Map of indexes of all joints in the eTaSL expression (indexes of etasl variables)
+        // std::vector<std::vector<unsigned int>> separated_jindices_all_;
+        std::vector<std::vector<int>> separated_jindices_in_expr_;
+        std::vector<std::vector<std::string>> separated_jnames_all_;
+        // std::vector<std::vector<std::string>> separated_jnames_in_expr_;
+        std::vector<std::string> jnames_in_expr_;
+        std::vector<std::string> jnames_all_;
+        std::unordered_map<std::string,int>  robot_joint_names_ndx_map;
+
+        std::vector<robotdrivers::DynamicJointDataField> feedback_separate_joint_pos_;
+
+        unsigned int num_joints_in_all_drivers_;
+        // robotdrivers::DynamicJointDataField& combined_joint_pos_;
 
 
         robotdrivers::DynamicJointDataField jvel_etasl_copy;
@@ -69,7 +93,8 @@ namespace etasl {
         KDL::Twist twist_inp_;
         KDL::Wrench wrench_inp_;
 
-        std::shared_ptr<t_manager::thread_t> thread_str_driver;
+        // std::shared_ptr<t_manager::thread_t> thread_str_driver;
+
 
         // protected:
         // /**
@@ -88,23 +113,30 @@ namespace etasl {
 
         // boost::lockfree::spsc_value< std::vector<double> > inputport_joint_vel_setpoints;
 
+        void demultiplexer(const Eigen::VectorXd& joint_vel_etasl, std::vector<Eigen::VectorXd>& jvel_etasl_separated_vector );
+
+        // bool multiplexer(const std::vector<std::shared_ptr<robotdrivers::FeedbackMsg>>& separate_feedback_copies_vec, std::shared_ptr<robotdrivers::FeedbackMsg>& combined_feedback_copy_ptr);
+        bool multiplexer(const std::vector<robotdrivers::DynamicJointDataField>& separate_joint_pos, robotdrivers::DynamicJointDataField& combined_joint_pos);
+
+        void update_joint_indices(const std::map<std::string,int>& name_ndx);
+
 
         public:
-            typedef std::shared_ptr<RobotDriverManagerLockFree> SharedPtr;
+            typedef std::shared_ptr<MultipleDriversManager> SharedPtr;
 
             /**
              * @brief Construct the driver manager.
              * @param config additional configuration parameters coming from the JSON configuration
              * @param jsonchecker a pointer to the jsonchecker that can be used to check the validity of the configuration
              */
-            RobotDriverManagerLockFree(rclcpp_lifecycle::LifecycleNode::SharedPtr _node,
+            MultipleDriversManager(rclcpp_lifecycle::LifecycleNode::SharedPtr _node,
                 const Json::Value config,
                 std::shared_ptr<etasl::JsonChecker> jsonchecker,
                 const bool& simulation,
                 std::atomic<bool>* stopFlagPtr_p);
 
 
-            void construct_driver(int num_joints, std::shared_ptr<pluginlib::ClassLoader<etasl::RobotDriver>>  driver_loader);
+            void construct_drivers(int num_joints_in_expr);
 
             /**
              * @brief Initialize the communication with the Robot
@@ -113,10 +145,10 @@ namespace etasl {
              *          in the initialization phase of eTaSL (e.g. specifying the initial value of the
              *           feature variables)
              */
-            [[nodiscard]] bool initialize(std::shared_ptr<robotdrivers::FeedbackMsg> feedback_copy_ptr, Context::Ptr ctx);
+            [[nodiscard]] bool initialize(Context::Ptr ctx);
 
             
-            void update( std::shared_ptr<robotdrivers::FeedbackMsg> feedback_copy_ptr, const Eigen::VectorXd& jvel_etasl);
+            void update( std::vector<float>& joint_positions, const Eigen::VectorXd& jvel_etasl);
 
 
             /**
@@ -152,7 +184,9 @@ namespace etasl {
              */
             void finalize();
 
-            std::shared_ptr<t_manager::thread_t> create_thread_str(std::atomic<bool> & stopFlag);
+            std::vector<std::shared_ptr<t_manager::thread_t>> create_driver_threads_structures(std::atomic<bool> & stopFlag);
+
+
 
 
 
@@ -160,8 +194,8 @@ namespace etasl {
              * @brief Destroy the Robot Driver object
              * 
              */
-            ~RobotDriverManagerLockFree();
+            ~MultipleDriversManager();
 
-    }; // RobotDriverManagerLockFree
+    }; // MultipleDriversManager
 
 } // namespace etasl

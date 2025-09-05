@@ -148,12 +148,39 @@ etaslNode::etaslNode(const std::string & node_name, bool intra_process_comms = f
   // rclcpp::on_shutdown(std::bind( &etaslNode::safe_shutdown, my_etasl_node)); //Alternative to add_on_shutdown_callback (don't know the difference)
 
   Json::Value robot_param = board->getPath("/robot", false);
-  if (simulation_param || (robot_param.isMember("robotdriver") && robot_param["robotdriver"].isMember("is-no_driver") && robot_param["robotdriver"]["is-no_driver"].isBool()) ) {
-    simulation = true;
+
+
+  if(simulation_param){
+    if(robot_param.isMember("robotsimulators") && robot_param["robotsimulators"].size() > 0){
+      simulation = true;
+      RCUTILS_LOG_INFO_NAMED(get_name(), "Executing in simulation mode!!!.");
+      
+    }
+    else{
+      RCUTILS_LOG_ERROR_NAMED(get_name(), "No robotsimulators were specified in the configuration file and therefore the etasl cannot run in simulation (i.e. simulation=true is not valid). Please either set simulation to false or provide a valid robotsimulators field in the configuration file.");
+      rclcpp::shutdown();
+      return;
+    }
   }
-  else {
-    simulation = false;
+  else{
+    if(robot_param.isMember("robotdrivers") && robot_param["robotdrivers"].size() > 0){
+      simulation = false;
+      RCUTILS_LOG_INFO_NAMED(get_name(), "Executing in real robot (i.e. simulation=false)!!!.");
+    }
+    else{
+      RCUTILS_LOG_ERROR_NAMED(get_name(), "No robotdrivers were specified in the configuration file and therefore etasl can only run in simulation (i.e. simulation=true). Please either set simulation to true or provide a valid robotdrivers field in the configuration file.");
+      rclcpp::shutdown();
+      return;
+    }
   }
+
+
+  // if (simulation_param || (robot_param.isMember("robotdrivers") && robot_param["robotdrivers"].isMember("is-no_driver") && robot_param["robotdrivers"]["is-no_driver"].isBool()) ) {
+  //   simulation = true;
+  // }
+  // else {
+  //   simulation = false;
+  // }
   
 
 }
@@ -364,6 +391,7 @@ bool etaslNode::readTaskParameters(const std::shared_ptr<etasl_interfaces::srv::
 // inspiration found in https://etasl.pages.gitlab.kuleuven.be/etasl-api-doc/api/etasl-rtt/solver__state_8hpp_source.html
 void etaslNode::update_controller_output(Eigen::VectorXd const& jvalues_solver){
     for (unsigned int i=0;i<jnames_in_expr.size();++i) {
+      //TODO: is name_ndx really necessary? I counld just do jpos_ros[i] = jnames_in_expr[i] and get rid of name_ndx
       std::map<std::string,int>::iterator it = name_ndx.find(jnames_in_expr[i]);
       if (it!=name_ndx.end()) {
           jpos_ros[it->second] = jvalues_solver[i]; //joints that will be used for ros topic
@@ -468,6 +496,18 @@ void etaslNode::initialize_joints(){
 
     // RCUTILS_LOG_INFO_NAMED(get_name(), "holaaa");
 
+    // Read initial joint positions from the robot feedback
+    std::vector<float> jpos_init_vec = multiple_robotdriver_managers->get_position_feedback(); //This method can only be used after the first time configuration
+    VectorXd jpos_init;
+    jpos_init = VectorXd::Zero(jpos_init_vec.size());
+
+    assert(jpos_init_vec.size() == jpos_init.size());
+
+    for (unsigned int i = 0; i < jpos_init_vec.size(); ++i) {
+      jpos_init[i] = jpos_init_vec[i];
+    }
+    
+
     update_controller_input(jpos_init);
         // RCUTILS_LOG_INFO_NAMED(get_name(), "holaaaaaaaaa");
 
@@ -527,11 +567,6 @@ void etaslNode::initialize_feature_variables(){
 
 void etaslNode::configure_etasl(){
     
-    Json::Value param_robot = board->getPath("/robot", false);
-    jointnames.clear();
-    for (auto n : jsonchecker->asArray(param_robot, "default_robot_specification/robot_joints")) {
-        jointnames.push_back(jsonchecker->asString(n, ""));
-    }
  
     /**
      * read task specification and creation of solver and handlers for monitor, inputs, outputs
@@ -663,13 +698,13 @@ void etaslNode::update_robot_status(){
     fpos_etasl += fvel_etasl*(periodicity_ms/1000.0);  // you always integrate feature variables yourself
     time += (periodicity_ms/1000.0);
 
-    robotdriver_manager->update(feedback_copy_ptr, jvel_etasl);
+    multiple_robotdriver_managers->update(feedback_copy_ptr, jvel_etasl);
     
-    if (feedback_copy_ptr->joint.is_pos_available){
+    // if (feedback_copy_ptr->joint.is_pos_available){
       for (unsigned int i=0; i<jvel_etasl.size(); ++i) {
         jpos_etasl[i] = feedback_copy_ptr->joint.pos.data[i]; //required only for positions
       }
-    }
+    // }
     
 }
 
@@ -691,7 +726,7 @@ void etaslNode::reinitialize_data_structures() {
     jvel_etasl = VectorXd::Zero(0);
     fvel_etasl = VectorXd::Zero(0);
 
-    jointnames.clear();
+    // jointnames.clear();
     jnames_in_expr.clear();
 
     jindex.clear();
@@ -721,14 +756,13 @@ void etaslNode::construct_node(std::atomic<bool>* stopFlagPtr_p){
     }
 
 
-
     feedback_copy_ptr = std::make_shared<robotdrivers::FeedbackMsg>(jointnames.size());
 
     /****************************************************
     * Adding Robot Driver
     ***************************************************/  
-    robotdriver_manager = std::make_shared<etasl::RobotDriverManagerLockFree>(shared_from_this(), param_root, jsonchecker, simulation, stopFlagPtr);
-    robotdriver_manager->construct_driver(jointnames.size());  //constructs and initializes communication with the robot
+    multiple_robotdriver_managers = std::make_shared<etasl::MultipleDriversManager>(shared_from_this(), param_root, jsonchecker, simulation, stopFlagPtr);
+    multiple_robotdriver_managers->construct_drivers(jointnames.size());  //constructs and initializes communication with the robot
 
     /****************************************************
     * Adding input and output handlers from the read JSON file 
@@ -763,30 +797,29 @@ void etaslNode::construct_node(std::atomic<bool>* stopFlagPtr_p){
     // available.
 
 
+
  // This still needs to be here and cannot be moved to construct_node() function because of the routine for verifying the joints in the expression. That routine should change 
     if(!first_time_configured){
 
-      bool is_robot_driver_initialized = robotdriver_manager->initialize(feedback_copy_ptr, ctx);
+      bool are_robot_drivers_initialized = multiple_robotdriver_managers->initialize(ctx);
 
-      if(!is_robot_driver_initialized){
-        return lifecycle_return::ERROR; //The message log and shutdown is done inside the robotdriver_manager
+      if(!are_robot_drivers_initialized){
+        return lifecycle_return::ERROR; //The message log and shutdown is done inside the multiple_robotdriver_managers
       }
 
 
       timer_ = this->create_wall_timer(std::chrono::milliseconds(periodicity_ms), std::bind(&etaslNode::update, this));
 
-      std::vector<double> jpos_init_vec; //TODO: This variable is no longer needed and can be replaced by feedback_copy_ptr->joint.pos.data
-      jpos_init_vec.resize(feedback_copy_ptr->joint.pos.data.size(),0.0);
-      for(unsigned int i = 0; i < feedback_copy_ptr->joint.pos.data.size(); ++i){
-          jpos_init_vec[i] = feedback_copy_ptr->joint.pos.data[i];
-        }
+      // std::vector<double> jpos_init_vec; //TODO: This variable is no longer needed and can be replaced by feedback_copy_ptr->joint.pos.data
+      // jpos_init_vec.resize(feedback_copy_ptr->joint.pos.data.size(),0.0);
+      // for(unsigned int i = 0; i < feedback_copy_ptr->joint.pos.data.size(); ++i){
+      //   jpos_init_vec[i] = feedback_copy_ptr->joint.pos.data[i];
+      // }
 
-      
-
-      jpos_init = VectorXd::Zero(jpos_init_vec.size());
-      for (unsigned int i = 0; i < jpos_init_vec.size(); ++i) {
-        jpos_init[i] = jpos_init_vec[i];
-      }
+      // jpos_init = VectorXd::Zero(jpos_init_vec.size());
+      // for (unsigned int i = 0; i < jpos_init_vec.size(); ++i) {
+      //   jpos_init[i] = jpos_init_vec[i];
+      // }
 
       io_handler_manager->initialize_input_handlers(ctx, jnames_in_expr, fnames, jpos_ros, fpos_etasl);
       io_handler_manager->initialize_output_handlers(ctx, jnames_in_expr, fnames);
@@ -795,16 +828,17 @@ void etaslNode::construct_node(std::atomic<bool>* stopFlagPtr_p){
     else{
       // jpos_init = jpos_etasl;
 
-      std::vector<float> jpos_init_vec = robotdriver_manager->get_position_feedback();
+      // std::vector<float> jpos_init_vec = multiple_robotdriver_managers->get_position_feedback(); //This method can only be used after the first time configuration
 
-      // jpos_init = VectorXd::Zero(jpos_init_vec.size());
-      assert(jpos_init_vec.size() == jpos_init.size());
+      // // jpos_init = VectorXd::Zero(jpos_init_vec.size());
+      // assert(jpos_init_vec.size() == jpos_init.size());
 
-      for (unsigned int i = 0; i < jpos_init_vec.size(); ++i) {
-        jpos_init[i] = jpos_init_vec[i];
-      }
+      // for (unsigned int i = 0; i < jpos_init_vec.size(); ++i) {
+      //   jpos_init[i] = jpos_init_vec[i];
+      // }
 
     }
+
 
   
     
@@ -813,7 +847,10 @@ void etaslNode::construct_node(std::atomic<bool>* stopFlagPtr_p){
 
     this->configure_etasl();
 
-    robotdriver_manager->on_configure(ctx);
+    multiple_robotdriver_managers->on_configure(ctx);
+
+
+
 
 
     RCUTILS_LOG_INFO_NAMED(get_name(), "on_configure() is called.");
@@ -857,7 +894,7 @@ void etaslNode::construct_node(std::atomic<bool>* stopFlagPtr_p){
 
     timer_->reset();
 
-    robotdriver_manager->on_activate();
+    multiple_robotdriver_managers->on_activate();
 
     // TODO: Handle erros in activate and return lifecycle_return::FAILURE instead
     io_handler_manager->activate_input_handlers(ctx, jnames_in_expr, fnames, slv);
@@ -901,7 +938,7 @@ void etaslNode::construct_node(std::atomic<bool>* stopFlagPtr_p){
 
     update_robot_status(); //Updates structures that the robot thread reads from shared memory, ensuring zero velocities
 
-    robotdriver_manager->on_deactivate();
+    multiple_robotdriver_managers->on_deactivate();
     io_handler_manager->deactivate_input_handlers(ctx);
     io_handler_manager->deactivate_output_handlers(ctx);
 
@@ -937,7 +974,7 @@ void etaslNode::construct_node(std::atomic<bool>* stopFlagPtr_p){
     jvel_etasl.setZero(); //Sets joint velocities to zero
     fvel_etasl.setZero(); //Sets feature variables to zero
 
-    robotdriver_manager->on_cleanup();
+    multiple_robotdriver_managers->on_cleanup();
 
     io_handler_manager->cleanup_input_handlers(ctx);
     io_handler_manager->cleanup_output_handlers(ctx);
@@ -1004,7 +1041,7 @@ void etaslNode::construct_node(std::atomic<bool>* stopFlagPtr_p){
     std::cout << "Program shutting down safely." << std::endl;
     stopFlagPtr->store(true); //Stops execution of driver_thread after executor e.g. when interrupted with ctr+c signal    
 
-    robotdriver_manager->finalize();
+    multiple_robotdriver_managers->finalize();
 
     io_handler_manager->finalize_input_handlers();
     io_handler_manager->finalize_output_handlers();
@@ -1012,9 +1049,9 @@ void etaslNode::construct_node(std::atomic<bool>* stopFlagPtr_p){
   }
 
 
-  std::shared_ptr<t_manager::thread_t> etaslNode::create_thread_str(std::atomic<bool> & stopFlag){
+  std::vector<std::shared_ptr<t_manager::thread_t>> etaslNode::create_driver_threads_structures(std::atomic<bool> & stopFlag){
 
-    return robotdriver_manager->create_thread_str(stopFlag);
+    return multiple_robotdriver_managers->create_driver_threads_structures(stopFlag);
 
   }
 
@@ -1041,10 +1078,21 @@ int main(int argc, char * argv[])
 
 
 
-    std::shared_ptr<t_manager::thread_t> thread_str_driver = my_etasl_node->create_thread_str(stopFlag);
+    // std::shared_ptr<t_manager::thread_t> thread_str_driver = my_etasl_node->create_thread_str(stopFlag);
 
-    std::thread driver_thread(t_manager::do_thread_loop, thread_str_driver, std::ref(stopFlag));
-    t_manager::setScheduling(driver_thread, SCHED_FIFO, 90);
+    std::vector<std::shared_ptr<t_manager::thread_t>> thread_str_drivers_vec =  my_etasl_node->create_driver_threads_structures(stopFlag);
+
+    std::vector<std::thread> driver_threads_vec;
+    driver_threads_vec.resize(thread_str_drivers_vec.size());
+
+    for (unsigned int i = 0; i < thread_str_drivers_vec.size(); ++i) {
+      std::shared_ptr<t_manager::thread_t> thread_str_driver = thread_str_drivers_vec[i];
+      driver_threads_vec[i] = std::thread(t_manager::do_thread_loop, thread_str_driver, std::ref(stopFlag));
+      t_manager::setScheduling(driver_threads_vec[i], SCHED_FIFO, 90);
+    }
+
+    // std::thread driver_thread(t_manager::do_thread_loop, thread_str_driver, std::ref(stopFlag));
+    // t_manager::setScheduling(driver_thread, SCHED_FIFO, 90);
     // driver_thread.detach();// Avoids the main thread to block. See spin() + stopFlag mechanism below.
 
 
@@ -1052,11 +1100,15 @@ int main(int argc, char * argv[])
     options.context = my_etasl_node->get_node_base_interface()->get_context(); //necessary to avoid unexplainable segmentation fault from the ros rclcpp library!!!
     rclcpp::executors::SingleThreadedExecutor executor(options);
     executor.add_node(my_etasl_node->get_node_base_interface());
-    executor.spin(); //This method blocks!
+    executor.spin(); //This method blocks until shutdown!
 
     stopFlag.store(true); //Stops execution of driver_thread after executor is interrupted with ctr+c signal
 
-    driver_thread.join();//Blocks until driver_thread stops, after the stopFlag is set to true
+    for (auto& thr : driver_threads_vec) {
+      thr.join(); //Blocks until each driver_thread stops, after the stopFlag is set to true
+    }
+
+    // driver_thread.join();//Blocks until driver_thread stops, after the stopFlag is set to true
 
     // std::this_thread::sleep_for(std::chrono::milliseconds(1000)); //Needed for the robotdriver thread to stop properly before calling shutdown. Otherwise segmentation fault is observed. This is because shutdown deletes something from the robotdriver as now ros2 pluginlib is being used.
     

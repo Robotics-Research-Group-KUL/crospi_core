@@ -52,7 +52,8 @@
 
 #include "etasl_node_utils/io_handler_manager.hpp"
 // #include "etasl_node_utils/robot_driver_manager.hpp"
-#include "etasl_node_utils/robot_driver_manager_lockfree.hpp"
+// #include "etasl_node_utils/robot_driver_manager_lockfree.hpp"
+#include "etasl_node_utils/multiple_drivers_manager.hpp"
 
 
 // #include "robot_interfacing_utils/feedback_struct.hpp"
@@ -99,7 +100,7 @@ class etaslNode : public rclcpp_lifecycle::LifecycleNode
         void construct_node(std::atomic<bool>* stopFlagPtr_p);
 
         void update_robot_status();
-        std::shared_ptr<t_manager::thread_t> create_thread_str(std::atomic<bool> & stopFlag);
+        std::vector<std::shared_ptr<t_manager::thread_t>> create_driver_threads_structures(std::atomic<bool> & stopFlag);
 
         bool etasl_console(const std::shared_ptr<std_srvs::srv::Empty::Request> request, std::shared_ptr<std_srvs::srv::Empty::Response>  response);
         bool readTaskSpecificationFile(const std::shared_ptr<etasl_interfaces::srv::TaskSpecificationFile::Request> request, std::shared_ptr<etasl_interfaces::srv::TaskSpecificationFile::Response>  response);
@@ -128,7 +129,8 @@ class etaslNode : public rclcpp_lifecycle::LifecycleNode
         etasl::IOHandlerManager::SharedPtr               io_handler_manager;
 
 
-        etasl::RobotDriverManagerLockFree::SharedPtr robotdriver_manager;
+        // etasl::RobotDriverManagerLockFree::SharedPtr robotdriver_manager;
+        etasl::MultipleDriversManager::SharedPtr multiple_robotdriver_managers;
 
         std::vector< std::string > jointnames;
         std::vector<std::string> jnames_in_expr;
@@ -149,14 +151,12 @@ class etaslNode : public rclcpp_lifecycle::LifecycleNode
         VectorXd jvel_etasl;
         VectorXd fvel_etasl;
 
-        VectorXd jpos_init;
-
 
         std::string outpfilename;
         std::string fname;
 
-        std::map< std::string, int> jindex;
-        std::map<std::string,int>  name_ndx;
+        std::map< std::string, int> jindex; //Indexes of joints according to eTaSL task specification
+        std::map<std::string,int>  name_ndx; //TODO: change to unordered_map instead of map
 
         bool first_time_configured;
         bool is_configured;

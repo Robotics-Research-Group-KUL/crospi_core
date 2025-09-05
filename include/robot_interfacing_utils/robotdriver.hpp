@@ -28,17 +28,6 @@ namespace etasl {
     class RobotDriver {            
 
         protected:
-        /**
-         * @brief Pointer to FeedbackMsg structure that stores feedback message
-         * 
-         */
-        robotdrivers::FeedbackMsg* feedback_ptr;
-
-        /**
-         * @brief Pointer to SetpointMsg structure that stores feedback message
-         * 
-         */
-        robotdrivers::SetpointMsg* setpoint_ptr;
 
         /**
          * @brief name of the robot
@@ -192,16 +181,12 @@ namespace etasl {
             /**
              * @brief Construct the plugin. Since the constructor of a ROS2 plugin cannot have arguments, the following method is used to pass those arguments.
              * This member function should be called right after the constructor of the super class is called.
-             * @param robot_name the name of the robot whose driver interfaces with 
-             * @param fb pointer to the feedback message structure where shared-memory communication occurs  
-             * @param sp pointer to the setpoingt message structure where shared-memory communication occurs  
+             * @param robot_name the name of the robot whose driver interfaces with   
              * @param config additional configuration parameters coming from the JSON configuration
              * @param jsonchecker a pointer to the jsonchecker that can be used to check the validity of the configuration
              * @return void
              */
             virtual void construct(std::string robot_name, 
-                                    robotdrivers::FeedbackMsg* fb, 
-                                    robotdrivers::SetpointMsg* sp,
                                     const Json::Value& config,
                                     std::shared_ptr<etasl::JsonChecker> jsonchecker) = 0;
 

@@ -15,6 +15,8 @@ set(BOOST_ROOT "/opt/boost/1.89.0")
 set(CMAKE_PREFIX_PATH "/opt/boost/1.89.0" ${CMAKE_PREFIX_PATH})
 find_package(Boost 1.89 REQUIRED)
 message(STATUS "Using Boost version ${Boost_VERSION}")
+message(STATUS "Boost include dirs: ${Boost_INCLUDE_DIRS}")
+
 # -- end -- Stuff for triple buffer implementation of boost 1.89
 
 include_directories(.)
@@ -54,7 +56,8 @@ ament_target_dependencies(etasl_node
 # TODO: change the directories of  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include> and $<INSTALL_INTERFACE:include>
 target_include_directories(etasl_node PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
-  $<INSTALL_INTERFACE:include>)
+  $<INSTALL_INTERFACE:include>
+  ${Boost_INCLUDE_DIRS})
 
 target_compile_features(etasl_node PUBLIC c_std_99 cxx_std_17)  # Require C99 and C++17
 
