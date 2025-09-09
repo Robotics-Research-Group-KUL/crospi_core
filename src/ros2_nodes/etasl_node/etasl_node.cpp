@@ -497,15 +497,33 @@ void etaslNode::initialize_joints(){
     // RCUTILS_LOG_INFO_NAMED(get_name(), "holaaa");
 
     // Read initial joint positions from the robot feedback
-    std::vector<float> jpos_init_vec = multiple_robotdriver_managers->get_position_feedback(); //This method can only be used after the first time configuration
+    std::vector<float> jpos_init_vec = multiple_robotdriver_managers->get_position_feedback();
     VectorXd jpos_init;
-    jpos_init = VectorXd::Zero(jpos_init_vec.size());
+    jpos_init  = VectorXd::Zero(jnames_in_expr.size()); 
 
-    assert(jpos_init_vec.size() == jpos_init.size());
 
-    for (unsigned int i = 0; i < jpos_init_vec.size(); ++i) {
-      jpos_init[i] = jpos_init_vec[i];
+    // assert(jpos_init_vec.size() == jpos_init.size());
+
+
+    for (unsigned int i=0;i<jointnames_drivers.size();++i) {
+      std::map<std::string,int>::iterator it = name_ndx.find(jointnames_drivers[i]);
+      if (it!=name_ndx.end()) {
+        jpos_init[it->second] = jpos_init_vec[i];
+      }
     }
+
+    std::cout << "--------------------------------------------------The initial joint positions read from the robot drivers are: " << std::endl;
+
+    for(unsigned int i=0;i<jpos_init_vec.size();++i) {
+      std::cout << jpos_init_vec[i] << ", ";
+    }
+    std::cout << std::endl;
+
+    for(unsigned int i=0;i<jpos_init.size();++i) {
+      std::cout << jpos_init[i] << ", ";
+    }
+    std::cout << std::endl;
+
     
 
     update_controller_input(jpos_init);
@@ -513,7 +531,7 @@ void etaslNode::initialize_joints(){
 
 
     if(jnames_in_expr.size()==0){
-        RCUTILS_LOG_WARN_NAMED(get_name(), "None of the robot_joints specified in the JSON configuration correspond the joints defined in the eTaSL robot expression graph.");
+        RCUTILS_LOG_ERROR_NAMED(get_name(), "None of the robot_joints specified in the JSON configuration correspond the joints defined in the eTaSL robot expression graph.");
     }
     else if(jnames_in_expr.size() != jointnames.size()){
       RCUTILS_LOG_WARN_NAMED(get_name(), "The number of robot_joints specified in the JSON configuration do not correspond to all the joints defined in the eTaSL robot expression graph.");
@@ -698,12 +716,35 @@ void etaslNode::update_robot_status(){
     fpos_etasl += fvel_etasl*(periodicity_ms/1000.0);  // you always integrate feature variables yourself
     time += (periodicity_ms/1000.0);
 
-    multiple_robotdriver_managers->update(feedback_copy_ptr, jvel_etasl);
+
+    //construct jvel_all_drivers from jvel_etasl
+
+    //TODO: The search does not need to be done at every iteration. It can be done once in the configuration phase
+    for (unsigned int i=0;i<jointnames_drivers.size();++i) {
+      std::map<std::string,int>::iterator it = name_ndx.find(jointnames_drivers[i]);
+      if (it!=name_ndx.end()) {
+        jvel_all_drivers[i] = jvel_etasl[it->second]; //joints that will be used for ros topic
+      }
+      else{
+        jvel_all_drivers[i] = 0.0; //if the joint is not used in the expression graph, then we set its velocity to zero
+      }
+    }
+
+    multiple_robotdriver_managers->update(joint_positions_feedback, jvel_all_drivers);
+
+
+    //TODO: The search does not need to be done at every iteration. It can be done once in the configuration phase
+    for (unsigned int i=0;i<jointnames_drivers.size();++i) {
+      std::map<std::string,int>::iterator it = name_ndx.find(jointnames_drivers[i]);
+      if (it!=name_ndx.end()) {
+        jpos_etasl[it->second] = joint_positions_feedback[i];
+      }
+    }
     
     // if (feedback_copy_ptr->joint.is_pos_available){
-      for (unsigned int i=0; i<jvel_etasl.size(); ++i) {
-        jpos_etasl[i] = feedback_copy_ptr->joint.pos.data[i]; //required only for positions
-      }
+      // for (unsigned int i=0; i<jvel_etasl.size(); ++i) {
+      //   jpos_etasl[i] = feedback_copy_ptr->joint.pos.data[i]; //required only for positions
+      // }
     // }
     
 }
@@ -756,13 +797,15 @@ void etaslNode::construct_node(std::atomic<bool>* stopFlagPtr_p){
     }
 
 
-    feedback_copy_ptr = std::make_shared<robotdrivers::FeedbackMsg>(jointnames.size());
 
     /****************************************************
     * Adding Robot Driver
     ***************************************************/  
     multiple_robotdriver_managers = std::make_shared<etasl::MultipleDriversManager>(shared_from_this(), param_root, jsonchecker, simulation, stopFlagPtr);
-    multiple_robotdriver_managers->construct_drivers(jointnames.size());  //constructs and initializes communication with the robot
+    multiple_robotdriver_managers->construct_drivers(joint_positions_feedback);  //constructs and initializes communication with the robot, and resizes joint_positions_feedback
+    jvel_all_drivers = VectorXd::Zero(joint_positions_feedback.size()); //After construct_drivers(joint_positions_feedback) is called, joint_positions_feedback has the correct size
+    jointnames_drivers = multiple_robotdriver_managers->get_robot_joints();
+
 
     /****************************************************
     * Adding input and output handlers from the read JSON file 
@@ -935,6 +978,7 @@ void etaslNode::construct_node(std::atomic<bool>* stopFlagPtr_p){
 
     jvel_etasl.setZero(); //Sets joint velocities to zero
     fvel_etasl.setZero(); //Sets feature variables to zero
+    jvel_all_drivers.setZero(); //Sets joint velocities (for robot drivers) to zero
 
     update_robot_status(); //Updates structures that the robot thread reads from shared memory, ensuring zero velocities
 

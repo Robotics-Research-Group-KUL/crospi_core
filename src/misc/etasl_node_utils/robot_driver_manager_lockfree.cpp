@@ -37,7 +37,11 @@ namespace etasl {
 
     void RobotDriverManagerLockFree::construct_driver(int num_joints, std::shared_ptr<pluginlib::ClassLoader<etasl::RobotDriver>>  driver_loader){
 
+        number_of_joints = num_joints;
+
         jvel_etasl_copy.data.resize(num_joints,0.0);
+
+        feedback_copy_ptr = std::make_shared<robotdrivers::FeedbackMsg>(num_joints);
 
         
         std::string driver_name = "";
@@ -56,7 +60,7 @@ namespace etasl {
           return;
         }
 
-        std::cout << parameters_.toStyledString() << std::endl;
+        // std::cout << parameters_.toStyledString() << std::endl;
         if(!parameters_.isMember("robot_joints")){
           std::string message = "Parameter robot_joints is currently missing in the robotdriver/robotsimulator " + driver_name + " and therefore the robot driver cannot be constructed.";
           RCLCPP_ERROR(node_->get_logger(), message.c_str());
@@ -85,7 +89,7 @@ namespace etasl {
     }
 
 
-    bool RobotDriverManagerLockFree::initialize(std::shared_ptr<robotdrivers::FeedbackMsg> feedback_copy_ptr, Context::Ptr ctx){
+    bool RobotDriverManagerLockFree::initialize(Context::Ptr ctx){
             
 
       
@@ -111,7 +115,7 @@ namespace etasl {
             }
             
 
-            robotdriver_->readFeedbackJointPosition(feedback_copy_ptr->joint.pos);
+            robotdriver_->readFeedbackJointPosition(feedback_copy_ptr->joint.pos); //local copy of initial feedback-> not used anymore
       
             // --------- Check if the requested feedback is available in the robot driver ---------------
             // Json::Value param_robot = board->getPath("/robot", false);
@@ -134,9 +138,9 @@ namespace etasl {
             input_channels_feedback.joint_torque.clear();
             input_channels_feedback.joint_current.clear();
       
-            input_channels_feedback.joint_vel.resize(feedback_copy_ptr->joint.pos.data.size(), nullptr);
-            input_channels_feedback.joint_torque.resize(feedback_copy_ptr->joint.pos.data.size(),nullptr);
-            input_channels_feedback.joint_current.resize(feedback_copy_ptr->joint.pos.data.size(),nullptr);
+            input_channels_feedback.joint_vel.resize(number_of_joints, nullptr);
+            input_channels_feedback.joint_torque.resize(number_of_joints,nullptr);
+            input_channels_feedback.joint_current.resize(number_of_joints,nullptr);
 
 
 
@@ -172,7 +176,7 @@ namespace etasl {
     }
                 
 
-    void RobotDriverManagerLockFree::update( std::shared_ptr<robotdrivers::FeedbackMsg> feedback_copy_ptr, const Eigen::VectorXd& jvel_etasl){
+    void RobotDriverManagerLockFree::update( robotdrivers::DynamicJointDataField& joint_positions, const Eigen::VectorXd& jvel_etasl){
 
 
     
@@ -186,7 +190,11 @@ namespace etasl {
         robotdriver_->writeSetpointJointVelocity(jvel_etasl_copy);
     
         if (feedback_copy_ptr->joint.is_pos_available){
-          robotdriver_->readFeedbackJointPosition(feedback_copy_ptr->joint.pos);
+          robotdriver_->readFeedbackJointPosition(joint_positions); //directly, without unnecessary local copy 
+
+          // robotdriver_->readFeedbackJointPosition(feedback_copy_ptr->joint.pos);
+          // joint_positions = feedback_copy_ptr->joint.pos.data;
+
         }
         else{
           RCLCPP_ERROR(node_->get_logger(), "The position feedback is not available in the used robot driver. This is required to run eTaSL.");
@@ -417,6 +425,11 @@ namespace etasl {
         robotdrivers::DynamicJointDataField jpos_current_vec;
 
         robotdriver_->readFeedbackJointPosition(jpos_current_vec);
+
+        while(!robotdriver_->readFeedbackJointPosition(jpos_current_vec)){ //ensures that there is something to be read (otherwise readFeedbackJointPosition returns false)
+          //sleep
+          std::this_thread::sleep_for(std::chrono::milliseconds(1));
+        }
 
         return jpos_current_vec.data;
     }

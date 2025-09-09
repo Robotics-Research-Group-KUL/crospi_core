@@ -39,6 +39,7 @@ namespace etasl {
         rclcpp_lifecycle::LifecycleNode::SharedPtr node_;
 
         bool simulation_;
+        int number_of_joints;
 
         etasl::RobotDriver::SharedPtr               robotdriver_;
 
@@ -48,6 +49,7 @@ namespace etasl {
 
 
         robotdrivers::DynamicJointDataField jvel_etasl_copy;
+        std::shared_ptr<robotdrivers::FeedbackMsg> feedback_copy_ptr;
 
         std::map<std::string, bool> feedback_report;
 
@@ -113,10 +115,10 @@ namespace etasl {
              *          in the initialization phase of eTaSL (e.g. specifying the initial value of the
              *           feature variables)
              */
-            [[nodiscard]] bool initialize(std::shared_ptr<robotdrivers::FeedbackMsg> feedback_copy_ptr, Context::Ptr ctx);
+            [[nodiscard]] bool initialize(Context::Ptr ctx);
 
             
-            void update( std::shared_ptr<robotdrivers::FeedbackMsg> feedback_copy_ptr, const Eigen::VectorXd& jvel_etasl);
+            void update(robotdrivers::DynamicJointDataField& joint_positions, const Eigen::VectorXd& jvel_etasl);
 
 
             /**

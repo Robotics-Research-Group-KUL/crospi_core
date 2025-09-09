@@ -21,35 +21,15 @@ namespace etasl {
         // Constructor implementation
 
         Json::Value param_robot = parameters_["robot"];
-
-        Json::Value def_robot_spec_params = parameters_["default_robot_specification"];
-        for (auto n : jsonchecker_->asArray(def_robot_spec_params, "robot_joints")) {
-          jnames_all_.push_back(n.asString());
-        }
-
-        for (unsigned int i=0;i<jnames_all_.size();++i) {
-          robot_joint_names_ndx_map[ jnames_all_[i]]  =i;
-        }
-
         
         if(simulation_){
-          // periodicity = jsonchecker_->asDouble(param_robot, "robotsimulator/periodicity");
           param_robotdrivers_ = param_robot["robotsimulators"];
           driver_loader_ = std::make_shared<pluginlib::ClassLoader<etasl::RobotDriver>>("etasl_ros2", "etasl::RobotSimulator"); //This works because etasl::RobotSimulator inherits from etasl::RobotDriver
-
         }
         else{
           param_robotdrivers_ = param_robot["robotdrivers"];
           driver_loader_ = std::make_shared<pluginlib::ClassLoader<etasl::RobotDriver>>("etasl_ros2", "etasl::RobotDriver");
-          // periodicity = jsonchecker_->asDouble(param_robot, "robotdriver/periodicity");
         }
-
-        // Json::Value robot_param = board->getPath("/robot", false);
-
-        // Json::Value param_iohandlers = parameters["iohandlers"];
-
-        
-
 
     }
 
@@ -59,63 +39,54 @@ namespace etasl {
         // Destructor implementation
     }
 
-    void MultipleDriversManager::construct_drivers(){
+    void MultipleDriversManager::construct_drivers(std::vector<float>& joint_positions_feedback){
 
       std::cout << "beginning of MultipleDriversManager::construct_drivers()" << std::endl;
 
 
       // ------- START: initialize robot joints and indices for demultiplexer and multiplexer of robot joints for different drivers. Already considers new structure of JSON      
       
-      separated_jnames_all_.clear();
-      separated_jindices_in_expr_.clear();
-      
+      robot_joints_drivers_separated.clear();
       
       for (const auto& driver : param_robotdrivers_){
-        std::vector<std::string> separated_jnames_element;
+        std::vector<std::string> robot_joint_d;
         for (auto n : jsonchecker_->asArray(driver, "robot_joints")) {
-          separated_jnames_element.push_back(n.asString());
+          robot_joint_d.push_back(n.asString());
         }
-        separated_jnames_all_.push_back(separated_jnames_element);
+        robot_joints_drivers_separated.push_back(robot_joint_d);
       }
       
-      separated_jindices_in_expr_.resize(separated_jnames_all_.size());
       
-      
-      for(unsigned int i=0; i<separated_jnames_all_.size(); ++i){
-        int num_joints = separated_jnames_all_.at(i).size();
-        separated_jindices_in_expr_.at(i).resize(num_joints);
+      for(unsigned int i=0; i<robot_joints_drivers_separated.size(); ++i){
+        int num_joints = robot_joints_drivers_separated.at(i).size();
         Json::Value current_driver_param = param_robotdrivers_[i];
+
+        std::cout << "+++++++++++++++Constructing driver " << i+1 << " of " << param_robotdrivers_.size() << " with " << num_joints << " joints." << std::endl;
+        std::cout << current_driver_param.toStyledString() << std::endl;
         robotdriver_manager_vector_.push_back(std::make_shared<etasl::RobotDriverManagerLockFree>(node_, current_driver_param, jsonchecker_, simulation_, stopFlagPtr_));
         robotdriver_manager_vector_.back()->construct_driver(num_joints, driver_loader_); //constructs and initializes communication with the robot
         
-        feedback_copies_vec.push_back(std::make_shared<robotdrivers::FeedbackMsg>(num_joints));
-        jvel_etasl_copies_vec.push_back(Eigen::VectorXd::Zero(num_joints)); //Initialize with zeros
-        feedback_separate_joint_pos_.push_back(robotdrivers::DynamicJointDataField(num_joints));
+        // feedback_copies_vec.push_back(std::make_shared<robotdrivers::FeedbackMsg>(num_joints));
+        joint_positions_drivers_.push_back(robotdrivers::DynamicJointDataField(num_joints)); //Initialize with zeros
+        joint_velocities_setpoints_drivers_.push_back(Eigen::VectorXd::Zero(num_joints)); //Initialize with zeros
         num_joints_in_all_drivers_ += num_joints;
+
+      }
+      
+      joint_positions_feedback.resize(num_joints_in_all_drivers_, 0.0); //Resize the output vector that will contain the feedback of all drivers
+
+
+      // Copy in order
+      robot_joints.resize(num_joints_in_all_drivers_);
+      int offset = 0;
+      for (const auto& field : robot_joints_drivers_separated) {
+          std::copy(field.begin(), field.end(), robot_joints.begin() + offset);
+          offset += field.size();
       }
       
       // ------- END: initialize robot joints and indices for demultiplexer and multiplexer of robot joints for different drivers. Already considers new structure of JSON
 
-      // for (const auto& drivers : param_robotdrivers_){
-
-      //   // double periodicity = jsonchecker_->asDouble(drivers, "periodicity");
-      //   // thread_str_drivers_vector_.push_back(std::make_shared<t_manager::thread_t>());
-      //   // std::shared_ptr<t_manager::thread_t> thread_str_driver = thread_str_drivers_vector_.back(); //Takes the last element
-
-      //   // robotdriver_manager = std::make_shared<etasl::RobotDriverManagerLockFree>(node_, param_root, jsonchecker, simulation, stopFlagPtr);
-      //   // robotdriver_manager->construct_driver(jointnames.size());  //constructs and initializes communication with the robot
-
-      //   robotdriver_manager_vector_.push_back(std::make_shared<etasl::RobotDriverManagerLockFree>(node_, parameters_, jsonchecker_, simulation_, stopFlagPtr_));
-      //   robotdriver_manager_vector_.back()->construct_driver(num_joints); //constructs and initializes communication with the robot
-
-      //   //TODO: iMPORTANT! CHANGE num_joints to each driver number of joints
-      //   feedback_copies_vec.push_back(std::make_shared<robotdrivers::FeedbackMsg>(num_joints));
-      //   jvel_etasl_copies_vec.push_back(Eigen::VectorXd::Zero(num_joints));
-        
-      // }
-
       std::cout << "end of MultipleDriversManager::construct_drivers()" << std::endl;
-      
 
     }
 
@@ -158,29 +129,14 @@ namespace etasl {
         // }
 
 
-      assert(robotdriver_manager_vector_.size() == feedback_copies_vec.size());
+      assert(robotdriver_manager_vector_.size() == joint_positions_drivers_.size());
 
       // for (const auto& driver_managers : robotdriver_manager_vector_){
       bool all_initialized = true;
       for (unsigned int i=0; i<robotdriver_manager_vector_.size(); ++i) {
-        all_initialized =  all_initialized && robotdriver_manager_vector_.at(i)->initialize(feedback_copies_vec[i], ctx);
-        feedback_separate_joint_pos_.at(i).data = feedback_copies_vec.at(i)->joint.pos.data; 
+        all_initialized =  all_initialized && robotdriver_manager_vector_.at(i)->initialize(ctx);
+        joint_positions_drivers_.at(i).data = robotdriver_manager_vector_.at(i)->get_position_feedback(); 
       }
-
-      // bool MultipleDriversManager::multiplexer(feedback_separate_joint_pos_, combined_joint_pos_);
-      // combined_joint_pos_.data.resize(feedback_copy_ptr->joint.pos.data.size(),0.0);
-      // combined_joint_pos_.data = feedback_copy_ptr->joint.pos.data; //Initialize with the current values of the robot
-
-      // update_joint_indices(robot_joint_names_ndx_map);
-      
-
-      // if(!this->multiplexer(feedback_separate_joint_pos_, feedback_copy_ptr->joint.pos)){
-      //   std::string message = "The feedback of the different robotdrivers could not be multiplexed at initialization.";
-      //   RCLCPP_ERROR(node_->get_logger(), message.c_str());
-      //   auto transition = node_->shutdown(); //calls on_shutdown() hook
-      //   return false;
-      // }
-            
       std::cout << "end of MultipleDriversManager::initialize()" << std::endl;
 
       return all_initialized;
@@ -188,71 +144,30 @@ namespace etasl {
 
     void MultipleDriversManager::update( std::vector<float>& joint_positions, const Eigen::VectorXd& jvel_etasl){
 
-      // std::cout <<"The size of the separated_jindices_in_expr_:" << separated_jindices_in_expr_.size() << std::endl;
-
-      // for(const auto& vec : separated_jindices_in_expr_){
-      //   for(const auto& val : vec){
-      //     std::cout << val << ", ";
-      //   }
-      //   std::cout << std::endl;
+      // for (const auto& pair : jvel_etasl) {
+      //   // std::cout << pair.first << " joint has velocity: " << pair.second << std::endl;
+        
       // }
 
 
-      this->demultiplexer(jvel_etasl, jvel_etasl_copies_vec );
-      // void MultipleDriversManager::demultiplexer(const Eigen::VectorXd& joint_vel_etasl, std::vector<Eigen::VectorXd>& jvel_etasl_separated_vector ){
-
-      // for (unsigned int i=0; i<jvel_etasl.size(); ++i) {
-      //   std::cout << jvel_etasl_copies_vec[0][i] << "=?" << jvel_etasl[i] << ", ";
-      // }
-      // std::cout << std::endl;
+      //TODO demultiplexer
+      this->demultiplexer(jvel_etasl, joint_velocities_setpoints_drivers_ );
 
       for (unsigned int i=0; i<robotdriver_manager_vector_.size(); ++i) {
-        robotdriver_manager_vector_[i]->update(feedback_copies_vec[i], jvel_etasl_copies_vec[i]);
-      }
-
-
-      //After reading feedback in the update I am copying data in the right format.
-      //TODO: Delete the feedback_copy_ptr and avoid so many copies!!!! I just need position stuff for this steps
-      for (unsigned int i=0; i<feedback_copies_vec.size(); ++i) {
-        feedback_separate_joint_pos_[i].data = feedback_copies_vec[i]->joint.pos.data; 
+        robotdriver_manager_vector_[i]->update(joint_positions_drivers_[i], joint_velocities_setpoints_drivers_[i]);
       }
 
 
       // if(!this->multiplexer(feedback_copies_vec, feedback_copy_ptr)){
-      if(!this->multiplexer(feedback_separate_joint_pos_, feedback_copy_ptr->joint.pos)){
-        std::string message = "The feedback of the different robotdrivers could not be multiplexed during the update.";
+      //TODO multiplexer
+      if(!this->multiplexer(joint_positions_drivers_, joint_positions)){
+        std::string message = "The feedback of the different robotdrivers could not be multiplexed during the update due to a missmatch in size.";
         RCLCPP_ERROR(node_->get_logger(), message.c_str());
         auto transition = node_->shutdown(); //calls on_shutdown() hook
         return;
       }
 
-      // for (unsigned int i=0; i<feedback_copy_ptr->joint.pos.data.size(); ++i) {
-      //     std::cout << feedback_separate_joint_pos_[0].data[i] << "=?" << feedback_copy_ptr->joint.pos.data[i] << ", ";
-      // }
-      // std::cout << std::endl;
 
-      // for(unsigned int i=0; i<feedback_copy_ptr->joint.pos.data.size(); ++i) {
-      //   std::cout << feedback_copy_ptr->joint.pos.data[i] << ", ";
-      // }
-      // std::cout << std::endl;
-
-    }
-
-    void MultipleDriversManager::update_joint_indices(const std::map<std::string,int>& robot_joint_names_ndx_map){
-      for (unsigned int g = 0; g < separated_jnames_all_.size(); ++g) {
-        for (unsigned int i = 0; i < separated_jnames_all_.at(g).size(); ++i) {
-          auto it = robot_joint_names_ndx_map.find(separated_jnames_all_.at(g).at(i));
-          if (it == robot_joint_names_ndx_map.end()) { //Joint name not found in the etasl expressions
-            separated_jindices_in_expr_.at(g).at(i) = -1; // Joint not found
-            // std::string message = "The joint name " + separated_jnames_all_.at(g).at(i) + "specified in the configuration of the driver/simulator was not found in the robot_joints provided to etasl in the provided .setup.json file";
-            // RCLCPP_ERROR(node_->get_logger(), message.c_str());
-            // auto transition = node_->shutdown(); //calls on_shutdown() hook
-          }
-          else{
-            separated_jindices_in_expr_.at(g).at(i) = it->second;  // Assigns the index of the joint
-          }
-        }
-      } 
     }
 
 
@@ -260,8 +175,6 @@ namespace etasl {
     void MultipleDriversManager::on_configure(Context::Ptr ctx){
 
       std::cout << "beginning of MultipleDriversManager::on_configure()" << std::endl;
-
-      update_joint_indices(robot_joint_names_ndx_map); //TODO: do this once at initialization since now we always give to the etasl_node all the joints of all the drivers (without taking into account what is in the etasl expressions)
 
 
       for (unsigned int i=0; i<robotdriver_manager_vector_.size(); ++i) {
@@ -278,47 +191,56 @@ namespace etasl {
       std::cout << "beginning of MultipleDriversManager::get_position_feedback()" << std::endl;
 
       
-      robotdrivers::DynamicJointDataField combined_jpos_current_vec(num_joints_in_all_drivers_);
+      // robotdrivers::DynamicJointDataField combined_jpos_current_vec(num_joints_in_all_drivers_);
+      std::vector<float> combined_jpos_current_vec(num_joints_in_all_drivers_, 0.0);
       std::vector<robotdrivers::DynamicJointDataField> separate_jpos_current_vec;
+      
 
       separate_jpos_current_vec.resize(robotdriver_manager_vector_.size());
 
-      std::cout << "ciaoo 111" << std::endl;
+      // std::cout << "ciaoo 111" << std::endl;
 
       for (unsigned int i=0; i<robotdriver_manager_vector_.size(); ++i) {
         separate_jpos_current_vec.at(i).data = robotdriver_manager_vector_.at(i)->get_position_feedback();
       }
-      std::cout << "ciaoo 222" << std::endl;
+      // std::cout << "ciaoo 222" << std::endl;
 
-      for (unsigned int i=0; i<separate_jpos_current_vec.at(0).data.size(); ++i) {
-        std::cout << separate_jpos_current_vec.at(0).data.at(i) << ", ";
-      }
-      std::cout << std::endl;
-      std::cout << "/////////////////////////////////////////////////////////hereee!!!! abovee" << std::endl;
+      // for (unsigned int i=0; i<separate_jpos_current_vec.at(0).data.size(); ++i) {
+      //   std::cout << separate_jpos_current_vec.at(0).data.at(i) << ", ";
+      // }
+      // std::cout << std::endl;
+      // std::cout << "/////////////////////////////////////////////////////////hereee!!!! abovee" << std::endl;
 
 
       if(!this->multiplexer(separate_jpos_current_vec, combined_jpos_current_vec)){
-        std::string message = "The position feedback of the different robotdrivers could not be multiplexed during the get_position_feedback() function.";
+        std::string message = "The position feedback of the different robotdrivers could not be multiplexed during the get_position_feedback() function due to a missmatch in size.";
         RCLCPP_ERROR(node_->get_logger(), message.c_str());
         auto transition = node_->shutdown(); //calls on_shutdown() hook
       }
       std::cout << "end of MultipleDriversManager::get_position_feedback()" << std::endl;
 
-        return combined_jpos_current_vec.data;
+        return combined_jpos_current_vec;
     }
 
     void MultipleDriversManager::on_activate(){
+      for (const auto& driver_manager : robotdriver_manager_vector_){
+        driver_manager->on_activate();
+      }
 
     }
 
 
     void MultipleDriversManager::on_deactivate(){
-
+      for (const auto& driver_manager : robotdriver_manager_vector_){
+        driver_manager->on_deactivate();
+      }
     }
 
 
     void MultipleDriversManager::on_cleanup(){
-
+      for (const auto& driver_manager : robotdriver_manager_vector_){
+        driver_manager->on_cleanup();
+      }
     }
 
     void MultipleDriversManager::finalize(){
@@ -329,47 +251,41 @@ namespace etasl {
 
     }
 
-    // void MultipleDriversManager::demultiplexer(const std::vector<std::vector<std::string>>& separated_jnames_all_, const Eigen::VectorXd& joint_vel_etasl, std::vector<Eigen::VectorXd>& jvel_etasl_separated_vector ){
+    std::vector<std::string> MultipleDriversManager::get_robot_joints(){
+      return robot_joints;
+    }
+
     void MultipleDriversManager::demultiplexer(const Eigen::VectorXd& joint_vel_etasl, std::vector<Eigen::VectorXd>& jvel_etasl_separated_vector ){
 
-      for (unsigned int g = 0; g < jvel_etasl_separated_vector.size(); ++g) {
-        for (unsigned int i=0;i<jvel_etasl_separated_vector[g].size();++i) {
-          if (separated_jindices_in_expr_[g][i] >= 0){ //!= -1
-            jvel_etasl_separated_vector[g][i] = joint_vel_etasl[separated_jindices_in_expr_[g][i]];
-          }
-          else{
-            jvel_etasl_separated_vector[g][i] = 0; //Set to zero velocities that are not considered by eTaSL in the current task
-          }
-        }
+      // Split in order
+      Eigen::Index offset = 0;
+      for (auto& v : jvel_etasl_separated_vector) {
+          v = joint_vel_etasl.segment(offset, v.size());
+          offset += v.size();
       }
 
       //TODO
       return;
     }
 
-    // bool MultipleDriversManager::multiplexer(const std::vector<std::shared_ptr<robotdrivers::FeedbackMsg>>& separate_feedback_copies_vec, std::shared_ptr<robotdrivers::FeedbackMsg>& combined_feedback_copy_ptr){
-    //   //TODO
-    //   return true;
-    // }
-    bool MultipleDriversManager::multiplexer(const std::vector<robotdrivers::DynamicJointDataField>& separate_joint_pos, robotdrivers::DynamicJointDataField& combined_joint_pos){
+
+    bool MultipleDriversManager::multiplexer(const std::vector<robotdrivers::DynamicJointDataField>& separate_joint_pos, std::vector<float>& joint_positions){
       
       // std::cout << "separate_joint_pos.size(): " << separate_joint_pos.size() << std::endl;
       // std::cout << "separate_joint_pos[0].data.size(): " << separate_joint_pos[0].data.size() << std::endl;
 
-      for (unsigned int g = 0; g < separate_joint_pos.size(); ++g) {
-        for (unsigned int i=0;i<separate_joint_pos[g].data.size();++i) {
-          if (separated_jindices_in_expr_[g][i] >= 0){ //!= -1
-            std::cout << "separated_jindices_in_expr_[g][i]" << separated_jindices_in_expr_[g][i] << std::endl;
-            std::cout << "combined_joint_pos.data.size()" << combined_joint_pos.data.size() << std::endl;
-
-            assert(separated_jindices_in_expr_[g][i] < combined_joint_pos.data.size()); //TODO: Comment this out
-            combined_joint_pos.data[separated_jindices_in_expr_[g][i]] = separate_joint_pos[g].data[i];
-            // std::cout << separate_joint_pos[g].data[i] << ", ";
-          }
-          //Else: don't do anything. Just maintain the previous positions (e.g. in case that the joints are not being considered in the current etasl task)
-        }
-        // std::cout << std::endl;
+      // Optional: check consistency
+      if (joint_positions.size() != num_joints_in_all_drivers_) {
+          return false;  // mismatch
       }
+
+      // Copy in order
+      int offset = 0;
+      for (const auto& field : separate_joint_pos) {
+          std::copy(field.data.begin(), field.data.end(), joint_positions.begin() + offset);
+          offset += field.data.size();
+      }
+
 
       return true;
     }

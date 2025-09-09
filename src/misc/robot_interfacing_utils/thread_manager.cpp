@@ -27,18 +27,32 @@ void do_thread_loop(std::shared_ptr<thread_t> thread, volatile std::atomic<bool>
 
     std::chrono::steady_clock::time_point  start_time = std::chrono::steady_clock::now();
     std::chrono::steady_clock::time_point  end_time = std::chrono::steady_clock::now();
-    auto duration_s = std::chrono::duration_cast<std::chrono::microseconds>(end_time - start_time);
+    // auto duration_s = std::chrono::duration_cast<std::chrono::microseconds>(end_time - start_time);
+    // auto now = std::chrono::steady_clock::now();
+    long long period_ns = std::chrono::duration_cast<std::chrono::nanoseconds>(end_time - start_time).count();
+    long long sum_period = 0ll;
+    long long max_period = 0ll;
+    long long min_period = 0ll;
+    long long num_samples = 0ll;
 
 
     // Comment the following lambda out to avoid measuring time:
     
-    // thread->benchmark_hook = [&end_time, &start_time, &duration_s]() {
+    thread->benchmark_hook = [&end_time, &start_time, &period_ns, &sum_period, &max_period, &min_period, &num_samples]() {
     
-    //     end_time = std::chrono::steady_clock::now();
-    //     duration_s = std::chrono::duration_cast<std::chrono::microseconds>(end_time - start_time);
-    //     std::cout << "Time spent: "<< duration_s.count()/1000.0<<" milliseconds" << std::endl; //Temporarily placed for debugging
-    //     start_time = std::chrono::steady_clock::now();
-    // };
+        end_time = std::chrono::steady_clock::now();
+        period_ns = std::chrono::duration_cast<std::chrono::nanoseconds>(end_time - start_time).count();
+        start_time = std::chrono::steady_clock::now();
+
+        sum_period+= period_ns;
+        num_samples++;
+        if (period_ns > max_period) {
+          max_period = period_ns;
+        }
+        if (min_period == 0 || period_ns < min_period) {
+          min_period = period_ns;
+        }
+    };
 
     // do_thread_loop_std_sleep_until(thread,  stopFlag);
     // do_thread_loop_std_sleep_for(thread,  stopFlag);
@@ -49,6 +63,13 @@ void do_thread_loop(std::shared_ptr<thread_t> thread, volatile std::atomic<bool>
 
     if ( thread->finalize_hook != nullptr)   {thread->finalize_hook();}
     // if(stopFlag.load(std::memory_order_relaxed))    {std::cout << "stopFlag=true" << std::endl;}
+
+    std::cout << "------------ Periodicity statistics --------------" << std::endl;
+    // std::cout << "Sum periodicity: " << sum_period << " ns" << std::endl;
+    std::cout << "Max periodicity: " << max_period << " ns" << std::endl;
+    std::cout << "Min periodicity: " << min_period << " ns" << std::endl;
+    std::cout << "Number of samples: " << num_samples << std::endl;
+    std::cout << "Average periodicity: " << (num_samples > 0 ? static_cast<double>(sum_period) / num_samples : 0.0) << " ns" << std::endl;
     
 }
 
@@ -58,15 +79,15 @@ void do_thread_loop_std_sleep_until(std::shared_ptr<thread_t> thread, volatile s
    std::chrono::steady_clock::time_point  end_time_sleep = std::chrono::steady_clock::now() + periodicity;
 
    while (!stopFlag.load(std::memory_order_relaxed)){
-       thread->update_hook(); //Function that I want to execute periodically
-       // Using std library to sleep
-       std::this_thread::sleep_until(end_time_sleep);
-       while ( std::chrono::steady_clock::now() < end_time_sleep || errno == EINTR ) { // In case the sleep was interrupted, continues to execute it
-           errno = 0;
-           std::this_thread::sleep_until(end_time_sleep);
-       }
-       end_time_sleep = std::chrono::steady_clock::now() + periodicity; //adds periodicity
-         if ( thread->benchmark_hook != nullptr)   {thread->benchmark_hook();}
+        thread->update_hook(); //Function that I want to execute periodically
+        // Using std library to sleep
+        std::this_thread::sleep_until(end_time_sleep);
+        while ( std::chrono::steady_clock::now() < end_time_sleep || errno == EINTR ) { // In case the sleep was interrupted, continues to execute it
+            errno = 0;
+            std::this_thread::sleep_until(end_time_sleep);
+        }
+        end_time_sleep = std::chrono::steady_clock::now() + periodicity; //adds periodicity
+        if ( thread->benchmark_hook != nullptr)   {thread->benchmark_hook();}
    }
    
 }

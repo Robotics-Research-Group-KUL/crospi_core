@@ -133,6 +133,7 @@ class etaslNode : public rclcpp_lifecycle::LifecycleNode
         etasl::MultipleDriversManager::SharedPtr multiple_robotdriver_managers;
 
         std::vector< std::string > jointnames;
+        std::vector< std::string > jointnames_drivers;
         std::vector<std::string> jnames_in_expr;
         std::vector< std::string > fnames;
 
@@ -141,14 +142,15 @@ class etaslNode : public rclcpp_lifecycle::LifecycleNode
 
         std::shared_ptr<etasl::JsonChecker> jsonchecker;
         
-        std::shared_ptr<robotdrivers::FeedbackMsg> feedback_copy_ptr;
 
+        std::vector<float> joint_positions_feedback; //Feedback of all joints in all drivers
 
         VectorXd fpos_etasl;
         VectorXd jpos_etasl;
         VectorXd jpos_ros;
         // VectorXd jpos;
         VectorXd jvel_etasl;
+        VectorXd jvel_all_drivers;
         VectorXd fvel_etasl;
 
 
