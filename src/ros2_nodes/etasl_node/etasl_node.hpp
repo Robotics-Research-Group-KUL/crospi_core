@@ -137,6 +137,10 @@ class etaslNode : public rclcpp_lifecycle::LifecycleNode
         std::vector<std::string> jnames_in_expr;
         std::vector< std::string > fnames;
 
+        std::vector<int> driver_to_etasl; // Maps driver index -> etasl index, or -1 if not used
+        std::vector<int> etasl_to_driver; // Maps etasl index -> driver index
+        
+
         std::shared_ptr<etasl::BlackBoard> board;
 
 

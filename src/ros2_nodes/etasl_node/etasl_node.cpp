@@ -494,6 +494,32 @@ void etaslNode::initialize_joints(){
         name_ndx[ jnames_in_expr[i]]  =i;
     }
 
+    
+
+
+
+
+    // for (int i = 0; i < jointnames_etasl.size(); ++i) {
+    //   name_ndx[jointnames_etasl[i]] = i;
+    // }
+
+    driver_to_etasl.resize(jointnames_drivers.size(), -1);
+    for (size_t i = 0; i < jointnames_drivers.size(); ++i) {
+        auto it = name_ndx.find(jointnames_drivers[i]);
+        if (it != name_ndx.end()) {
+            driver_to_etasl[i] = it->second;
+        }// Else, it remains -1
+    }
+
+    // build the reverse mapping too
+    etasl_to_driver.resize(jnames_in_expr.size(), -1);
+    for (size_t i = 0; i < driver_to_etasl.size(); ++i) {
+        if (driver_to_etasl[i] != -1) {
+            etasl_to_driver[driver_to_etasl[i]] = i;
+        }
+    }
+
+
     // RCUTILS_LOG_INFO_NAMED(get_name(), "holaaa");
 
     // Read initial joint positions from the robot feedback
@@ -720,13 +746,22 @@ void etaslNode::update_robot_status(){
     //construct jvel_all_drivers from jvel_etasl
 
     //TODO: The search does not need to be done at every iteration. It can be done once in the configuration phase
-    for (unsigned int i=0;i<jointnames_drivers.size();++i) {
-      std::map<std::string,int>::iterator it = name_ndx.find(jointnames_drivers[i]);
-      if (it!=name_ndx.end()) {
-        jvel_all_drivers[i] = jvel_etasl[it->second]; //joints that will be used for ros topic
-      }
-      else{
-        jvel_all_drivers[i] = 0.0; //if the joint is not used in the expression graph, then we set its velocity to zero
+    // for (unsigned int i=0;i<jointnames_drivers.size();++i) {
+    //   std::map<std::string,int>::iterator it = name_ndx.find(jointnames_drivers[i]);
+    //   if (it!=name_ndx.end()) {
+    //     jvel_all_drivers[i] = jvel_etasl[it->second]; //joints that will be used for ros topic
+    //   }
+    //   else{
+    //     jvel_all_drivers[i] = 0.0; //if the joint is not used in the expression graph, then we set its velocity to zero
+    //   }
+    // }
+
+    // Fill jvel_all_drivers from jvel_etasl
+    for (size_t i = 0; i < driver_to_etasl.size(); ++i) {
+      if (driver_to_etasl[i] != -1) {
+          jvel_all_drivers[i] = jvel_etasl[driver_to_etasl[i]];
+      } else {
+          jvel_all_drivers[i] = 0.0; // joint not used in ETaSL
       }
     }
 
@@ -734,11 +769,17 @@ void etaslNode::update_robot_status(){
 
 
     //TODO: The search does not need to be done at every iteration. It can be done once in the configuration phase
-    for (unsigned int i=0;i<jointnames_drivers.size();++i) {
-      std::map<std::string,int>::iterator it = name_ndx.find(jointnames_drivers[i]);
-      if (it!=name_ndx.end()) {
-        jpos_etasl[it->second] = joint_positions_feedback[i];
-      }
+    // for (unsigned int i=0;i<jointnames_drivers.size();++i) {
+    //   std::map<std::string,int>::iterator it = name_ndx.find(jointnames_drivers[i]);
+    //   if (it!=name_ndx.end()) {
+    //     jpos_etasl[it->second] = joint_positions_feedback[i];
+    //   }
+    // }
+
+    for (size_t etasl_idx = 0; etasl_idx < etasl_to_driver.size(); ++etasl_idx) {
+        if (etasl_to_driver[etasl_idx] != -1) {
+            jpos_etasl[etasl_idx] = joint_positions_feedback[etasl_to_driver[etasl_idx]];
+        }
     }
     
     // if (feedback_copy_ptr->joint.is_pos_available){
@@ -942,7 +983,6 @@ void etaslNode::construct_node(std::atomic<bool>* stopFlagPtr_p){
     // TODO: Handle erros in activate and return lifecycle_return::FAILURE instead
     io_handler_manager->activate_input_handlers(ctx, jnames_in_expr, fnames, slv);
     io_handler_manager->activate_output_handlers(ctx, jnames_in_expr, fnames, slv);
-
 
 
     RCUTILS_LOG_INFO_NAMED(get_name(), "on_activate() is called.");
