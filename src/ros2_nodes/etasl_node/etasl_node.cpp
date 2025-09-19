@@ -132,10 +132,11 @@ etaslNode::etaslNode(const std::string & node_name, bool intra_process_comms = f
   rclcpp::QoS qos_profile( rclcpp::QoSInitialization::from_rmw(rmw_qos_profile_default));
 
   qos_profile
-    .reliability(rmw_qos_reliability_policy_t::RMW_QOS_POLICY_RELIABILITY_RELIABLE) //Uses TCP for reliability instead of UDP
-    .durability(rmw_qos_durability_policy_t::RMW_QOS_POLICY_DURABILITY_VOLATILE)
-    .history(rmw_qos_history_policy_t::RMW_QOS_POLICY_HISTORY_KEEP_LAST) //Keeps the last msgs received in case buffer is fulll
-    .keep_last(20); //Buffer size
+    .reliability(rclcpp::ReliabilityPolicy::Reliable) // Ensures every message is delivered (may retransmit if lost)
+    .durability(rclcpp::DurabilityPolicy::TransientLocal)
+    .history(rclcpp::HistoryPolicy::KeepLast) //Keeps the last msgs received in case buffer is fulll
+    .keep_last(20) //Buffer size
+    .lifespan(300ms);  // Messages older than 300 ms are dropped
 
   events_pub_ = this->create_publisher<std_msgs::msg::String>(jsonchecker->asString(etasl_param, "general/event_topic"), qos_profile); 
 
