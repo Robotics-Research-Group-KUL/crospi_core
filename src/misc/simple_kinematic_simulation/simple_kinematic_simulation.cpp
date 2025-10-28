@@ -16,7 +16,7 @@ void simple_kinematic_simulation::construct(std::string robot_name,
                         FeedbackMsg* fb, 
                         SetpointMsg* sp,
                         const Json::Value& config,
-                        boost::shared_ptr<etasl::JsonChecker> jsonchecker)
+                        std::shared_ptr<etasl::JsonChecker> jsonchecker)
 {
 
     periodicity = jsonchecker->asDouble(config, "periodicity");
@@ -191,5 +191,5 @@ simple_kinematic_simulation::~simple_kinematic_simulation() {
 
 
 // Uncomment this if want to make it a plugin:
-// #include <pluginlib/class_list_macros.hpp>
-// PLUGINLIB_EXPORT_CLASS(etasl::simple_kinematic_simulation, etasl::RobotDriver)
+#include <pluginlib/class_list_macros.hpp>
+PLUGINLIB_EXPORT_CLASS(etasl::simple_kinematic_simulation, etasl::RobotDriver)

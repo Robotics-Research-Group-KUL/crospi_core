@@ -10,6 +10,7 @@
 
 #include <jsoncpp/json/json.h>
 
+#include <fmt/format.h>
 
 // For real-time control loop
 #include <chrono>
@@ -29,10 +30,6 @@ etaslNode::etaslNode(const std::string & node_name, bool intra_process_comms = f
 , event_postfix(get_name())
 , first_time_configured(false)
 , is_configured(false)
-, vector_inp(KDL::Vector::Zero())
-, rotation_inp(KDL::Rotation::Identity())
-, twist_inp(KDL::Twist::Zero())
-, wrench_inp(KDL::Wrench::Zero())
 {
 
   // Lambda function to handle errors when reading a JSON element from the configuration file
@@ -41,7 +38,7 @@ etaslNode::etaslNode(const std::string & node_name, bool intra_process_comms = f
     rclcpp::shutdown(); 
     exit(1); //1 indicates It indicates abnormal termination of a program as a result a minor problem.
   };
-  jsonchecker = boost::make_shared<etasl::JsonChecker>(error_callback);
+  jsonchecker = std::make_shared<etasl::JsonChecker>(error_callback);
 
   srv_etasl_console_ = create_service<std_srvs::srv::Empty>("etasl_node/etasl_console", std::bind(&etaslNode::etasl_console, this, std::placeholders::_1, std::placeholders::_2));
 
@@ -64,7 +61,21 @@ etaslNode::etaslNode(const std::string & node_name, bool intra_process_comms = f
       return;
   }
 
-
+  // Checks if the path is in the appropriate format.
+  static const std::regex pattern_file(R"(^\$\[([a-zA-Z0-9_]+)\]\/.+\.json$)");
+  std::smatch matched_package;
+  std::string package_name;
+  
+  bool matches_file_pattern = std::regex_match(configFilePath,matched_package, pattern_file);
+  if(!matches_file_pattern){
+    std::string message = "The format of the config_file:=" + configFilePath + " provided as --ros-arg: is not valid.\n It should contain a valid ROS2 package based on the etasl_ros2_application_template, and it should be a JSON file as follows: $[my_ros2_package]/applications/application_example_ur10/application_example_ur10.setup.json";
+    RCUTILS_LOG_ERROR_NAMED(get_name(), message.c_str());
+    rclcpp::shutdown();
+    return;
+  }
+  else{
+    package_name = matched_package[1];
+  }
 
  // Checks if the package exists when performing the string interpolation. It does not check if the file exists! 
 //  Necessary because BlackBoard::load called in BlackBoard::load_process_and_validate does not handle the exception thrown by string_interpolate 
@@ -86,16 +97,28 @@ etaslNode::etaslNode(const std::string & node_name, bool intra_process_comms = f
       std::string message = "The config_file:=" + file_path + " which was provided through --ros-arg is not a valid file directory.";
       RCUTILS_LOG_ERROR_NAMED(get_name(), message.c_str());
       rclcpp::shutdown();
+      return;
   } 
-
 
 
   reinitialize_data_structures();
 
-  board = boost::make_shared<etasl::BlackBoard>(1);
+  board = std::make_shared<etasl::BlackBoard>(1); //if -1, all parts of the local path in the URI are returned.  if >=0, then
+  // *                             the last path_components_used parts are retained.
   // etasl::BlackBoard board(1);
   std::cout << " loading blackboard" << std::endl;
-  board->setSearchPath("$[etasl_ros2]/scripts/schema:$[etasl_ros2]/scripts/schema/tasks");
+
+  std::string location_of_bundled_schema = etasl::string_interpolate(fmt::format("$[{}]/schemas/generated", package_name));
+
+  //print parent_path
+  std::cout << "parent_path: " << path.parent_path() << std::endl;
+  // board->setSearchPath(path.parent_path());
+  // board->setSearchPath(fmt::format("{}:$[etasl_ros2]/scripts/schema", path.parent_path().c_str()));
+  // board->setSearchPath("$[etasl_ros2]/scripts/schema:$[etasl_ros2]/scripts/schema/tasks");
+  // board->setSearchPath("$[etasl_ros2]/scripts/schema");
+  // board->setSearchPath("https://gitlab.kuleuven.be/rob-expressiongraphs/ros2/etasl_json_schemas/raw/main/schemas");
+  // board->setSearchPath("$[etasl_ros2_application_template]/schemas:https://gitlab.kuleuven.be/rob-expressiongraphs/ros2/etasl_json_schemas/raw/main/schemas");
+  board->setSearchPath(location_of_bundled_schema); //Selects search path based on the package provided in the config file
   // board->load_process_and_validate("$[etasl_ros2]/scripts/json/blackboard.json");
   
   board->load_process_and_validate(configFilePath); // Also checks if it is a valid JSON file
@@ -106,7 +129,16 @@ etaslNode::etaslNode(const std::string & node_name, bool intra_process_comms = f
   periodicity_ms = 1000*jsonchecker->asDouble(etasl_param, "general/sample_time"); //Expressed in milliseconds
 
   // TODO: change the quality of service to transient local and reliable:
-  events_pub_ = this->create_publisher<std_msgs::msg::String>(jsonchecker->asString(etasl_param, "general/event_topic"), 10); 
+  rclcpp::QoS qos_profile( rclcpp::QoSInitialization::from_rmw(rmw_qos_profile_default));
+
+  qos_profile
+    .reliability(rmw_qos_reliability_policy_t::RMW_QOS_POLICY_RELIABILITY_RELIABLE) // Ensures every message is delivered (may retransmit if lost)
+    .durability(rmw_qos_durability_policy_t::RMW_QOS_POLICY_DURABILITY_VOLATILE)
+    .history(rmw_qos_history_policy_t::RMW_QOS_POLICY_HISTORY_KEEP_LAST) //Keeps the last msgs received in case buffer is fulll
+    .keep_last(20); //Buffer size
+
+
+  events_pub_ = this->create_publisher<std_msgs::msg::String>(jsonchecker->asString(etasl_param, "general/event_topic"), qos_profile); 
 
   std::string message = "\n+++++++++++++++++++++++++++++++++++++++++++++++++\nThe following configuration file was loaded correctly:" + file_path + "\n+++++++++++++++++++++++++++++++++++++++++++++++++";
   RCUTILS_LOG_INFO_NAMED(get_name(), message.c_str());
@@ -117,13 +149,41 @@ etaslNode::etaslNode(const std::string & node_name, bool intra_process_comms = f
   // rclcpp::on_shutdown(std::bind( &etaslNode::safe_shutdown, my_etasl_node)); //Alternative to add_on_shutdown_callback (don't know the difference)
 
   Json::Value robot_param = board->getPath("/robot", false);
-  if (simulation_param || (robot_param.isMember("robotdriver") && robot_param["robotdriver"].isMember("is-no_driver") && robot_param["robotdriver"]["is-no_driver"].isBool()) ) {
-    simulation = true;
+
+
+  if(simulation_param){
+    if(robot_param.isMember("robotsimulators") && robot_param["robotsimulators"].size() > 0){
+      simulation = true;
+      RCUTILS_LOG_INFO_NAMED(get_name(), "Executing in simulation mode!!!.");
+      
+    }
+    else{
+      RCUTILS_LOG_ERROR_NAMED(get_name(), "No robotsimulators were specified in the configuration file and therefore the etasl cannot run in simulation (i.e. simulation=true is not valid). Please either set simulation to false or provide a valid robotsimulators field in the configuration file.");
+      rclcpp::shutdown();
+      return;
+    }
   }
-  else {
-    simulation = false;
+  else{
+    if(robot_param.isMember("robotdrivers") && robot_param["robotdrivers"].size() > 0){
+      simulation = false;
+      RCUTILS_LOG_INFO_NAMED(get_name(), "Executing in real robot (i.e. simulation=false)!!!.");
+    }
+    else{
+      RCUTILS_LOG_ERROR_NAMED(get_name(), "No robotdrivers were specified in the configuration file and therefore etasl can only run in simulation (i.e. simulation=true). Please either set simulation to true or provide a valid robotdrivers field in the configuration file.");
+      rclcpp::shutdown();
+      return;
+    }
   }
+
+
+  // if (simulation_param || (robot_param.isMember("robotdrivers") && robot_param["robotdrivers"].isMember("is-no_driver") && robot_param["robotdrivers"]["is-no_driver"].isBool()) ) {
+  //   simulation = true;
+  // }
+  // else {
+  //   simulation = false;
+  // }
   
+
 }
 
 
@@ -296,6 +356,10 @@ bool etaslNode::readTaskParameters(const std::shared_ptr<etasl_interfaces::srv::
 	try{
 		// Read eTaSL specification:
     std::string param_request = "_JSON_TASK_SPECIFICATION_PARAMETERS_STRING='" + request->str + "'"; 
+    
+    std::cout << "The received parameters are:" << std::endl;
+    std::cout << request->str << std::endl;
+
 		int retval = LUA->executeString(param_request);
 		// int retval = LUA->executeFile("/workspaces/colcon_ws/install/etasl_ros2/share/etasl_ros2/etasl/move_cartesianspace.lua");
 		if (retval !=0) {
@@ -328,6 +392,7 @@ bool etaslNode::readTaskParameters(const std::shared_ptr<etasl_interfaces::srv::
 // inspiration found in https://etasl.pages.gitlab.kuleuven.be/etasl-api-doc/api/etasl-rtt/solver__state_8hpp_source.html
 void etaslNode::update_controller_output(Eigen::VectorXd const& jvalues_solver){
     for (unsigned int i=0;i<jnames_in_expr.size();++i) {
+      //TODO: is name_ndx really necessary? I counld just do jpos_ros[i] = jnames_in_expr[i] and get rid of name_ndx
       std::map<std::string,int>::iterator it = name_ndx.find(jnames_in_expr[i]);
       if (it!=name_ndx.end()) {
           jpos_ros[it->second] = jvalues_solver[i]; //joints that will be used for ros topic
@@ -430,14 +495,70 @@ void etaslNode::initialize_joints(){
         name_ndx[ jnames_in_expr[i]]  =i;
     }
 
+    
+
+
+
+
+    // for (int i = 0; i < jointnames_etasl.size(); ++i) {
+    //   name_ndx[jointnames_etasl[i]] = i;
+    // }
+
+    driver_to_etasl.resize(jointnames_drivers.size(), -1);
+    for (size_t i = 0; i < jointnames_drivers.size(); ++i) {
+        auto it = name_ndx.find(jointnames_drivers[i]);
+        if (it != name_ndx.end()) {
+            driver_to_etasl[i] = it->second;
+        }// Else, it remains -1
+    }
+
+    // build the reverse mapping too
+    etasl_to_driver.resize(jnames_in_expr.size(), -1);
+    for (size_t i = 0; i < driver_to_etasl.size(); ++i) {
+        if (driver_to_etasl[i] != -1) {
+            etasl_to_driver[driver_to_etasl[i]] = i;
+        }
+    }
+
+
     // RCUTILS_LOG_INFO_NAMED(get_name(), "holaaa");
+
+    // Read initial joint positions from the robot feedback
+    std::vector<float> jpos_init_vec = multiple_robotdriver_managers->get_position_feedback();
+    VectorXd jpos_init;
+    jpos_init  = VectorXd::Zero(jnames_in_expr.size()); 
+
+
+    // assert(jpos_init_vec.size() == jpos_init.size());
+
+
+    for (unsigned int i=0;i<jointnames_drivers.size();++i) {
+      std::map<std::string,int>::iterator it = name_ndx.find(jointnames_drivers[i]);
+      if (it!=name_ndx.end()) {
+        jpos_init[it->second] = jpos_init_vec[i];
+      }
+    }
+
+    std::cout << "--------------------------------------------------The initial joint positions read from the robot drivers are: " << std::endl;
+
+    for(unsigned int i=0;i<jpos_init_vec.size();++i) {
+      std::cout << jpos_init_vec[i] << ", ";
+    }
+    std::cout << std::endl;
+
+    for(unsigned int i=0;i<jpos_init.size();++i) {
+      std::cout << jpos_init[i] << ", ";
+    }
+    std::cout << std::endl;
+
+    
 
     update_controller_input(jpos_init);
         // RCUTILS_LOG_INFO_NAMED(get_name(), "holaaaaaaaaa");
 
 
     if(jnames_in_expr.size()==0){
-        RCUTILS_LOG_WARN_NAMED(get_name(), "None of the robot_joints specified in the JSON configuration correspond the joints defined in the eTaSL robot expression graph.");
+        RCUTILS_LOG_ERROR_NAMED(get_name(), "None of the robot_joints specified in the JSON configuration correspond the joints defined in the eTaSL robot expression graph.");
     }
     else if(jnames_in_expr.size() != jointnames.size()){
       RCUTILS_LOG_WARN_NAMED(get_name(), "The number of robot_joints specified in the JSON configuration do not correspond to all the joints defined in the eTaSL robot expression graph.");
@@ -491,11 +612,6 @@ void etaslNode::initialize_feature_variables(){
 
 void etaslNode::configure_etasl(){
     
-    Json::Value param_robot = board->getPath("/robot", false);
-    jointnames.clear();
-    for (auto n : jsonchecker->asArray(param_robot, "default_robot_specification/robot_joints")) {
-        jointnames.push_back(jsonchecker->asString(n, ""));
-    }
  
     /**
      * read task specification and creation of solver and handlers for monitor, inputs, outputs
@@ -516,12 +632,11 @@ void etaslNode::configure_etasl(){
     // initial input (e.g. robot joints) is used for initialization.                
     this->initialize_feature_variables();
 
-      /****************************************************
-     * Update input handlers (i.e. read values for solver initialization)
+    /****************************************************
+     * Update input handlers in the configure_input_handlers (i.e. read values for solver initialization)
      ***************************************************/
-    for (auto h : inputhandlers) {
-        h->update(time, jnames_in_expr, jpos_ros, fnames, fpos_etasl);
-    }
+    io_handler_manager->configure_input_handlers(time, jnames_in_expr, jpos_ros, fnames, fpos_etasl);
+    io_handler_manager->configure_output_handlers(time, jnames_in_expr, jpos_ros, fnames, fpos_etasl);
 
 
     // Prepare the solver for execution, define output variables for both robot joints and feature states: 
@@ -557,55 +672,6 @@ void etaslNode::configure_etasl(){
         RCUTILS_LOG_INFO_NAMED(get_name(), (message2.str()).c_str());
     }
 
-    for (const auto& pair : feedback_report) {
-      std::string key = pair.first;
-      bool value = pair.second;
-
-      if(value){
-        //Check types and get Input Channels accordingly. Joint values are vectors of pointers, and the rest are pointers. Careful!
-        if (key == "joint_vel") {
-          for (unsigned int i = 0; i < jvel_etasl.size(); ++i) {
-            input_channels_feedback.joint_vel[i] = ctx->getInputChannel<double>(jsonchecker->asString(param_robot, "robotdriver/name_expr_" + key) + "_" + std::to_string(i));
-          }
-        } 
-        else if (key == "joint_torque") {
-          for (unsigned int i = 0; i < jvel_etasl.size(); ++i) {
-            input_channels_feedback.joint_torque[i] = ctx->getInputChannel<double>(jsonchecker->asString(param_robot, "robotdriver/name_expr_" + key) + "_" + std::to_string(i));
-          }
-        }
-        else if (key == "joint_current") {
-          for (unsigned int i = 0; i < jvel_etasl.size(); ++i) {
-            input_channels_feedback.joint_current[i] = ctx->getInputChannel<double>(jsonchecker->asString(param_robot, "robotdriver/name_expr_" + key) + "_" + std::to_string(i));
-          }
-        }
-        else if (key == "cartesian_pos") {
-            input_channels_feedback.cartesian_pos = ctx->getInputChannel<KDL::Vector>(jsonchecker->asString(param_robot, "robotdriver/name_expr_" + key));
-        }
-        else if (key == "cartesian_quat") {
-            input_channels_feedback.cartesian_quat = ctx->getInputChannel<KDL::Rotation>(jsonchecker->asString(param_robot, "robotdriver/name_expr_" + key));
-        }
-        else if (key == "cartesian_twist") {
-            input_channels_feedback.cartesian_twist = ctx->getInputChannel<KDL::Twist>(jsonchecker->asString(param_robot, "robotdriver/name_expr_" + key));
-        }
-        else if (key == "cartesian_wrench") {
-            input_channels_feedback.cartesian_wrench = ctx->getInputChannel<KDL::Wrench>(jsonchecker->asString(param_robot, "robotdriver/name_expr_" + key));
-        }
-        else if (key == "base_pos") {
-            input_channels_feedback.base_pos = ctx->getInputChannel<KDL::Vector>(jsonchecker->asString(param_robot, "robotdriver/name_expr_" + key));
-        }
-        else if (key == "base_quat") {
-            input_channels_feedback.base_quat = ctx->getInputChannel<KDL::Rotation>(jsonchecker->asString(param_robot, "robotdriver/name_expr_" + key));
-        }
-        else if (key == "base_twist") {
-            input_channels_feedback.base_twist = ctx->getInputChannel<KDL::Twist>(jsonchecker->asString(param_robot, "robotdriver/name_expr_" + key));
-        }
-      }
-
-
-    }
-
-
-
 }
 
 
@@ -615,12 +681,15 @@ void etaslNode::configure_etasl(){
 
 void etaslNode::update()
 {       
+
+        // if(stopFlagPtr->load()) //This checks if the stopFlag has been triggered, e.g. by an error in the robot driver
+        // {
+        //   rclcpp::shutdown();
+        //   return;
+        // }
         // gets inputs, this can includes joint values in jpos,
         // which will be overwritten if used.
-        for (auto& h : inputhandlers) {
-            // TODO: Check if jpos_ros or jpos_etasl should be used
-            h->update(time, jnames_in_expr, jpos_ros, fnames, fpos_etasl);
-        }
+        io_handler_manager->update_input_handlers(time, jnames_in_expr, jpos_ros, fnames, fpos_etasl);
 
         // check monitors:
         ctx->checkMonitors();
@@ -665,12 +734,7 @@ void etaslNode::update()
 
         update_robot_status();
 
-
-        for (auto& h : outputhandlers) {
-            // TODO: Check if jpos_ros or jpos_etasl should be used
-            h->update(jnames_in_expr, jpos_ros, jvel_etasl, fnames, fpos_etasl, fvel_etasl);
-        }
-        // std::cout << "jointpos:" << jpos_etasl.transpose() << std::endl;
+        io_handler_manager->update_output_handlers(jnames_in_expr, jpos_ros, jvel_etasl, fnames, fvel_etasl, fpos_etasl);
 }
 
 void etaslNode::update_robot_status(){
@@ -679,233 +743,51 @@ void etaslNode::update_robot_status(){
     fpos_etasl += fvel_etasl*(periodicity_ms/1000.0);  // you always integrate feature variables yourself
     time += (periodicity_ms/1000.0);
 
-    feedback_shared_ptr->mtx.lock();
-    setpoint_shared_ptr->mtx.lock();
 
-    assert(feedback_shared_ptr->joint.pos.data.size() == jvel_etasl.size());
-    assert(setpoint_shared_ptr->velocity.data.size() == jvel_etasl.size());
+    //construct jvel_all_drivers from jvel_etasl
 
-    setpoint_shared_ptr->velocity.fs = etasl::NewData;
-    for (unsigned int i=0; i<jvel_etasl.size(); ++i) {
-      setpoint_shared_ptr->velocity.data[i] = jvel_etasl[i];
-    }
+    //TODO: The search does not need to be done at every iteration. It can be done once in the configuration phase
+    // for (unsigned int i=0;i<jointnames_drivers.size();++i) {
+    //   std::map<std::string,int>::iterator it = name_ndx.find(jointnames_drivers[i]);
+    //   if (it!=name_ndx.end()) {
+    //     jvel_all_drivers[i] = jvel_etasl[it->second]; //joints that will be used for ros topic
+    //   }
+    //   else{
+    //     jvel_all_drivers[i] = 0.0; //if the joint is not used in the expression graph, then we set its velocity to zero
+    //   }
+    // }
 
-    // -------- Jointspace feedback -----------------
-    //Copy joint positions
-    // Json::Value param_robot = board->getPath("/robot", false);
-    // feedback_report["joint_vel"] = jsonchecker->is_member(param_robot, "robotdriver/name_expr_joint_vel") && feedback_copy_ptr->joint.vel.is_available;
-    // feedback_report["joint_torque"] = jsonchecker->is_member(param_robot, "robotdriver/name_expr_joint_torque") && feedback_copy_ptr->joint.torque.is_available;
-    // feedback_report["joint_current"] = jsonchecker->is_member(param_robot, "robotdriver/name_expr_joint_current") && feedback_copy_ptr->joint.current.is_available;
-    // feedback_report["cartesian_pos"] = jsonchecker->is_member(param_robot, "robotdriver/name_expr_cartesian_pos") && feedback_copy_ptr->cartesian.pos.is_available;
-    // feedback_report["cartesian_quat"] = jsonchecker->is_member(param_robot, "robotdriver/name_expr_cartesian_quat") && feedback_copy_ptr->cartesian.quat.is_available;
-    // feedback_report["cartesian_twist"] = jsonchecker->is_member(param_robot, "robotdriver/name_expr_cartesian_twist") && feedback_copy_ptr->cartesian.twist.is_available;
-    // feedback_report["cartesian_wrench"] = jsonchecker->is_member(param_robot, "robotdriver/name_expr_cartesian_wrench") && feedback_copy_ptr->cartesian.wrench.is_available;
-    // feedback_report["base_pos"] = jsonchecker->is_member(param_robot, "robotdriver/name_expr_base_pos") && feedback_copy_ptr->base.pos.is_available;
-    // feedback_report["base_quat"] = jsonchecker->is_member(param_robot, "robotdriver/name_expr_base_quat") && feedback_copy_ptr->base.quat.is_available;
-    // feedback_report["base_twist"] = jsonchecker->is_member(param_robot, "robotdriver/name_expr_base_twist") && feedback_copy_ptr->base.twist.is_available;
-
-
-
-    if (feedback_copy_ptr->joint.pos.is_available){
-      for (unsigned int i=0; i<jvel_etasl.size(); ++i) {
-        feedback_copy_ptr->joint.pos.data[i] = feedback_shared_ptr->joint.pos.data[i];
-        jpos_etasl[i] = feedback_shared_ptr->joint.pos.data[i]; //required only for positions
+    // Fill jvel_all_drivers from jvel_etasl
+    for (size_t i = 0; i < driver_to_etasl.size(); ++i) {
+      if (driver_to_etasl[i] != -1) {
+          jvel_all_drivers[i] = jvel_etasl[driver_to_etasl[i]];
+      } else {
+          jvel_all_drivers[i] = 0.0; // joint not used in ETaSL
       }
     }
 
+    multiple_robotdriver_managers->update(joint_positions_feedback, jvel_all_drivers);
 
-    //Copy joint velocities
-    if (feedback_report["joint_vel"]){
-      for (unsigned int i=0; i<jvel_etasl.size(); ++i) {
-        feedback_copy_ptr->joint.vel.data[i] = feedback_shared_ptr->joint.vel.data[i];
-      }
-    }
 
-    //Copy joint torques
-    if (feedback_report["joint_torque"]){
-      for (unsigned int i=0; i<jvel_etasl.size(); ++i) {
-        feedback_copy_ptr->joint.torque.data[i] = feedback_shared_ptr->joint.torque.data[i];
-      }
-    }
+    //TODO: The search does not need to be done at every iteration. It can be done once in the configuration phase
+    // for (unsigned int i=0;i<jointnames_drivers.size();++i) {
+    //   std::map<std::string,int>::iterator it = name_ndx.find(jointnames_drivers[i]);
+    //   if (it!=name_ndx.end()) {
+    //     jpos_etasl[it->second] = joint_positions_feedback[i];
+    //   }
+    // }
 
-    //Copy joint currents
-    if (feedback_report["joint_current"]){
-      for (unsigned int i=0; i<jvel_etasl.size(); ++i) {
-        feedback_copy_ptr->joint.current.data[i] = feedback_shared_ptr->joint.current.data[i];
-      }
-    }
-
-    // -------- Cartesian feedback -----------------
-
-    //Copy Cartesian position
-    if (feedback_report["cartesian_pos"]){
-      feedback_copy_ptr->cartesian.pos.x = feedback_shared_ptr->cartesian.pos.x;
-      feedback_copy_ptr->cartesian.pos.y = feedback_shared_ptr->cartesian.pos.y;
-      feedback_copy_ptr->cartesian.pos.z = feedback_shared_ptr->cartesian.pos.z;
-    }
-
-    //Copy Cartesian orientation in quaternion format
-    if (feedback_report["cartesian_quat"]){
-      feedback_copy_ptr->cartesian.quat.qx = feedback_shared_ptr->cartesian.quat.qx;
-      feedback_copy_ptr->cartesian.quat.qy = feedback_shared_ptr->cartesian.quat.qy;
-      feedback_copy_ptr->cartesian.quat.qz = feedback_shared_ptr->cartesian.quat.qz;
-      feedback_copy_ptr->cartesian.quat.qw = feedback_shared_ptr->cartesian.quat.qw;
-    }
-
-    //Copy Cartesian twist
-    if (feedback_report["cartesian_twist"]){
-      feedback_copy_ptr->cartesian.twist.linear.x = feedback_shared_ptr->cartesian.twist.linear.x;
-      feedback_copy_ptr->cartesian.twist.linear.y = feedback_shared_ptr->cartesian.twist.linear.y;
-      feedback_copy_ptr->cartesian.twist.linear.z = feedback_shared_ptr->cartesian.twist.linear.z;
-      feedback_copy_ptr->cartesian.twist.angular.x = feedback_shared_ptr->cartesian.twist.angular.x;
-      feedback_copy_ptr->cartesian.twist.angular.y = feedback_shared_ptr->cartesian.twist.angular.y;
-      feedback_copy_ptr->cartesian.twist.angular.z = feedback_shared_ptr->cartesian.twist.angular.z;
-    }
-
-    //Copy Cartesian wrench
-    if (feedback_report["cartesian_wrench"]){
-      feedback_copy_ptr->cartesian.wrench.linear.x = feedback_shared_ptr->cartesian.wrench.linear.x;
-      feedback_copy_ptr->cartesian.wrench.linear.y = feedback_shared_ptr->cartesian.wrench.linear.y;
-      feedback_copy_ptr->cartesian.wrench.linear.z = feedback_shared_ptr->cartesian.wrench.linear.z;
-      feedback_copy_ptr->cartesian.wrench.angular.x = feedback_shared_ptr->cartesian.wrench.angular.x;
-      feedback_copy_ptr->cartesian.wrench.angular.y = feedback_shared_ptr->cartesian.wrench.angular.y;
-      feedback_copy_ptr->cartesian.wrench.angular.z = feedback_shared_ptr->cartesian.wrench.angular.z;
-    }
-
-    //Copy base position
-    if (feedback_report["base_pos"]){
-      feedback_copy_ptr->base.pos.x = feedback_shared_ptr->base.pos.x;
-      feedback_copy_ptr->base.pos.y = feedback_shared_ptr->base.pos.y;
-      feedback_copy_ptr->base.pos.z = feedback_shared_ptr->base.pos.z;
-    }
-
-    //Copy base orientation in quaternion format
-    if (feedback_report["base_quat"]){
-      feedback_copy_ptr->base.quat.qx = feedback_shared_ptr->base.quat.qx;
-      feedback_copy_ptr->base.quat.qy = feedback_shared_ptr->base.quat.qy;
-      feedback_copy_ptr->base.quat.qz = feedback_shared_ptr->base.quat.qz;
-      feedback_copy_ptr->base.quat.qw = feedback_shared_ptr->base.quat.qw;
-    }
-
-    //Copy base twist
-    if (feedback_report["base_twist"]){
-      feedback_copy_ptr->base.twist.linear.x = feedback_shared_ptr->base.twist.linear.x;
-      feedback_copy_ptr->base.twist.linear.y = feedback_shared_ptr->base.twist.linear.y;
-      feedback_copy_ptr->base.twist.linear.z = feedback_shared_ptr->base.twist.linear.z;
-      feedback_copy_ptr->base.twist.angular.x = feedback_shared_ptr->base.twist.angular.x;
-      feedback_copy_ptr->base.twist.angular.y = feedback_shared_ptr->base.twist.angular.y;
-      feedback_copy_ptr->base.twist.angular.z = feedback_shared_ptr->base.twist.angular.z;
-    }
-
-    feedback_shared_ptr->mtx.unlock();
-    setpoint_shared_ptr->mtx.unlock();
-
-        // Write in the input handler the joint velocities
-        if (feedback_report["joint_vel"]){
-          for (unsigned int i=0; i<jvel_etasl.size(); ++i) { //Check that the input channel exists (i.e. was declared in the task specification)
-            if(input_channels_feedback.joint_vel[i]){      
-              input_channels_feedback.joint_vel[i]->setValue(feedback_copy_ptr->joint.vel.data[i]);
-            }
-          }
+    for (size_t etasl_idx = 0; etasl_idx < etasl_to_driver.size(); ++etasl_idx) {
+        if (etasl_to_driver[etasl_idx] != -1) {
+            jpos_etasl[etasl_idx] = joint_positions_feedback[etasl_to_driver[etasl_idx]];
         }
+    }
     
-        //Write in the input handler the joint torques
-        if (feedback_report["joint_torque"]){
-          for (unsigned int i=0; i<jvel_etasl.size(); ++i) { //Check that the input channel exists (i.e. was declared in the task specification)
-            if(input_channels_feedback.joint_torque[i]){      
-              input_channels_feedback.joint_torque[i]->setValue(feedback_copy_ptr->joint.torque.data[i]);
-            }
-          }
-        }
-    
-        //Write in the input handler the joint currents
-        if (feedback_report["joint_current"]){
-          for (unsigned int i=0; i<jvel_etasl.size(); ++i) { //Check that the input channel exists (i.e. was declared in the task specification)
-            if(input_channels_feedback.joint_current[i]){      
-              input_channels_feedback.joint_current[i]->setValue(feedback_copy_ptr->joint.current.data[i]);
-            }
-          }
-        }
-    
-        // -------- Cartesian feedback -----------------
-    
-        //Write in the input handler the Cartesian position
-        if (feedback_report["cartesian_pos"]){
-            if(input_channels_feedback.cartesian_pos){
-              vector_inp[0] = feedback_copy_ptr->cartesian.pos.x;
-              vector_inp[1] = feedback_copy_ptr->cartesian.pos.y;
-              vector_inp[2] = feedback_copy_ptr->cartesian.pos.z;
-
-              input_channels_feedback.cartesian_pos->setValue(vector_inp);
-            }
-        }
-    
-        //Write in the input handler the Cartesian orientation in quaternion format
-        //TODO: Check the quaternion format in KDL and also how to transform it to rotation
-        if (feedback_report["cartesian_quat"]){
-            if(input_channels_feedback.cartesian_quat){
-              input_channels_feedback.cartesian_quat->setValue(KDL::Rotation::Quaternion(feedback_copy_ptr->cartesian.quat.qw, feedback_copy_ptr->cartesian.quat.qx, feedback_copy_ptr->cartesian.quat.qy, feedback_copy_ptr->cartesian.quat.qz));
-            }
-        }
-    
-        //Write in the input handler the Cartesian twist
-        if (feedback_report["cartesian_twist"]){
-          if(input_channels_feedback.cartesian_twist){
-              twist_inp.vel[0] = feedback_copy_ptr->cartesian.twist.linear.x;
-              twist_inp.vel[1] = feedback_copy_ptr->cartesian.twist.linear.y;
-              twist_inp.vel[2] = feedback_copy_ptr->cartesian.twist.linear.z;
-              twist_inp.rot[0] = feedback_copy_ptr->cartesian.twist.angular.x;
-              twist_inp.rot[1] = feedback_copy_ptr->cartesian.twist.angular.y;
-              twist_inp.rot[2] = feedback_copy_ptr->cartesian.twist.angular.z;
-              input_channels_feedback.cartesian_twist->setValue(twist_inp);
-          }
-      }
-    
-        //Write in the input handler the Cartesian wrench
-        if (feedback_report["cartesian_wrench"]){
-          if(input_channels_feedback.cartesian_wrench){
-              wrench_inp.force[0] = feedback_copy_ptr->cartesian.wrench.linear.x;
-              wrench_inp.force[1] = feedback_copy_ptr->cartesian.wrench.linear.y;
-              wrench_inp.force[2] = feedback_copy_ptr->cartesian.wrench.linear.z;
-              wrench_inp.torque[0] = feedback_copy_ptr->cartesian.wrench.angular.x;
-              wrench_inp.torque[1] = feedback_copy_ptr->cartesian.wrench.angular.y;
-              wrench_inp.torque[2] = feedback_copy_ptr->cartesian.wrench.angular.z;
-
-              input_channels_feedback.cartesian_wrench->setValue(wrench_inp);
-          }
-      }
-    
-        //Write in the input handler the base position
-        if (feedback_report["base_pos"]){
-          if(input_channels_feedback.base_pos){
-            vector_inp[0] = feedback_copy_ptr->base.pos.x;
-            vector_inp[1] = feedback_copy_ptr->base.pos.y;
-            vector_inp[2] = feedback_copy_ptr->base.pos.z;
-            input_channels_feedback.base_pos->setValue(vector_inp);
-          }
-      }
-    
-        //Write in the input handler the base orientation in quaternion format
-        if (feedback_report["base_quat"]){
-          if(input_channels_feedback.base_quat){
-            input_channels_feedback.base_quat->setValue(KDL::Rotation::Quaternion(feedback_copy_ptr->base.quat.qw, feedback_copy_ptr->base.quat.qx, feedback_copy_ptr->base.quat.qy, feedback_copy_ptr->base.quat.qz));
-          }
-      }
-    
-        //Write in the input handler the base twist
-        if (feedback_report["base_twist"]){
-          if(input_channels_feedback.base_twist){
-              twist_inp.vel[0] = feedback_copy_ptr->base.twist.linear.x;
-              twist_inp.vel[1] = feedback_copy_ptr->base.twist.linear.y;
-              twist_inp.vel[2] = feedback_copy_ptr->base.twist.linear.z;
-              twist_inp.rot[0] = feedback_copy_ptr->base.twist.angular.x;
-              twist_inp.rot[1] = feedback_copy_ptr->base.twist.angular.y;
-              twist_inp.rot[2] = feedback_copy_ptr->base.twist.angular.z;
-              input_channels_feedback.base_twist->setValue(twist_inp);
-          }
-      }
-    
-    
+    // if (feedback_copy_ptr->joint.is_pos_available){
+      // for (unsigned int i=0; i<jvel_etasl.size(); ++i) {
+      //   jpos_etasl[i] = feedback_copy_ptr->joint.pos.data[i]; //required only for positions
+      // }
+    // }
     
 }
 
@@ -914,7 +796,7 @@ void etaslNode::reinitialize_data_structures() {
     slv.reset();
     ctx->addType("robot");
     ctx->addType("feature");
-    LUA = boost::make_shared<LuaContext>();
+    LUA = std::make_shared<LuaContext>();
     // define a variable that only depends on time
     LUA->initContext(ctx);
 
@@ -927,149 +809,52 @@ void etaslNode::reinitialize_data_structures() {
     jvel_etasl = VectorXd::Zero(0);
     fvel_etasl = VectorXd::Zero(0);
 
-    jointnames.clear();
+    // jointnames.clear();
     jnames_in_expr.clear();
 
     jindex.clear();
     name_ndx.clear();
     fnames.clear();
-
-    // inputhandlers.clear();
-    // outputhandlers.clear();
-    // ih_initialized.clear();
-
     
 }
 
-bool etaslNode::initialize_input_handlers(){
-
-    RCUTILS_LOG_INFO_NAMED(get_name(), "Initializing input handlers...");
-    for (auto& h : inputhandlers) {
-        std::stringstream message;
-        message << "Initializing input handler:" <<  h->getName();
-        RCUTILS_LOG_INFO_NAMED(get_name(), (message.str()).c_str());
-
-        h->initialize(ctx, jnames_in_expr, fnames, jpos_ros, fpos_etasl);
-    }
-    RCUTILS_LOG_INFO_NAMED(get_name(), "finished initializing input handlers");
-
-    return true;
-}
-
-
-bool etaslNode::initialize_output_handlers(){
-    // initialize output-handlers
-    RCUTILS_LOG_INFO_NAMED(get_name(), "Initializing output handlers...");
-    for (auto& h : outputhandlers) {
-        std::stringstream message;
-        message << "Initializing output handler:" <<  h->getName();
-        RCUTILS_LOG_INFO_NAMED(get_name(), (message.str()).c_str());
-        RCUTILS_LOG_INFO_NAMED(get_name(), "helloo1");
-
-        h->initialize(ctx, jnames_in_expr, fnames);
-        RCUTILS_LOG_INFO_NAMED(get_name(), "helloo2");
-    }
-    RCUTILS_LOG_INFO_NAMED(get_name(), "finished initializing output handlers");
-    return true;
-}
 
 void etaslNode::construct_node(std::atomic<bool>* stopFlagPtr_p){
-    
+
+  //This method is necessary becaus shared_from_this() does not work in the constructor of the class (as it returns something that does not yet exist)
+    //shared_from_this() is used for all objects that need a reference to the ROS2 node.
     stopFlagPtr = stopFlagPtr_p;
 
-    Json::Value param = board->getPath("/robot", false);
+      // Json::Value param_root = board->getPath(".", false);
+    Json::Value param_root = board->getLocal();
+    // std::cout << "param_root: " << param_root.toStyledString() << std::endl;
+    io_handler_manager = std::make_shared<etasl::IOHandlerManager>(shared_from_this(), param_root, jsonchecker);
+    std::cout << "constructing input handlers" << std::endl;
 
-    // jointnames.clear();
-    // for (auto n : param["default_robot_specification"]["robot_joints"]) {
-    //     jointnames.push_back(n.asString());
-    // }
+    Json::Value param = board->getPath("/robot", false);
 
     jointnames.clear();
     for (auto n : jsonchecker->asArray(param, "default_robot_specification/robot_joints")) {
         jointnames.push_back(jsonchecker->asString(n, ""));
     }
 
-    feedback_shared_ptr = boost::make_shared<etasl::FeedbackMsg>(jointnames.size());
-    setpoint_shared_ptr = boost::make_shared<etasl::SetpointMsg>(jointnames.size());
 
-    feedback_copy_ptr = std::make_unique<etasl::FeedbackMsg>(jointnames.size());
-    /****************************************************
-    * Registering factories
-    ***************************************************/
-   register_factories();
 
     /****************************************************
     * Adding Robot Driver
-    ***************************************************/
-    RCUTILS_LOG_INFO_NAMED(get_name(), "register_output_handler");
-    // TODO: add info about the output handler added (e.g. p[is-...] and p[topic-name])
-
-    
-
-    //Checks if it's in simulation, and else it loads the driver from pluginlib
-    if (simulation) {
-      robotdriver = etasl::Registry<etasl::RobotDriverFactory>::create(param["simulation"],jsonchecker);
-    }
-    else{
-      driver_loader = boost::make_shared<pluginlib::ClassLoader<etasl::RobotDriver>>("etasl_ros2", "etasl::RobotDriver");
-      std::string driver_name = "no_driver_specified_in_json";
-
-      try
-      {
-        for (const auto& key : param["robotdriver"].getMemberNames()) {
-          if (key.rfind("is-", 0) == 0) { // Check if key starts with "is-"
-              driver_name = key.substr(3);
-          }
-        }
-        robotdriver = driver_loader->createSharedInstance("etasl::" + driver_name);
-
-        // if (driver_loader->isClassAvailable("etasl::TemplateDriverEtasl"))
-        // {
-        //   robotdriver = driver_loader->createSharedInstance("etasl::TemplateDriverEtasl");
-        // }
-        // robotdriver = driver_loader->createSharedInstance("etasl::TemplateDriverEtasl");
-        // robotdriver = driver_loader->createSharedInstance("etasl::Ur10eDriverEtasl");
-        // robotdriver = driver_loader->createSharedInstance("etasl::KukaIiwaRobotDriver");
-
-        
-      }
-      catch(pluginlib::PluginlibException& ex)
-      {
-        // printf("The plugin failed to load for some reason. Error: %s\n", ex.what());
-  
-        std::string message = "The plugin failed to load. Error: \n" + std::string(ex.what());
-        RCUTILS_LOG_ERROR_NAMED(get_name(), message.c_str());
-  
-        auto transition = this->shutdown(); //calls on_shutdown() hook.
-        return;
-      }
-      robotdriver->construct(driver_name, feedback_shared_ptr.get(), setpoint_shared_ptr.get(), param["robotdriver"],jsonchecker);
-    }
- 
-    
-
-
-  
-
-    // robotdriver = etasl::Registry<etasl::RobotDriverFactory>::create(param["robotdriver"],jsonchecker);
-    
+    ***************************************************/  
+    multiple_robotdriver_managers = std::make_shared<etasl::MultipleDriversManager>(shared_from_this(), param_root, jsonchecker, simulation, stopFlagPtr);
+    multiple_robotdriver_managers->construct_drivers(joint_positions_feedback);  //constructs and initializes communication with the robot, and resizes joint_positions_feedback
+    jvel_all_drivers = VectorXd::Zero(joint_positions_feedback.size()); //After construct_drivers(joint_positions_feedback) is called, joint_positions_feedback has the correct size
+    jointnames_drivers = multiple_robotdriver_managers->get_robot_joints();
 
 
     /****************************************************
     * Adding input and output handlers from the read JSON file 
     ***************************************************/
-   Json::Value param_iohandlers = board->getPath("/iohandlers", false);
-    for (const auto& p : param_iohandlers["outputhandlers"]) {
-        RCUTILS_LOG_INFO_NAMED(get_name(), "register_output_handler");
-        outputhandlers.push_back(etasl::Registry<etasl::OutputHandlerFactory>::create(p, jsonchecker));
-    }
-    for (const auto& p : param_iohandlers["inputhandlers"]) {
-        RCUTILS_LOG_INFO_NAMED(get_name(), "register_input_handler");
-        inputhandlers.push_back(etasl::Registry<etasl::InputHandlerFactory>::create(p, jsonchecker));
-        ih_initialized.push_back(false);
-    }  
+    io_handler_manager->construct_input_handlers();
+    io_handler_manager->construct_output_handlers();
 
-    robotdriver->initialize();
 
 }
 
@@ -1097,122 +882,48 @@ void etaslNode::construct_node(std::atomic<bool>* stopFlagPtr_p){
     // available.
 
 
+
  // This still needs to be here and cannot be moved to construct_node() function because of the routine for verifying the joints in the expression. That routine should change 
     if(!first_time_configured){
+
+      bool are_robot_drivers_initialized = multiple_robotdriver_managers->initialize(ctx);
+
+      if(!are_robot_drivers_initialized){
+        return lifecycle_return::ERROR; //The message log and shutdown is done inside the multiple_robotdriver_managers
+      }
+
+
       timer_ = this->create_wall_timer(std::chrono::milliseconds(periodicity_ms), std::bind(&etaslNode::update, this));
 
-      std::vector<double> jpos_init_vec;
-      feedback_shared_ptr->mtx.lock();
-
-      feedback_copy_ptr->joint.pos.is_available = feedback_shared_ptr->joint.pos.is_available;
-      feedback_copy_ptr->joint.vel.is_available = feedback_shared_ptr->joint.vel.is_available;
-      feedback_copy_ptr->joint.torque.is_available = feedback_shared_ptr->joint.torque.is_available;
-      feedback_copy_ptr->joint.current.is_available = feedback_shared_ptr->joint.current.is_available;
-
-      feedback_copy_ptr->cartesian.pos.is_available = feedback_shared_ptr->cartesian.pos.is_available;
-      feedback_copy_ptr->cartesian.quat.is_available = feedback_shared_ptr->cartesian.quat.is_available;
-      feedback_copy_ptr->cartesian.twist.is_available = feedback_shared_ptr->cartesian.twist.is_available;
-      feedback_copy_ptr->cartesian.wrench.is_available = feedback_shared_ptr->cartesian.wrench.is_available;
-      
-      feedback_copy_ptr->base.pos.is_available = feedback_shared_ptr->base.pos.is_available;
-      feedback_copy_ptr->base.quat.is_available = feedback_shared_ptr->base.quat.is_available;
-      feedback_copy_ptr->base.twist.is_available = feedback_shared_ptr->base.twist.is_available;
-
-      if (!feedback_copy_ptr->joint.pos.is_available){
-        std::string message = "The position feedback is not available in the used robot driver. This is required to run eTaSL.";
-        RCUTILS_LOG_ERROR_NAMED(get_name(), message.c_str());
-        auto transition = this->shutdown(); //calls on_shutdown() hook.
-      }
-
-      jpos_init_vec.resize(feedback_shared_ptr->joint.pos.data.size(),0.0);
-      for(unsigned int i = 0; i < feedback_shared_ptr->joint.pos.data.size(); ++i){
-        jpos_init_vec[i] = feedback_shared_ptr->joint.pos.data[i];
-      }
-
-      feedback_shared_ptr->mtx.unlock();
-
-      jpos_init = VectorXd::Zero(jpos_init_vec.size());
-      for (unsigned int i = 0; i < jpos_init_vec.size(); ++i) {
-        jpos_init[i] = jpos_init_vec[i];
-      }
-
-      // --------- Check if the requested feedback is available in the robot driver ---------------
-      Json::Value param_robot = board->getPath("/robot", false);
-      Json::Value param_iohandlers = board->getPath("iohandlers", false);
-      feedback_report["joint_vel"] = jsonchecker->is_member(param_robot, "robotdriver/name_expr_joint_vel") && feedback_copy_ptr->joint.vel.is_available;
-      feedback_report["joint_torque"] = jsonchecker->is_member(param_robot, "robotdriver/name_expr_joint_torque") && feedback_copy_ptr->joint.torque.is_available;
-      feedback_report["joint_current"] = jsonchecker->is_member(param_robot, "robotdriver/name_expr_joint_current") && feedback_copy_ptr->joint.current.is_available;
-      feedback_report["cartesian_pos"] = jsonchecker->is_member(param_robot, "robotdriver/name_expr_cartesian_pos") && feedback_copy_ptr->cartesian.pos.is_available;
-      feedback_report["cartesian_quat"] = jsonchecker->is_member(param_robot, "robotdriver/name_expr_cartesian_quat") && feedback_copy_ptr->cartesian.quat.is_available;
-      feedback_report["cartesian_twist"] = jsonchecker->is_member(param_robot, "robotdriver/name_expr_cartesian_twist") && feedback_copy_ptr->cartesian.twist.is_available;
-      feedback_report["cartesian_wrench"] = jsonchecker->is_member(param_robot, "robotdriver/name_expr_cartesian_wrench") && feedback_copy_ptr->cartesian.wrench.is_available;
-      feedback_report["base_pos"] = jsonchecker->is_member(param_robot, "robotdriver/name_expr_base_pos") && feedback_copy_ptr->base.pos.is_available;
-      feedback_report["base_quat"] = jsonchecker->is_member(param_robot, "robotdriver/name_expr_base_quat") && feedback_copy_ptr->base.quat.is_available;
-      feedback_report["base_twist"] = jsonchecker->is_member(param_robot, "robotdriver/name_expr_base_twist") && feedback_copy_ptr->base.twist.is_available;
-
-
-
-      input_channels_feedback.joint_vel.clear();
-      input_channels_feedback.joint_torque.clear();
-      input_channels_feedback.joint_current.clear();
-
-      input_channels_feedback.joint_vel.resize(jpos_init_vec.size(), nullptr);
-      input_channels_feedback.joint_torque.resize(jpos_init_vec.size(),nullptr);
-      input_channels_feedback.joint_current.resize(jpos_init_vec.size(),nullptr);
-
-      // if(jsonchecker->is_member(param_robot, "robotdriver/name_expr_joint_vel")){
-      //   if(!feedback_copy_ptr->joint.vel.is_available){
-      //     std::string message = "The requested joint.vel feedback is not available in the used robot driver. Delete the input value name_expr_joint_vel from the setup.json file or fix the robot driver to report it.";
-      //     RCUTILS_LOG_ERROR_NAMED(get_name(), message.c_str());
-      //     auto transition = this->shutdown(); //calls on_shutdown() hook.
-      //     return;
-      //   }
-      //   for (const auto& input_h : param_iohandlers["inputhandlers"]){ //Check that the user is not requesting a topic with the same name as the expression variable for the driver
-      //     if(input_h["varname"].asString() == jsonchecker->asString(param_robot, "robotdriver/name_expr_joint_vel")){
-      //       std::string message = "The name `" + input_h["varname"].asString() + "` cannot be used within the setup.json file for both the name_expr_joint_vel of robotdriver field and the an input handler.";
-      //       RCUTILS_LOG_ERROR_NAMED(get_name(), message.c_str());
-      //       auto transition = this->shutdown(); //calls on_shutdown() hook.
-      //       return;
-      //     } 
-      //   }
+      // std::vector<double> jpos_init_vec; //TODO: This variable is no longer needed and can be replaced by feedback_copy_ptr->joint.pos.data
+      // jpos_init_vec.resize(feedback_copy_ptr->joint.pos.data.size(),0.0);
+      // for(unsigned int i = 0; i < feedback_copy_ptr->joint.pos.data.size(); ++i){
+      //   jpos_init_vec[i] = feedback_copy_ptr->joint.pos.data[i];
       // }
 
-      for (const auto& pair : feedback_report) {
-        std::string key = pair.first;
-        bool value = pair.second;
+      // jpos_init = VectorXd::Zero(jpos_init_vec.size());
+      // for (unsigned int i = 0; i < jpos_init_vec.size(); ++i) {
+      //   jpos_init[i] = jpos_init_vec[i];
+      // }
 
-        if(jsonchecker->is_member(param_robot, "robotdriver/name_expr_" + key)){
-
-
-          if(!value){
-            std::string message = "The requested " + key + " feedback is not available in the used robot driver. Delete the input value name_expr_"+ key +" from the setup.json file or fix the robot driver to report it.";
-            RCUTILS_LOG_ERROR_NAMED(get_name(), message.c_str());
-            auto transition = this->shutdown(); //calls on_shutdown() hook.
-            return lifecycle_return::ERROR;
-          }
-          
-          for (const auto& input_h : param_iohandlers["inputhandlers"]){ //Check that the user is not requesting a topic with the same name as the expression variable for the driver
-            if(input_h["varname"].asString() == jsonchecker->asString(param_robot, "robotdriver/name_expr_" + key)){
-              std::string message = "The name `" + input_h["varname"].asString() + "` cannot be used within the setup.json file for both the name_expr_"+ key + " of robotdriver field and an input handler.";
-              RCUTILS_LOG_ERROR_NAMED(get_name(), message.c_str());
-              auto transition = this->shutdown(); //calls on_shutdown() hook.
-              return lifecycle_return::ERROR;
-            } 
-          }
-        }
-    }
-
- 
-
-      // jpos_init << 180.0/180.0*3.1416, -90.0/180.0*3.1416, 90.0/180.0*3.1416, -90.0/180.0*3.1416, -90.0/180.0*3.1416, 0.0/180.0*3.1416;
-      
-      this->initialize_input_handlers();
-      this->initialize_output_handlers();
+      io_handler_manager->initialize_input_handlers(ctx, jnames_in_expr, fnames, jpos_ros, fpos_etasl);
+      io_handler_manager->initialize_output_handlers(ctx, jnames_in_expr, fnames);
 
     }
     else{
-      jpos_init = jpos_etasl;
+      // jpos_init = jpos_etasl;
+
+      // std::vector<float> jpos_init_vec = multiple_robotdriver_managers->get_position_feedback(); //This method can only be used after the first time configuration
+
+      // // jpos_init = VectorXd::Zero(jpos_init_vec.size());
+      // assert(jpos_init_vec.size() == jpos_init.size());
+
+      // for (unsigned int i = 0; i < jpos_init_vec.size(); ++i) {
+      //   jpos_init[i] = jpos_init_vec[i];
+      // }
+
     }
+
 
   
     
@@ -1221,9 +932,9 @@ void etaslNode::construct_node(std::atomic<bool>* stopFlagPtr_p){
 
     this->configure_etasl();
 
-    // std::cout << "The time is:" << std::endl;
-    // auto timeee = ctx->getOutputExpression<double>("time");
-    // std::cout << timeee->value() << std::endl;
+    multiple_robotdriver_managers->on_configure(ctx);
+
+
 
 
 
@@ -1268,30 +979,14 @@ void etaslNode::construct_node(std::atomic<bool>* stopFlagPtr_p){
 
     timer_->reset();
 
-    robotdriver->on_activate();
-    RCUTILS_LOG_INFO_NAMED(get_name(), "Entering on activate for input handlers.");
-    for (auto& h : inputhandlers) {
-        h->on_activate(ctx, jnames_in_expr, fnames);
-    }
-    RCUTILS_LOG_INFO_NAMED(get_name(), "Entering on activate for output handlers.");
-    for (auto& h : outputhandlers) {
-        h->on_activate(ctx, jnames_in_expr, fnames);
-    }
+    multiple_robotdriver_managers->on_activate();
 
-    //     std::cout << "hello2" << std::endl;
-    // std::cout <<"The current state label is:" << state.label() << std::endl;
-    // std::cout <<"The current state id is:" << state.id() << std::endl;
+    // TODO: Handle erros in activate and return lifecycle_return::FAILURE instead
+    io_handler_manager->activate_input_handlers(ctx, jnames_in_expr, fnames, slv);
+    io_handler_manager->activate_output_handlers(ctx, jnames_in_expr, fnames, slv);
 
-    // etaslNode::on_activate(state);
-
-    // std::cout << "hello3" << std::endl;
 
     RCUTILS_LOG_INFO_NAMED(get_name(), "on_activate() is called.");
-
-    // Let's sleep for 2 seconds.
-    // We emulate we are doing important
-    // work in the activating phase.
-    // std::this_thread::sleep_for(2s);
 
 
     // We return a success and hence invoke the transition to the next
@@ -1324,24 +1019,13 @@ void etaslNode::construct_node(std::atomic<bool>* stopFlagPtr_p){
 
     jvel_etasl.setZero(); //Sets joint velocities to zero
     fvel_etasl.setZero(); //Sets feature variables to zero
+    jvel_all_drivers.setZero(); //Sets joint velocities (for robot drivers) to zero
 
     update_robot_status(); //Updates structures that the robot thread reads from shared memory, ensuring zero velocities
 
-    robotdriver->on_deactivate();
-    for (auto& h : inputhandlers) {
-        h->on_deactivate(ctx);
-    }
-    for (auto& h : outputhandlers) {
-        h->on_deactivate(ctx);
-    }
-
-    // for (auto& h : inputhandlers) {
-    //     h->finalize();
-    // }
-    // for (auto& h : outputhandlers) {
-    //     h->finalize();
-    // }
-
+    multiple_robotdriver_managers->on_deactivate();
+    io_handler_manager->deactivate_input_handlers(ctx);
+    io_handler_manager->deactivate_output_handlers(ctx);
 
     RCUTILS_LOG_INFO_NAMED(get_name(), "on_deactivate() is called.");
 
@@ -1375,13 +1059,10 @@ void etaslNode::construct_node(std::atomic<bool>* stopFlagPtr_p){
     jvel_etasl.setZero(); //Sets joint velocities to zero
     fvel_etasl.setZero(); //Sets feature variables to zero
 
-    robotdriver->on_cleanup();
-    for (auto& h : inputhandlers) {
-        h->on_cleanup(ctx);
-    }
-    for (auto& h : outputhandlers) {
-        h->on_cleanup(ctx);
-    }
+    multiple_robotdriver_managers->on_cleanup();
+
+    io_handler_manager->cleanup_input_handlers(ctx);
+    io_handler_manager->cleanup_output_handlers(ctx);
 
     timer_->cancel();
     this->reinitialize_data_structures();
@@ -1445,63 +1126,17 @@ void etaslNode::construct_node(std::atomic<bool>* stopFlagPtr_p){
     std::cout << "Program shutting down safely." << std::endl;
     stopFlagPtr->store(true); //Stops execution of driver_thread after executor e.g. when interrupted with ctr+c signal    
 
-    if (robotdriver!=nullptr){
-      robotdriver->finalize();
-    }
-    for (auto& h : inputhandlers) {
-        h->finalize();
-    }
-    for (auto& h : outputhandlers) {
-        h->finalize();
-    }
+    multiple_robotdriver_managers->finalize();
+
+    io_handler_manager->finalize_input_handlers();
+    io_handler_manager->finalize_output_handlers();
     
-
-    // std::this_thread::sleep_for(std::chrono::milliseconds(1000));
-
-    // rclcpp::shutdown(); 
   }
 
-  void etaslNode::register_factories(){
-        // The following registers each factory. If you don't declare this, the program will not be able to create objects from
-    // such factory when specified in the JSON files.
-    // etasl::registerQPOasesSolverFactory();
-    etasl::registerTopicOutputHandlerFactory(shared_from_this()); 
-    // etasl::registerFileOutputHandlerFactory();
-    etasl::registerJointStateOutputHandlerFactory(shared_from_this());
-    // etasl::registerTopicInputHandlerFactory(shared_from_this());
-    // etasl::registerTFOutputHandlerFactory(shared_from_this());
-    etasl::registerTwistInputHandlerFactory(shared_from_this());
-    etasl::registerWrenchInputHandlerFactory(shared_from_this());
-    // etasl::registerSimulationRobotDriverFactory(feedback_shared_ptr.get(), setpoint_shared_ptr.get());
-    // etasl::registerKukaIiwaRobotDriverFactory(feedback_shared_ptr.get(), setpoint_shared_ptr.get());
-    etasl::register_simple_kinematic_simulation_factory(feedback_shared_ptr.get(), setpoint_shared_ptr.get());
 
-  }
+  std::vector<std::shared_ptr<t_manager::thread_t>> etaslNode::create_driver_threads_structures(std::atomic<bool> & stopFlag){
 
-  boost::shared_ptr<t_manager::thread_t> etaslNode::create_thread_str(std::atomic<bool> & stopFlag){
-    
-    double periodicity;
-    Json::Value param = board->getPath("/robot", false);
-    if(simulation){
-      periodicity = jsonchecker->asDouble(param, "simulation/periodicity");
-    }
-    else{
-      periodicity = jsonchecker->asDouble(param, "robotdriver/periodicity");
-    }
-    
-
-    // double periodicity = jsonchecker->asDouble(param, "robotdriver/periodicity");
-
-    thread_str_driver = boost::make_shared<t_manager::thread_t>();
-
-    
-      thread_str_driver->periodicity = std::chrono::nanoseconds(static_cast<long long>(periodicity * 1E9)); //*1E9 to convert seconds to nanoseconds
-      thread_str_driver->update_hook = std::bind(&etasl::RobotDriver::update, robotdriver, std::ref(stopFlag));
-      thread_str_driver->finalize_hook = std::bind(&etasl::RobotDriver::finalize, robotdriver);
-    
-
-
-    return thread_str_driver;
+    return multiple_robotdriver_managers->create_driver_threads_structures(stopFlag);
 
   }
 
@@ -1528,21 +1163,39 @@ int main(int argc, char * argv[])
 
 
 
-    boost::shared_ptr<t_manager::thread_t> thread_str_driver = my_etasl_node->create_thread_str(stopFlag);
+    // std::shared_ptr<t_manager::thread_t> thread_str_driver = my_etasl_node->create_thread_str(stopFlag);
 
-    std::thread driver_thread(t_manager::do_thread_loop, thread_str_driver, std::ref(stopFlag));
-    driver_thread.detach();// Avoids the main thread to block. See spin() + stopFlag mechanism below.
+    std::vector<std::shared_ptr<t_manager::thread_t>> thread_str_drivers_vec =  my_etasl_node->create_driver_threads_structures(stopFlag);
+
+    std::vector<std::thread> driver_threads_vec;
+    driver_threads_vec.resize(thread_str_drivers_vec.size());
+
+    for (unsigned int i = 0; i < thread_str_drivers_vec.size(); ++i) {
+      std::shared_ptr<t_manager::thread_t> thread_str_driver = thread_str_drivers_vec[i];
+      driver_threads_vec[i] = std::thread(t_manager::do_thread_loop, thread_str_driver, std::ref(stopFlag));
+      t_manager::setScheduling(driver_threads_vec[i], SCHED_FIFO, 90);
+    }
+
+    // std::thread driver_thread(t_manager::do_thread_loop, thread_str_driver, std::ref(stopFlag));
+    // t_manager::setScheduling(driver_thread, SCHED_FIFO, 90);
+    // driver_thread.detach();// Avoids the main thread to block. See spin() + stopFlag mechanism below.
 
 
     rclcpp::ExecutorOptions options;
     options.context = my_etasl_node->get_node_base_interface()->get_context(); //necessary to avoid unexplainable segmentation fault from the ros rclcpp library!!!
     rclcpp::executors::SingleThreadedExecutor executor(options);
     executor.add_node(my_etasl_node->get_node_base_interface());
-    executor.spin(); //This method blocks!
+    executor.spin(); //This method blocks until shutdown!
 
     stopFlag.store(true); //Stops execution of driver_thread after executor is interrupted with ctr+c signal
 
-    std::this_thread::sleep_for(std::chrono::milliseconds(200)); //Needed for the robotdriver thread to stop properly before calling shutdown. Otherwise segmentation fault is observed. This is because shutdown deletes something from the robotdriver as now ros2 pluginlib is being used.
+    for (auto& thr : driver_threads_vec) {
+      thr.join(); //Blocks until each driver_thread stops, after the stopFlag is set to true
+    }
+
+    // driver_thread.join();//Blocks until driver_thread stops, after the stopFlag is set to true
+
+    // std::this_thread::sleep_for(std::chrono::milliseconds(1000)); //Needed for the robotdriver thread to stop properly before calling shutdown. Otherwise segmentation fault is observed. This is because shutdown deletes something from the robotdriver as now ros2 pluginlib is being used.
     
     executor.remove_node(my_etasl_node->get_node_base_interface());
 

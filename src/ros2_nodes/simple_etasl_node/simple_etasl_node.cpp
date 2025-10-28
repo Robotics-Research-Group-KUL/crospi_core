@@ -59,7 +59,7 @@ void etaslNode::publishJointState() {
 
 typename Observer::Ptr 
 create_PrintObserver(
-        typename boost::shared_ptr<solver> _slv, 
+        typename std::shared_ptr<solver> _slv, 
         const std::string& _action_name, 
         const std::string& _message, 
         typename Observer::Ptr _next ) 
@@ -90,7 +90,7 @@ void etaslNode::update_controller_input(Eigen::VectorXd const& jvalues_meas){
 
 void etaslNode::solver_configuration(){
       // Create registry and register known solvers: 
-    solver_registry = boost::make_shared<SolverRegistry>();
+    solver_registry = std::make_shared<SolverRegistry>();
     registerSolverFactory_qpOases(solver_registry, "qpoases");
     //registerSolverFactory_hqp(R, "hqp");
 
@@ -242,9 +242,9 @@ void etaslNode::configure_etasl(){
     // oh( ctx);     // or   std::vector<std::string> varnames =  {"q","f","dx","dy"};
                                       //      eTaSL_OutputHandler oh( ctx, varnames); for only specific outputs
     // create the OutputHandler:
-    oh = boost::make_shared<eTaSL_OutputHandler>(ctx);
+    oh = std::make_shared<eTaSL_OutputHandler>(ctx);
         // create the Inputhandler:
-    ih = boost::make_shared<eTaSL_InputHandler>(ctx,"sine_input", 0.2,0.1,0.0);
+    ih = std::make_shared<eTaSL_InputHandler>(ctx,"sine_input", 0.2,0.1,0.0);
     // ih->update(time);                                              
     ih->update(0.0);    
 
@@ -293,7 +293,7 @@ void etaslNode::configure_etasl(){
     // std::ofstream outpfile(outpfilename);
 
     outpfilename = this->get_parameter("outpfilename").as_string();
-    outpfile_ptr = boost::make_shared<std::ofstream>(outpfilename);
+    outpfile_ptr = std::make_shared<std::ofstream>(outpfilename);
     
     
     oh->printHeader(*outpfile_ptr);
@@ -315,15 +315,15 @@ Context::Ptr etaslNode::get_ctx()
 {
   return ctx;
 }
-boost::shared_ptr<solver> etaslNode::get_slv()
+std::shared_ptr<solver> etaslNode::get_slv()
 {
   return slv;
 }
-boost::shared_ptr<eTaSL_OutputHandler> etaslNode::get_output_handler()
+std::shared_ptr<eTaSL_OutputHandler> etaslNode::get_output_handler()
 {
   return oh;
 }
-boost::shared_ptr<eTaSL_InputHandler> etaslNode::get_input_handler()
+std::shared_ptr<eTaSL_InputHandler> etaslNode::get_input_handler()
 {
   return ih;
 }

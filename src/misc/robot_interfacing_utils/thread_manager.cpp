@@ -23,22 +23,36 @@ namespace t_manager {
  * When all the registered activities reach the dead state, the loop is interrupted.
  * @param[in] thread thread data structure of type thread_t
  * */
-void do_thread_loop(boost::shared_ptr<thread_t> thread, volatile std::atomic<bool>& stopFlag){
+void do_thread_loop(std::shared_ptr<thread_t> thread, volatile std::atomic<bool>& stopFlag){
 
     std::chrono::steady_clock::time_point  start_time = std::chrono::steady_clock::now();
     std::chrono::steady_clock::time_point  end_time = std::chrono::steady_clock::now();
-    auto duration_s = std::chrono::duration_cast<std::chrono::microseconds>(end_time - start_time);
+    // auto duration_s = std::chrono::duration_cast<std::chrono::microseconds>(end_time - start_time);
+    // auto now = std::chrono::steady_clock::now();
+    long long period_ns = std::chrono::duration_cast<std::chrono::nanoseconds>(end_time - start_time).count();
+    long long sum_period = 0ll;
+    long long max_period = 0ll;
+    long long min_period = 0ll;
+    long long num_samples = 0ll;
 
 
     // Comment the following lambda out to avoid measuring time:
     
-    // thread->benchmark_hook = [&end_time, &start_time, &duration_s]() {
+    thread->benchmark_hook = [&end_time, &start_time, &period_ns, &sum_period, &max_period, &min_period, &num_samples]() {
     
-    //     end_time = std::chrono::steady_clock::now();
-    //     duration_s = std::chrono::duration_cast<std::chrono::microseconds>(end_time - start_time);
-    //     std::cout << "Time spent: "<< duration_s.count()/1000.0<<" milliseconds" << std::endl; //Temporarily placed for debugging
-    //     start_time = std::chrono::steady_clock::now();
-    // };
+        end_time = std::chrono::steady_clock::now();
+        period_ns = std::chrono::duration_cast<std::chrono::nanoseconds>(end_time - start_time).count();
+        start_time = std::chrono::steady_clock::now();
+
+        sum_period+= period_ns;
+        num_samples++;
+        if (period_ns > max_period) {
+          max_period = period_ns;
+        }
+        if (min_period == 0 || period_ns < min_period) {
+          min_period = period_ns;
+        }
+    };
 
     // do_thread_loop_std_sleep_until(thread,  stopFlag);
     // do_thread_loop_std_sleep_for(thread,  stopFlag);
@@ -48,37 +62,44 @@ void do_thread_loop(boost::shared_ptr<thread_t> thread, volatile std::atomic<boo
 
 
     if ( thread->finalize_hook != nullptr)   {thread->finalize_hook();}
-    if(stopFlag.load())    {std::cout << "stopFlag=true" << std::endl;}
+    // if(stopFlag.load(std::memory_order_relaxed))    {std::cout << "stopFlag=true" << std::endl;}
+
+    std::cout << "------------ Periodicity statistics --------------" << std::endl;
+    // std::cout << "Sum periodicity: " << sum_period << " ns" << std::endl;
+    std::cout << "Max periodicity: " << max_period << " ns" << std::endl;
+    std::cout << "Min periodicity: " << min_period << " ns" << std::endl;
+    std::cout << "Number of samples: " << num_samples << std::endl;
+    std::cout << "Average periodicity: " << (num_samples > 0 ? static_cast<double>(sum_period) / num_samples : 0.0) << " ns" << std::endl;
     
 }
 
-void do_thread_loop_std_sleep_until(boost::shared_ptr<thread_t> thread, volatile std::atomic<bool>& stopFlag){
+void do_thread_loop_std_sleep_until(std::shared_ptr<thread_t> thread, volatile std::atomic<bool>& stopFlag){
 
    std::chrono::nanoseconds periodicity = thread->periodicity;
    std::chrono::steady_clock::time_point  end_time_sleep = std::chrono::steady_clock::now() + periodicity;
 
-   while (!stopFlag.load()){
-       thread->update_hook(); //Function that I want to execute periodically
-       // Using std library to sleep
-       std::this_thread::sleep_until(end_time_sleep);
-       while ( std::chrono::steady_clock::now() < end_time_sleep || errno == EINTR ) { // In case the sleep was interrupted, continues to execute it
-           errno = 0;
-           std::this_thread::sleep_until(end_time_sleep);
-       }
-       end_time_sleep = std::chrono::steady_clock::now() + periodicity; //adds periodicity
-         if ( thread->benchmark_hook != nullptr)   {thread->benchmark_hook();}
+   while (!stopFlag.load(std::memory_order_relaxed)){
+        thread->update_hook(); //Function that I want to execute periodically
+        // Using std library to sleep
+        std::this_thread::sleep_until(end_time_sleep);
+        while ( std::chrono::steady_clock::now() < end_time_sleep || errno == EINTR ) { // In case the sleep was interrupted, continues to execute it
+            errno = 0;
+            std::this_thread::sleep_until(end_time_sleep);
+        }
+        end_time_sleep = std::chrono::steady_clock::now() + periodicity; //adds periodicity
+        if ( thread->benchmark_hook != nullptr)   {thread->benchmark_hook();}
    }
    
 }
 
-void do_thread_loop_std_sleep_for(boost::shared_ptr<thread_t> thread, volatile std::atomic<bool>& stopFlag){
+void do_thread_loop_std_sleep_for(std::shared_ptr<thread_t> thread, volatile std::atomic<bool>& stopFlag){
 
    std::chrono::nanoseconds periodicity = thread->periodicity;
    std::chrono::steady_clock::time_point  time_start = std::chrono::steady_clock::now();
    std::chrono::steady_clock::time_point  time_end = std::chrono::steady_clock::now();
    std::chrono::duration<double>  elapsed_time = time_end - time_start;
 
-   while (!stopFlag.load()){
+   while (!stopFlag.load(std::memory_order_relaxed)){
        time_start = std::chrono::steady_clock::now();
        thread->update_hook(); //Function that I want to execute periodically
        time_end = std::chrono::steady_clock::now();
@@ -91,14 +112,14 @@ void do_thread_loop_std_sleep_for(boost::shared_ptr<thread_t> thread, volatile s
 
 }
 
-void do_thread_loop_posix_usleep(boost::shared_ptr<thread_t> thread, volatile std::atomic<bool>& stopFlag){
+void do_thread_loop_posix_usleep(std::shared_ptr<thread_t> thread, volatile std::atomic<bool>& stopFlag){
 
    std::chrono::nanoseconds periodicity = thread->periodicity;
    struct timespec start, end;
    uint64_t elapsed_time_us;
    useconds_t periodicity_us = periodicity.count()/1000.0;
 
-   while (!stopFlag.load()){
+   while (!stopFlag.load(std::memory_order_relaxed)){
        clock_gettime(CLOCK_MONOTONIC_RAW, &start);
        thread->update_hook(); //Function that I want to execute periodically
        clock_gettime(CLOCK_MONOTONIC_RAW, &end);
@@ -110,7 +131,7 @@ void do_thread_loop_posix_usleep(boost::shared_ptr<thread_t> thread, volatile st
     }
 }
 
-void do_thread_loop_posix_clock_nanosleep(boost::shared_ptr<thread_t> thread, volatile std::atomic<bool>& stopFlag){
+void do_thread_loop_posix_clock_nanosleep(std::shared_ptr<thread_t> thread, volatile std::atomic<bool>& stopFlag){
         
     struct timespec next_wakeup_time_;
     std::chrono::nanoseconds periodicity = thread->periodicity;
@@ -118,7 +139,7 @@ void do_thread_loop_posix_clock_nanosleep(boost::shared_ptr<thread_t> thread, vo
     int err_int = 0;
     clock_gettime(CLOCK_MONOTONIC, &next_wakeup_time_);
     
-    while (!stopFlag.load()){
+    while (!stopFlag.load(std::memory_order_relaxed)){
         thread->update_hook();
         clock_gettime(CLOCK_MONOTONIC, &next_wakeup_time_);//Remove to compensate for accumulated extra slept time, but we can get times between cyles 
         //... with errors in the order of magnitude of tenths of a millisecond below the specified cycle time. With it we always get erros above the specified cycle time that will accumulate over time. 
@@ -127,7 +148,7 @@ void do_thread_loop_posix_clock_nanosleep(boost::shared_ptr<thread_t> thread, vo
         if(!sleep_clock_nanosleep(next_wakeup_time_, err_int)){
             stopFlag.store(true); //Stops execution of the loop
         }
-        if ( thread->benchmark_hook != nullptr)   {thread->benchmark_hook();}
+        if ( thread->benchmark_hook != nullptr)   {thread->benchmark_hook();} //Modify benchmark hook e.g. to measure time between executions
     }
 }
 
@@ -168,6 +189,10 @@ void setScheduling(std::thread &th, int sched_policy, int priority) {
 
     if(pthread_setschedparam(th.native_handle(), sched_policy, &sch_params)) {
         std::cerr << "Failed to set Thread scheduling : " << std::strerror(errno) << std::endl;
+    }
+    else{
+        std::cout << "########################################################### " << std::endl;
+        std::cout << "The priority of the thread was changed succesfully to " << priority << std::endl;
     }
 }
 

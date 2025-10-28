@@ -45,37 +45,23 @@
 #include "etasl_interfaces/srv/task_specification_file.hpp" 
 
 
-// #include "etasl_node_utils/rostask.hpp"
 #include "etasl_task_utils/blackboard.hpp"
 #include "etasl_task_utils/registry.hpp"
-#include "etasl_task_utils/inputhandlerfactory.hpp"
-#include "etasl_node_utils/topicinputhandlerfactory.hpp"
-
-#include "etasl_task_utils/outputhandler.hpp"
-#include "etasl_task_utils/outputhandlerfactory.hpp"
-#include "etasl_node_utils/jointstateoutputhandlerfactory.hpp"
-#include "etasl_node_utils/topicoutputhandlerfactory.hpp"
-#include "etasl_task_utils/fileoutputhandlerfactory.hpp"
-#include "etasl_node_utils/tfoutputhandlerfactory.hpp"
-#include "etasl_node_utils/twistinputhandlerfactory.hpp"
-#include "etasl_node_utils/wrenchinputhandlerfactory.hpp"
+#include <etasl_task_utils/inputhandler.hpp>
 
 
-#include "robot_interfacing_utils/robotdriverfactory.hpp"
-#include "simple_kinematic_simulation/simple_kinematic_simulation_factory.hpp"
-// #include "robot_interfacing_utils/simulationrobotdriverfactory.hpp"
-// #include "kuka_iiwa_driver/kukaiiwa_robotdriverfactory.hpp"
-#include <pluginlib/class_loader.hpp> //For plugins such as robot drivers
+#include "etasl_node_utils/io_handler_manager.hpp"
+// #include "etasl_node_utils/robot_driver_manager.hpp"
+// #include "etasl_node_utils/robot_driver_manager_lockfree.hpp"
+#include "etasl_node_utils/multiple_drivers_manager.hpp"
 
 
-#include "robot_interfacing_utils/feedback_struct.hpp"
-#include "robot_interfacing_utils/thread_manager.hpp"
+// #include "robot_interfacing_utils/feedback_struct.hpp"
+#include "robot_interfacing_utils/robot_data_structures.hpp"
+
+// #include "robot_interfacing_utils/thread_manager.hpp"
 
 #include "etasl_task_utils/json_checker.hpp"
-
-
-
-
 
 
 
@@ -103,12 +89,7 @@ class etaslNode : public rclcpp_lifecycle::LifecycleNode
         void configure_etasl();
         void update();
         void reinitialize_data_structures();
-        bool initialize_input_handlers();
-        bool initialize_output_handlers();
         void safe_shutdown();
-
-        // void setJointValues(const std::vector<double>& jval, const std::vector<std::string>& jvalnames);
-
 
         void update_controller_output(Eigen::VectorXd const& jvalues);
         void update_controller_input(Eigen::VectorXd const& jvalues);
@@ -118,17 +99,8 @@ class etaslNode : public rclcpp_lifecycle::LifecycleNode
         void initialize_feature_variables();
         void construct_node(std::atomic<bool>* stopFlagPtr_p);
 
-        void register_factories();
         void update_robot_status();
-        boost::shared_ptr<t_manager::thread_t> create_thread_str(std::atomic<bool> & stopFlag);
-        
-
-
-
-
-
-        // bool srv_configure(const std::shared_ptr<lifecycle_msgs::srv::ChangeState::Request> request,
-        //   std::shared_ptr<lifecycle_msgs::srv::ChangeState::Response>  response);
+        std::vector<std::shared_ptr<t_manager::thread_t>> create_driver_threads_structures(std::atomic<bool> & stopFlag);
 
         bool etasl_console(const std::shared_ptr<std_srvs::srv::Empty::Request> request, std::shared_ptr<std_srvs::srv::Empty::Response>  response);
         bool readTaskSpecificationFile(const std::shared_ptr<etasl_interfaces::srv::TaskSpecificationFile::Request> request, std::shared_ptr<etasl_interfaces::srv::TaskSpecificationFile::Response>  response);
@@ -148,78 +120,49 @@ class etaslNode : public rclcpp_lifecycle::LifecycleNode
 
         Context::Ptr ctx;
         boost::shared_ptr<solver> slv;
-        boost::shared_ptr<LuaContext> LUA;
+        std::shared_ptr<LuaContext> LUA;
         SolverRegistry::Ptr solver_registry;
 
         std::atomic<bool>* stopFlagPtr;
 
+        
+        etasl::IOHandlerManager::SharedPtr               io_handler_manager;
 
-        // boost::shared_ptr<eTaSL_OutputHandler> oh;
-        // boost::shared_ptr<eTaSL_InputHandler> ih;
-        // boost::shared_ptr<std::ofstream > outpfile_ptr;
 
-        std::vector<etasl::OutputHandler::SharedPtr> outputhandlers;
-        std::vector<etasl::InputHandler::SharedPtr> inputhandlers;
-        etasl::RobotDriver::SharedPtr               robotdriver;
-
-        boost::shared_ptr<pluginlib::ClassLoader<etasl::RobotDriver>>  driver_loader;
-
-        std::vector<bool> ih_initialized;
+        // etasl::RobotDriverManagerLockFree::SharedPtr robotdriver_manager;
+        etasl::MultipleDriversManager::SharedPtr multiple_robotdriver_managers;
 
         std::vector< std::string > jointnames;
+        std::vector< std::string > jointnames_drivers;
         std::vector<std::string> jnames_in_expr;
         std::vector< std::string > fnames;
 
-        boost::shared_ptr<etasl::BlackBoard> board;
-
-
-        boost::shared_ptr<etasl::FeedbackMsg> feedback_shared_ptr;
-        boost::shared_ptr<etasl::SetpointMsg> setpoint_shared_ptr;
-        boost::shared_ptr<t_manager::thread_t> thread_str_driver;
-        boost::shared_ptr<etasl::JsonChecker> jsonchecker;
+        std::vector<int> driver_to_etasl; // Maps driver index -> etasl index, or -1 if not used
+        std::vector<int> etasl_to_driver; // Maps etasl index -> driver index
         
-        std::unique_ptr<etasl::FeedbackMsg> feedback_copy_ptr;
 
-        struct InputChannelsFeedback {
-            std::vector<etasl::VariableType<double>::Ptr> joint_vel;
-            std::vector<etasl::VariableType<double>::Ptr> joint_torque;
-            std::vector<etasl::VariableType<double>::Ptr> joint_current;
-            etasl::VariableType<KDL::Vector>::Ptr cartesian_pos;
-            etasl::VariableType<KDL::Rotation>::Ptr cartesian_quat;
-            etasl::VariableType<KDL::Twist>::Ptr cartesian_twist;
-            etasl::VariableType<KDL::Wrench>::Ptr cartesian_wrench;
-            etasl::VariableType<KDL::Vector>::Ptr base_pos;
-            etasl::VariableType<KDL::Rotation>::Ptr base_quat;
-            etasl::VariableType<KDL::Twist>::Ptr base_twist;
-        } input_channels_feedback;
+        std::shared_ptr<etasl::BlackBoard> board;
+
+
+        std::shared_ptr<etasl::JsonChecker> jsonchecker;
         
-        KDL::Vector vector_inp;
-        KDL::Rotation rotation_inp;
-        KDL::Twist twist_inp;
-        KDL::Wrench wrench_inp;
-        std::map<std::string, bool> feedback_report;
 
-        // eTaSL_OutputHandler oh;
-        // eTaSL_InputHandler ih;
+        std::vector<float> joint_positions_feedback; //Feedback of all joints in all drivers
 
         VectorXd fpos_etasl;
         VectorXd jpos_etasl;
         VectorXd jpos_ros;
         // VectorXd jpos;
         VectorXd jvel_etasl;
+        VectorXd jvel_all_drivers;
         VectorXd fvel_etasl;
 
-        VectorXd jpos_init;
 
-
-
-
-          
         std::string outpfilename;
         std::string fname;
 
-        std::map< std::string, int> jindex;
-        std::map<std::string,int>  name_ndx;
+        std::map< std::string, int> jindex; //Indexes of joints according to eTaSL task specification
+        std::map<std::string,int>  name_ndx; //TODO: change to unordered_map instead of map
 
         bool first_time_configured;
         bool is_configured;
@@ -233,14 +176,6 @@ class etaslNode : public rclcpp_lifecycle::LifecycleNode
         rclcpp::Service<etasl_interfaces::srv::TaskSpecificationFile>::SharedPtr srv_readTaskSpecificationFile_;
         rclcpp::Service<etasl_interfaces::srv::TaskSpecificationFile>::SharedPtr srv_readRobotSpecification_;
         rclcpp::Service<etasl_interfaces::srv::TaskSpecificationString>::SharedPtr srv_readTaskParameters_;
-
-
-
-
-        
-
-
-
 
 
 };

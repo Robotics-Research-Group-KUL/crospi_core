@@ -1,0 +1,25 @@
+{
+    "$schema": "http://json-schema.org/draft-06/schema",
+    "$id": "robotdriver.json",
+    "title": "Robotdriver",
+    "description": "Robotdriver interfaces robot hardware with eTaSL and runs in a separate thread, communicating via shared memory for reduced latency",
+    "oneOf": [
+        {
+            "$ref":"kuka_iiwa_driver.json"
+        },
+        {
+            "$ref":"ur10erobotdriver.json"
+        },
+        {
+            "type":"object",
+            "properties":{
+                "is-no_driver" : {
+                    "description":"To indicate that there is no available driver yet for the robot and therefore the tasks can only be executed in simulation",
+                    "type":"boolean",
+                    "default":true
+                }
+            },
+            "required":["is-no_driver"]
+        }
+    ]
+}

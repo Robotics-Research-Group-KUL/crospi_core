@@ -10,6 +10,15 @@ find_package(etasl REQUIRED)
 find_package(pluginlib REQUIRED)
 # find_package(etasl_ros2 REQUIRED) #Needed to read srv and msgs generated with rosidl_generate_interfaces
 
+# -- start --Stuff for triple buffer implementation of boost 1.89
+set(BOOST_ROOT "/opt/boost/1.89.0")
+set(CMAKE_PREFIX_PATH "/opt/boost/1.89.0" ${CMAKE_PREFIX_PATH})
+find_package(Boost 1.89 REQUIRED)
+message(STATUS "Using Boost version ${Boost_VERSION}")
+message(STATUS "Boost include dirs: ${Boost_INCLUDE_DIRS}")
+
+# -- end -- Stuff for triple buffer implementation of boost 1.89
+
 include_directories(.)
 
 add_executable(etasl_node etasl_node.cpp)
@@ -24,8 +33,10 @@ target_link_libraries(etasl_node
         etasl_task_utils
         etasl_node_utils
         robot_interfacing_utils
+        # buffer_utils
+        # triple_buffer
         # kuka_iiwa_driver
-        simple_kinematic_simulation
+        # simple_kinematic_simulation
         )
 
 # ament_target_dependencies(etasl_node rclcpp std_msgs sensor_msgs)
@@ -45,7 +56,8 @@ ament_target_dependencies(etasl_node
 # TODO: change the directories of  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include> and $<INSTALL_INTERFACE:include>
 target_include_directories(etasl_node PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
-  $<INSTALL_INTERFACE:include>)
+  $<INSTALL_INTERFACE:include>
+  ${Boost_INCLUDE_DIRS})
 
 target_compile_features(etasl_node PUBLIC c_std_99 cxx_std_17)  # Require C99 and C++17
 

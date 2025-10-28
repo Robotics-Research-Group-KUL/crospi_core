@@ -12,7 +12,7 @@ namespace etasl {
 class SolverFactory {
 
 public:
-    typedef std::shared_ptr<SolverFactory> SharedPtr;
+    typedef boost::shared_ptr<SolverFactory> SharedPtr;
     typedef KDL::solver::Ptr ProductSharedPtr;
     
 
@@ -31,7 +31,7 @@ public:
      * @brief create the solver with the given parameters
      *
      */
-    virtual ProductSharedPtr create(const Json::Value& parameters, boost::shared_ptr<JsonChecker> jsonchecker) = 0;
+    virtual ProductSharedPtr create(const Json::Value& parameters, std::shared_ptr<JsonChecker> jsonchecker) = 0;
 
     virtual ~SolverFactory() { }
 };

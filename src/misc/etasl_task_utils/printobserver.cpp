@@ -5,7 +5,7 @@
 
 namespace etasl {
  
-        PrintObserver::PrintObserver(boost::shared_ptr<solver> _slv,
+        PrintObserver::PrintObserver(std::shared_ptr<solver> _slv,
                          const std::string& _action_name,
                          const std::string& _message,
                          Observer::Ptr _next ) :
@@ -44,7 +44,7 @@ namespace etasl {
 
     typename Observer::Ptr 
     create_PrintObserver(
-            typename boost::shared_ptr<solver> _slv, 
+            typename std::shared_ptr<solver> _slv, 
             const std::string& _action_name, 
             const std::string& _message, 
             typename Observer::Ptr _next ) 

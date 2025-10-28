@@ -10,6 +10,7 @@ find_package(etasl REQUIRED)
 find_package(resource_retriever REQUIRED)
 find_package(etasl_interfaces REQUIRED)
 find_package(sensor_msgs REQUIRED)
+find_package(geometry_msgs REQUIRED)
 find_package(std_msgs REQUIRED)
 find_package(Lua51 REQUIRED)
 find_package(Eigen3 REQUIRED)
@@ -19,6 +20,8 @@ find_package(jsoncpp REQUIRED)
 find_package(tf2 REQUIRED)
 find_package(tf2_geometry_msgs REQUIRED)
 find_package(tf2_ros REQUIRED)
+find_package(pluginlib REQUIRED)
+
 #add_subdirectory( doc )
 
 set(CMAKE_CXX_STANDARD 17)
@@ -27,26 +30,34 @@ include_directories(include ${LUA_INCLUDE_DIR})
 
 
 set( src_etasl_node_utils
-    rosloghandler.cpp
+    # rosloghandler.cpp
     # rostask.cpp
 
-    topicoutputhandler.cpp
-    jointstateoutputhandler.cpp
-    jointstateinputhandler.cpp
-    topicinputhandler.cpp
-    tfoutputhandler.cpp
-    twistinputhandler.cpp
-    wrenchinputhandler.cpp
+    io_handler_manager.cpp
+    # robot_driver_manager.cpp
+    robot_driver_manager_lockfree.cpp
+    multiple_drivers_manager.cpp
 
-    topicoutputhandlerfactory.cpp
-    jointstateoutputhandlerfactory.cpp
-    jointstateinputhandlerfactory.cpp    
-    topicinputhandlerfactory.cpp
-    tfoutputhandlerfactory.cpp
-    twistinputhandlerfactory.cpp
-    wrenchinputhandlerfactory.cpp
+    # topicoutputhandler.cpp
+    # jointstateoutputhandler.cpp
+    # tfoutputhandler.cpp
+    # topicinputhandler.cpp
+    # twistinputhandler.cpp
+    # wrenchinputhandler.cpp
+    # tfinputhandler.cpp
+    # jointstateinputhandler.cpp
+
+    # topicoutputhandlerfactory.cpp
+    # jointstateoutputhandlerfactory.cpp
+    # jointstateinputhandlerfactory.cpp    
+    # topicinputhandlerfactory.cpp
+    # tfoutputhandlerfactory.cpp
+    # # twistinputhandlerfactory.cpp
+    # wrenchinputhandlerfactory.cpp
+    # tfinputhandlerfactory.cpp
+
     #robotsimulator.cpp
-    robotsimulatorfactory.cpp    
+    # robotsimulatorfactory.cpp    
 )
 
 set(rosdependencies 
@@ -62,6 +73,7 @@ set(rosdependencies
     tf2
     tf2_geometry_msgs
     tf2_ros
+    pluginlib
 )
 
 set(dependencies

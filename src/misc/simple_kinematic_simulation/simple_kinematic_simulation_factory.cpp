@@ -3,7 +3,8 @@
 #include "robot_interfacing_utils/robotdriverfactory.hpp"
 #include "simple_kinematic_simulation/simple_kinematic_simulation.hpp"
 #include "etasl_task_utils/registry.hpp"
-#include "robot_interfacing_utils/feedback_struct.hpp"
+// #include "robot_interfacing_utils/feedback_struct.hpp"
+#include "robot_interfacing_utils/robot_data_structures.hpp"
 #include <jsoncpp/json/json.h>
 
 namespace etasl {
@@ -75,15 +76,15 @@ public:
      * @brief create the solver with the given parameters
      *
      */
-    virtual RobotDriver::SharedPtr create(const Json::Value& parameters, boost::shared_ptr<etasl::JsonChecker> jsonchecker)
+    virtual RobotDriver::SharedPtr create(const Json::Value& parameters, std::shared_ptr<etasl::JsonChecker> jsonchecker)
     {
-        double periodicity = jsonchecker->asDouble(parameters, "periodicity");
+        // double periodicity = jsonchecker->asDouble(parameters, "periodicity");
 
-        std::vector<double> init_joints;
-        // init_joints.resize(parameters["initial_joints"].size(), 0.0);
-        for (auto n : jsonchecker->asArray(parameters, "initial_joints")) {
-            init_joints.push_back(jsonchecker->asDouble(n, ""));
-        }
+        // std::vector<double> init_joints;
+        // // init_joints.resize(parameters["initial_joints"].size(), 0.0);
+        // for (auto n : jsonchecker->asArray(parameters, "initial_joints")) {
+        //     init_joints.push_back(jsonchecker->asDouble(n, ""));
+        // }
  
         std::string name = getName();
 

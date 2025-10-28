@@ -9,12 +9,21 @@ if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
   # add_compile_options( -Wno-deprecated -Wno-unused-but-set-variable -Wno-unused-parameter -Wno-unused-variable -Wno-reorder)
 endif()
 
+# -- start --Stuff for triple buffer implementation of boost 1.89
+set(BOOST_ROOT "/opt/boost/1.89.0")
+set(CMAKE_PREFIX_PATH "/opt/boost/1.89.0" ${CMAKE_PREFIX_PATH})
+find_package(Boost 1.89 REQUIRED)
+message(STATUS "Using Boost version ${Boost_VERSION}")
+# -- end -- Stuff for triple buffer implementation of boost 1.89
+
 add_definitions(-DBOOST_DISABLE_PRAGMA_MESSAGE)
 
 # find dependencies
 find_package(ament_cmake REQUIRED)
 find_package(std_msgs REQUIRED)
 find_package(rosidl_default_generators REQUIRED)
+# find_package(pluginlib REQUIRED)
+
 
 # uncomment the following section in order to fill in
 # further dependencies manually.
@@ -45,12 +54,6 @@ include_directories(
    include
 )
 
-
-include_directories(
-  #  src/misc/kuka_iiwa_driver
-   src/misc/simple_kinematic_simulation
-) #TODO: Remove this
-
 # TODO: Delete the following. It is only used for debug in VSCODE:
 # include_directories("/home/santiregui/etasl-cmake/standalone-cmake/install/include")
 
@@ -63,10 +66,16 @@ include_directories(
 # )
 
 add_subdirectory(src/misc)
-add_subdirectory(src/ros2_nodes/simple_etasl_node)
+
+
+# add_subdirectory(src/ros2_nodes/simple_etasl_node)
 add_subdirectory(src/ros2_nodes/etasl_node)
-add_subdirectory(src/ros2_nodes/test_publisher_node)
-add_subdirectory(src/ros2_nodes/erwin_node)
+# add_subdirectory(src/ros2_nodes/shared_memory_test_mutex)
+# add_subdirectory(src/ros2_nodes/shared_memory_test)
+# add_subdirectory(src/ros2_nodes/shared_memory_test_boost)
+# add_subdirectory(src/ros2_nodes/shared_memory_test_new_drivers)
+# add_subdirectory(src/ros2_nodes/test_publisher_node)
+# add_subdirectory(src/ros2_nodes/erwin_node)
 
 
 ament_export_dependencies(ament_cmake)

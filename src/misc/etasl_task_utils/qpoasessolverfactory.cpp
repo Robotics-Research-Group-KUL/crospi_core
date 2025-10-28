@@ -15,7 +15,7 @@ namespace etasl {
 class QPOasesSolverFactory : public SolverFactory {
 
 public:
-    typedef std::shared_ptr<QPOasesSolverFactory> SharedPtr;
+    typedef boost::shared_ptr<QPOasesSolverFactory> SharedPtr;
 
     QPOasesSolverFactory()
     {
@@ -76,7 +76,7 @@ public:
      * @brief create the solver with the given parameters
      *
      */
-    virtual KDL::solver::Ptr create(const Json::Value& parameters, boost::shared_ptr<etasl::JsonChecker> jsonchecker)
+    virtual KDL::solver::Ptr create(const Json::Value& parameters, std::shared_ptr<etasl::JsonChecker> jsonchecker)
     {
         int nWSR =  jsonchecker->asInt(parameters, "nWSR");
         double regularization_factor =  jsonchecker->asDouble(parameters, "regularization_factor");;
@@ -90,7 +90,7 @@ public:
 void registerQPOasesSolverFactory()
 {
     // be sure to use the BASE CLASS as template parameter for the Registry!
-    Registry<SolverFactory>::registerFactory(std::make_shared<QPOasesSolverFactory>());
+    Registry<SolverFactory>::registerFactory(boost::make_shared<QPOasesSolverFactory>());
 }
 
 } // namespace

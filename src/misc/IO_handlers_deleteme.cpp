@@ -133,7 +133,7 @@ void eTaSL_InputHandler::update(double time) {
     * \param _message  an additional message to pass.
     * \param _next next observer to check.  
     */
-PrintObserver::PrintObserver(boost::shared_ptr<solver> _slv,
+PrintObserver::PrintObserver(std::shared_ptr<solver> _slv,
                     const std::string& _action_name,
                     const std::string& _message,
                     Observer::Ptr _next ):

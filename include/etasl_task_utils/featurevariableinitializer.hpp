@@ -96,7 +96,7 @@ namespace etasl {
                 DISPLAY_ERRORS     = 5
             };
      
-            typedef typename boost::shared_ptr<FeatureVariableInitializer> Ptr;
+            typedef typename std::shared_ptr<FeatureVariableInitializer> Ptr;
 
             /**
              * gets the current value of the feature variable state
