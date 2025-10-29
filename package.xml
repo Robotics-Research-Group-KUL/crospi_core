@@ -14,6 +14,14 @@
 
   <depend>std_msgs</depend>
   <depend>etasl_wrapper</depend>
+  <depend>lua-dev</depend>
+  <depend>tree</depend>
+  <depend>cmake</depend>
+
+  <depend>python-jsonref-pip</depend>
+  <depend>python-jsonschema-pip</depend>
+  
+  <exec_depend>python3-colorama</exec_depend>
 
   <!-- <build_depend>etasl_interfaces</build_depend> -->
 
