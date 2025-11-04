@@ -14,6 +14,7 @@
 
   <depend>std_msgs</depend>
   <depend>etasl_wrapper</depend>
+  <depend>etasl_interfaces</depend>
   <depend>lua-dev</depend>
   <depend>tree</depend>
   <depend>cmake</depend>
@@ -28,14 +29,11 @@
   <buildtool_depend>rosidl_default_generators</buildtool_depend>
   <exec_depend>rosidl_default_runtime</exec_depend>
   <!-- <exec_depend>etasl_ros2_default_plugins</exec_depend> -->
-  <exec_depend>etasl_interfaces</exec_depend>
   <member_of_group>rosidl_interface_packages</member_of_group>
-
 
   <!-- For python library: -->
   <buildtool_depend>ament_cmake_python</buildtool_depend>
   <exec_depend>python3</exec_depend>
-  <exec_depend>setuptools</exec_depend>
 
   
   

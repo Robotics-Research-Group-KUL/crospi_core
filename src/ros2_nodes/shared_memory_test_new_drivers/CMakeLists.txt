@@ -12,8 +12,8 @@ message(STATUS "===================CMAKE_MODULE_PATH: ${CMAKE_MODULE_PATH}")
 # list(APPEND CMAKE_MODULE_PATH "/usr/local/share/cmake/low_latency_buffers")
 # find_package(low_latency_buffers REQUIRED) #enables buffer_utils and triple_buffer
 
-set(BOOST_ROOT "/opt/boost/1.89.0")
-set(CMAKE_PREFIX_PATH "/opt/boost/1.89.0" ${CMAKE_PREFIX_PATH})
+set(BOOST_ROOT "$ENV{HOME}/.local/lib/boost/1.89.0")
+set(CMAKE_PREFIX_PATH "$ENV{HOME}/.local/lib/boost/1.89.0" ${CMAKE_PREFIX_PATH})
 
 find_package(Boost 1.89 REQUIRED)
 

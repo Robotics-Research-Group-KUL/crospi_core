@@ -10,11 +10,15 @@ if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
 endif()
 
 # -- start --Stuff for triple buffer implementation of boost 1.89
-set(BOOST_ROOT "/opt/boost/1.89.0")
-set(CMAKE_PREFIX_PATH "/opt/boost/1.89.0" ${CMAKE_PREFIX_PATH})
-find_package(Boost 1.89 REQUIRED)
+set(BOOST_ROOT "$ENV{HOME}/.local/lib/boost/1.89.0")
+message(STATUS "CMAKE_PREFIX_PATH before: ${CMAKE_PREFIX_PATH}")
+set(CMAKE_PREFIX_PATH "${HOME}/.local/boost/1.89.0" ${CMAKE_PREFIX_PATH})
+message(STATUS "CMAKE_PREFIX_PATH after: ${CMAKE_PREFIX_PATH}")
 message(STATUS "Using Boost version ${Boost_VERSION}")
+
+find_package(Boost 1.89 REQUIRED)
 # -- end -- Stuff for triple buffer implementation of boost 1.89
+
 
 add_definitions(-DBOOST_DISABLE_PRAGMA_MESSAGE)
 

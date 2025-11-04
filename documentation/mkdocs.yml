@@ -1,67 +1,106 @@
-site_name: !ENV [VERSION_TITLE, "eTaSL in ROS2"]
+site_name: "eTaSL"
 site_description: How to get started with eTaSL in ROS2.
 repo_url: https://gitlab.kuleuven.be/rob-expressiongraphs/ros2/etasl_ros2
 edit_uri: edit/devel/documentation/docs/
-copyright: "Santiago Iregui and Erwin Aertbeliën, KU Leuven, 2024, <a href='https://etasl.pages.gitlab.kuleuven.be/_static/LICENSE.txt'>GNU Lesser General Public License v3</a>"
+copyright: "Santiago Iregui, Federico Ulloa Rios, and Erwin Aertbeliën, KU Leuven, 2025, <a href='https://etasl.pages.gitlab.kuleuven.be/_static/LICENSE.txt'>GNU Lesser General Public License v3</a>"
 theme:
-  name: "readthedocs"
-  custom_dir: 'docs/readthedocs_custom/overrides'
-  # name: material
-  features: 
-    # - content.code.copy
+  name: "material"
+  favicon: img/favicon.ico
+  icon:
+    annotation: material/chevron-right-circle
+  palette: 
+    # Palette toggle for light mode
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+
+    # Palette toggle for dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+  features:
+    - content.tabs.link
+    - content.code.copy
+    - content.code.annotate
+    - content.code.select
+    - navigation.instant
+    - navigation.instant.progress
+    - navigation.tabs
+    # - navigation.tabs.sticky #navigation tabs remain always visible at the top when scrolling down
+
+
+
+# theme:
+#   name: "readthedocs"
+#   custom_dir: 'docs/readthedocs_custom/overrides'
+#   # name: material
+#   features: 
+#     # - content.code.copy
 
 nav:
-  - 'Installation':
-    - 'markdown/installation/regular_installation.md'
-    - 'markdown/installation/docker.md'
-  - 'Introduction':
+  - eTaSL:
     - 'markdown/introduction/about.md'
-    - 'markdown/introduction/application_template.md'
-  - 'How to run':
-    - 'markdown/basic_tutorials/node_execution.md'
-    - 'markdown/basic_tutorials/running_examples.md'
-  - 'Developing Applications':
-    - Introduction: 'markdown/basic_tutorials/intro_to_applications.md'
-    - 'markdown/basic_tutorials/setup_configuration.md'
-    - 'Outputting data':
-      - 'markdown/basic_tutorials/task_variables_to_topics.md' 
-      - 'markdown/basic_tutorials/task_variables_to_csv_files.md'
-    - 'Inputting data':
-      - 'markdown/basic_tutorials/subscribing_to_ros_topics.md' 
-      - 'markdown/basic_tutorials/intraprocess_communication.md' 
-    - 'Coordination of skills and nodes':
-      - 'markdown/basic_tutorials/applications_with_betfsm.md'
-      - 'markdown/basic_tutorials/action_server.md'
-      - 'markdown/basic_tutorials/behavior_tree.md' 
-  - 'Developing Skills':
-    - Introduction: 'markdown/basic_tutorials/intro_to_skills.md'
-    - 'markdown/basic_tutorials/installing_task_spec_library.md'
-    - 'markdown/basic_tutorials/task_configuration.md'
-    - 'markdown/basic_tutorials/general_skill_development.md'
-    - 'markdown/basic_tutorials/monitoring_of_events.md' 
-    - 'markdown/basic_tutorials/skills_with_betfsm.md'
-  - 'Developing Task Specifications':
-    - Introduction: 'markdown/basic_tutorials/intro_to_task_specifications.md'
-    - 'markdown/basic_tutorials/task_specifications.md'
-    - 'markdown/basic_tutorials/creating_libraries.md'
-    - Debugging: 'markdown/basic_tutorials/etasl_console.md'
-  - 'Extending node (advanced)':
-    - 'I/O Handlers':
-      - 'markdown/advanced_tutorials/input_handlers.md'
-      - 'markdown/advanced_tutorials/output_handlers.md'
-    - 'Robot Drivers':
-      - 'markdown/advanced_tutorials/creating_robot_drivers.md'
-      - 'markdown/advanced_tutorials/using_ros_control.md'
-  - 'Extras':
-    - 'markdown/extras/changelog.md'
-    - 'markdown/extras/glossary.md'
-    - 'markdown/extras/citations.md'
-    - 'markdown/extras/how_to_contribute.md'
+  - Publications:
+    - 'markdown/introduction/about.md'
+  - ROS 2:
+    - 'Installation':
+      - 'markdown/installation/regular_installation.md'
+      - 'markdown/installation/docker.md'
+    - 'Introduction':
+      - 'markdown/introduction/about.md'
+      - 'markdown/introduction/application_template.md'
+    - 'How to run':
+      - 'markdown/basic_tutorials/node_execution.md'
+      - 'markdown/basic_tutorials/running_examples.md'
+    - 'Developing Applications':
+      - Introduction: 'markdown/basic_tutorials/intro_to_applications.md'
+      - 'markdown/basic_tutorials/setup_configuration.md'
+      - 'Outputting data':
+        - 'markdown/basic_tutorials/task_variables_to_topics.md' 
+        - 'markdown/basic_tutorials/task_variables_to_csv_files.md'
+      - 'Inputting data':
+        - 'markdown/basic_tutorials/subscribing_to_ros_topics.md' 
+        - 'markdown/basic_tutorials/intraprocess_communication.md' 
+      - 'Coordination of skills and nodes':
+        - 'markdown/basic_tutorials/applications_with_betfsm.md'
+        - 'markdown/basic_tutorials/action_server.md'
+        - 'markdown/basic_tutorials/behavior_tree.md' 
+    - 'Developing Skills (Python)':
+      - Introduction: 'markdown/basic_tutorials/intro_to_skills.md'
+      - 'markdown/basic_tutorials/installing_task_spec_library.md'
+      - 'markdown/basic_tutorials/task_configuration.md'
+      - 'markdown/basic_tutorials/general_skill_development.md'
+      - 'markdown/basic_tutorials/monitoring_of_events.md' 
+      - 'markdown/basic_tutorials/skills_with_betfsm.md'
+    - 'Developing Task Specifications (eTaSL)':
+      - Introduction: 'markdown/basic_tutorials/intro_to_task_specifications.md'
+      - 'markdown/basic_tutorials/task_specifications.md'
+      - 'markdown/basic_tutorials/creating_libraries.md'
+      - Debugging: 'markdown/basic_tutorials/etasl_console.md'
+    - 'Plugins (C++)':
+      - 'I/O Handlers':
+        - 'markdown/advanced_tutorials/input_handlers.md'
+        - 'markdown/advanced_tutorials/output_handlers.md'
+      - 'Robot Drivers':
+        - 'markdown/advanced_tutorials/creating_robot_drivers.md'
+        - 'markdown/advanced_tutorials/using_ros_control.md'
+    - 'Extras':
+      - 'markdown/extras/changelog.md'
+      - 'markdown/extras/glossary.md'
+      - 'markdown/extras/citations.md'
+      - 'markdown/extras/how_to_contribute.md'
 
 markdown_extensions:
   - toc:
       permalink: true
   - attr_list
+  - pymdownx.emoji:
+      emoji_index: !!python/name:material.extensions.emoji.twemoji
+      emoji_generator: !!python/name:material.extensions.emoji.to_svg
   - admonition
   - abbr
   # - md_in_html
@@ -73,17 +112,21 @@ markdown_extensions:
         #   format: !!python/name:pymdownx.superfences.fence_code_format
   - def_list
   - tables
+  # - pymdownx.highlight:
+  #       anchor_linenums: true
+  #       line_spans: __span
+  #       use_pygments: true
+  #       linenums_style: table
   - pymdownx.highlight:
-        anchor_linenums: true
-        line_spans: __span
-        use_pygments: true
-        linenums_style: table
-  # - pymdownx.tabbed
+      anchor_linenums: true
+      line_spans: __span
+      pygments_lang_class: true
+  - pymdownx.tabbed:
+      alternate_style: true
   - pymdownx.inlinehilite
   - pymdownx.snippets
   # - pymdownx.superfences
-  - pymdownx.details
-  - pymdownx.tabbed
+  # - pymdownx.tabbed
     #- nl2br
     ##  - mdx_gh_links:
 #      user: mkdocs
@@ -92,23 +135,23 @@ markdown_extensions:
   - pymdownx.arithmatex:
       generic: true
 
-extra_javascript:
-  - https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS_HTML
+# extra_javascript:
+  # - https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS_HTML
   # - javascripts/mathjaxhelper.js
   # The following libs are used to enable the copy button (since readthedocs does not come with that by default) 
-  - https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js
-  - https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.10/clipboard.min.js
-  - https://unpkg.com/@popperjs/core@2
-  - https://unpkg.com/tippy.js@6
-  - readthedocs_custom/javascripts/copy-to-clipboard.js
+  # - https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js
+  # - https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.10/clipboard.min.js
+  # - https://unpkg.com/@popperjs/core@2
+  # - https://unpkg.com/tippy.js@6
+  # - readthedocs_custom/javascripts/copy-to-clipboard.js
   # - https://unpkg.com/mermaid@10.9.3/dist/mermaid.esm.min.mjs
 
 # The following some style aspects:
-extra_css:
-  - readthedocs_custom/css/extra.css
-  - readthedocs_custom/css/copy-to-clipboard.css
-  - readthedocs_custom/css/navbar.css
-  - particularities/css/button_pressed.css #this file should be in each repository that make usage of the buttons
+# extra_css:
+  # - readthedocs_custom/css/extra.css
+  # - readthedocs_custom/css/copy-to-clipboard.css
+  # - readthedocs_custom/css/navbar.css
+  # - particularities/css/button_pressed.css #this file should be in each repository that make usage of the buttons
 
 
 #hooks:

@@ -11,8 +11,8 @@ find_package(pluginlib REQUIRED)
 # find_package(etasl_ros2 REQUIRED) #Needed to read srv and msgs generated with rosidl_generate_interfaces
 
 # -- start --Stuff for triple buffer implementation of boost 1.89
-set(BOOST_ROOT "/opt/boost/1.89.0")
-set(CMAKE_PREFIX_PATH "/opt/boost/1.89.0" ${CMAKE_PREFIX_PATH})
+set(BOOST_ROOT "$ENV{HOME}/.local/lib/boost/1.89.0")
+set(CMAKE_PREFIX_PATH "$ENV{HOME}/.local/lib/boost/1.89.0" ${CMAKE_PREFIX_PATH})
 find_package(Boost 1.89 REQUIRED)
 message(STATUS "Using Boost version ${Boost_VERSION}")
 message(STATUS "Boost include dirs: ${Boost_INCLUDE_DIRS}")
