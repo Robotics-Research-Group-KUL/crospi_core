@@ -1,7 +1,7 @@
 image: python:3.8-buster
 
 before_script:
-  - pip install -r documentation/docs/readthedocs_custom/requirements.txt
+  - pip install -r documentation/docs/requirements.txt
 
 variables:
   GIT_SUBMODULE_STRATEGY: recursive
