@@ -22,6 +22,9 @@ theme:
       toggle:
         icon: material/brightness-4
         name: Switch to light mode
+  font:
+    text: Roboto
+    code: Roboto Mono
   features:
     - content.tabs.link
     - content.code.copy
@@ -42,9 +45,10 @@ theme:
 #     # - content.code.copy
 
 nav:
-  - eTaSL:
+  - Home: index.md
+  - eTaSL C++ library:
     - 'markdown/introduction/about.md'
-  - Publications:
+  - eTaSL Task Specifications:
     - 'markdown/introduction/about.md'
   - ROS 2:
     - 'Installation':
@@ -93,6 +97,8 @@ nav:
       - 'markdown/extras/glossary.md'
       - 'markdown/extras/citations.md'
       - 'markdown/extras/how_to_contribute.md'
+  - Publications:
+    - 'markdown/introduction/about.md'
 
 markdown_extensions:
   - toc:
