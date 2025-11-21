@@ -5,10 +5,12 @@ edit_uri: edit/devel/documentation/docs/
 copyright: "Santiago Iregui, Federico Ulloa Rios, and Erwin Aertbeliën, KU Leuven, 2025, <a href='https://etasl.pages.gitlab.kuleuven.be/_static/LICENSE.txt'>GNU Lesser General Public License v3</a>"
 theme:
   name: "material"
+  custom_dir: 'overrides'
   favicon: img/favicon.ico
   icon:
     annotation: material/chevron-right-circle
   palette: 
+
     # Palette toggle for light mode
     - media: "(prefers-color-scheme: light)"
       scheme: default
@@ -19,6 +21,7 @@ theme:
     # Palette toggle for dark mode
     - media: "(prefers-color-scheme: dark)"
       scheme: slate
+      primary: blue grey
       toggle:
         icon: material/brightness-4
         name: Switch to light mode
@@ -47,9 +50,9 @@ theme:
 nav:
   - Home: index.md
   - eTaSL C++ library:
-    - 'markdown/introduction/about.md'
+    - 'markdown/introduction/about2.md'
   - eTaSL Task Specifications:
-    - 'markdown/introduction/about.md'
+    - 'markdown/introduction/about2.md'
   - ROS 2:
     - 'Installation':
       - 'markdown/installation/regular_installation.md'
@@ -98,7 +101,7 @@ nav:
       - 'markdown/extras/citations.md'
       - 'markdown/extras/how_to_contribute.md'
   - Publications:
-    - 'markdown/introduction/about.md'
+    - 'markdown/introduction/about2.md'
 
 markdown_extensions:
   - toc:
@@ -140,6 +143,14 @@ markdown_extensions:
 #  - mkdocs-click
   - pymdownx.arithmatex:
       generic: true
+
+extra_javascript:
+  - assets/javascripts/scroll_animate.js
+  - assets/javascripts/scroll_robot.js
+
+extra_css:
+  - assets/stylesheets/scroll_animate.css
+  - assets/stylesheets/extra.css
 
 # extra_javascript:
   # - https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS_HTML

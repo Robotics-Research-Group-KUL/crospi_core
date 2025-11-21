@@ -1,0 +1,289 @@
+
+{% extends "base.html" %}
+{% block content %}
+
+<style>
+/* -------------------------
+   HIDE MD SIDEBAR SCROLLBAR WITH TABLE OF CONTENTS
+-------------------------- */
+.md-sidebar__scrollwrap {
+    display: none;
+  }
+
+  
+/* -------------------------
+   GLOBAL SCROLL ANIMATION
+-------------------------- */
+.reveal {
+  opacity: 0;
+  transform: translateY(25px);
+  transition: opacity 0.8s ease, transform 0.8s ease;
+}
+.reveal.visible {
+  opacity: 1;
+  transform: none;
+}
+
+/* -------------------------
+   FEATURE CARD HOVER EFFECT
+-------------------------- */
+.feature-card {
+  background: var(--md-default-bg-color);
+  border-radius: 0.6rem;
+  padding: 1.6rem;
+  box-shadow: 0 0.2rem 0.8rem rgba(0,0,0,.06);
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+/* Expand card on hover */
+.feature-card:hover {
+  transform: scale(1.2);
+  box-shadow: 0 0.4rem 1.2rem rgba(0,0,0,0.15);
+  z-index: 2;
+}
+
+/* --- FEATURE GIF (hidden by default) --- */
+.feature-gif {
+  margin-top: 1rem;
+  height: 0;
+  opacity: 0;
+  overflow: hidden;
+  transition: opacity 0.3s ease, height 0.3s ease;
+}
+
+/* Reveal GIF on hover */
+.feature-card:hover .feature-gif {
+  opacity: 1;
+  height: 200px;   /* adjust depending on your GIF size */
+}
+
+/* Optional: scale GIF nicely */
+.feature-gif img {
+  width: 100%;
+  object-fit: contain;
+  border-radius: 0.4rem;
+}
+
+
+
+
+/* -------------------------
+   BACKGROUND ROBOT IMAGE
+-------------------------- */
+
+.scroll-robot-background {
+  position: fixed;        /* stays in the background */
+  top: 50%;
+  left: 50%;
+  transform: translate(0%, -50%);
+  width: 100vw;
+  height: auto;
+  pointer-events: none;   /* clicks pass through */
+  z-index: 0;             /* behind everything */
+  opacity: 0.3;          /* subtle background effect */
+}
+
+.scroll-robot-background img {
+  width: 100%;
+  height: auto;
+  display: block;
+  will-change: transform;
+}
+
+/* -------------------------
+   HERO SECTION
+-------------------------- */
+.hero {
+  position: relative;     /* allows z-index */
+  z-index: 1;
+  padding: 4rem 1rem 1rem;
+  text-align: center;
+  border-radius: 0.6rem;
+  color: white;
+  background: linear-gradient(135deg, #84aed9, var(--md-default-bg-color));
+}
+
+/* hero text */
+/* .hero-title { font-size: 3rem; font-weight: 700; } */
+.hero-subtitle { font-size: 1.35rem; margin-top: 1rem; opacity: 0.9; }
+.hero-opensource-subtitle { font-size: 1.1rem; margin-top: 1rem; opacity: 0.9; margin-bottom: 1rem; }
+
+/* hero buttons */
+.hero-buttons { margin-top: 2rem; }
+.hero-buttons .md-button { margin: 0 0.5rem; }
+
+/* -------------------------
+   FEATURES GRID
+-------------------------- */
+.features {
+  margin: 3.5rem auto;
+  max-width: 1200px;
+  padding: 0 1rem;
+  display: grid;
+  gap: 1.6rem;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  position: relative;
+  z-index: 1;
+}
+
+.feature-card {
+  background: var(--md-default-bg-color);
+  border-radius: 0.6rem;
+  padding: 1.6rem;
+  box-shadow: 0 0.2rem 0.8rem rgba(0,0,0,.06);
+}
+
+
+/* -------------------------
+   CHANGES COLOR OF ACRONYM LETTERS
+-------------------------- */
+.acronym-letter-color {
+  color: #012859ff; /* desired color */
+  font-weight: bold;
+}
+
+.acronym-letter-color2 {
+  color: #0f89ddff; /* desired color */
+  font-weight: bold;
+}
+
+/* -------------------------
+   CTA SECTION
+-------------------------- */
+.cta {
+  margin: 3rem auto;
+  max-width: 900px;
+  padding: 2.2rem 1.6rem;
+  text-align: center;
+  border-radius: 0.6rem;
+  background: var(--md-code-bg-color);
+  position: relative;
+  z-index: 1;
+}
+</style>
+
+
+<!-- BACKGROUND ROBOT IMAGE -->
+<div class="scroll-robot-background">
+  <img src="images/home/robot_image_test.png" alt="Robot Illustration" class="scroll-robot" />
+</div>
+
+<!-- HERO -->
+<div class="hero reveal">
+  <!-- <h1 class="hero-title reveal">eTaSL</h1> -->
+  <img src="images/home/crospi_logo_gear.svg" alt="crospi_logo_gear" class="crospi-logo" />
+
+  <!-- Title without individual letter colors -->
+  <p class="hero-subtitle reveal">
+    Constraint-based Reactive and Orchestrated Sensor-driven PIpeline.
+  </p>
+  
+  <!-- Title with individual letter colors -->
+  <!-- <p class="hero-subtitle reveal">
+    <span class="acronym-letter-color">C</span>onstraint-based 
+    <span class="acronym-letter-color">r</span>eactive 
+    and 
+    <span class="acronym-letter-color">o</span>rchestrated 
+    <span class="acronym-letter-color">s</span>ensor-driven 
+    <span class="acronym-letter-color2">pi</span>peline.
+  </p> -->
+  
+  <div class="hero-buttons reveal">
+    <a href="/markdown/introduction/about/#about" class="md-button md-button--primary">Get Started</a>
+    <a href="https://github.com/your-repo" class="md-button">GitHub</a>
+  </div>
+  <p class="hero-opensource-subtitle reveal">
+    Open-Source software!
+  </p>
+</div>
+
+<!-- FEATURES -->
+<section class="features">
+
+  <div class="feature-card reveal" style="transition-delay: 0.25s;">
+    <h3>&#128640 Easy and fast development</h3>
+    <p>Allows beginner users to reuse existing libraries to easily program complex robotic applications.</p>
+
+    <div class="feature-gif">
+      <img src="images/home/hr_interaction.gif" alt="Feature 1 demo">
+    </div>
+  </div>
+  
+  <div class="feature-card reveal" style="transition-delay: 0.1s;">
+    <h3>&#129504 Powered by eTaSL</h3>
+    <p>Reuse or develop your own smart and reactive robot behaviors by defining constraints in a high-level interpreted language eTaSL.</p>
+
+    <div class="feature-gif">
+      <img src="images/home/hr_interaction.gif" alt="Feature 1 demo">
+    </div>
+  </div>
+  
+  <div class="feature-card reveal" style="transition-delay: 0.4s;">
+    <h3>&#129467 Sensor Integration</h3>
+    <p>Built-in support for ROS2 and non-ROS sensor feedback to create reactive robotic behaviors easier than ever.</p>
+
+    <div class="feature-gif">
+      <img src="images/home/hr_interaction.gif" alt="Feature 1 demo">
+    </div>
+  </div>
+  
+  <div class="feature-card reveal" style="transition-delay: 0.55s;">
+    <h3> &#127775 ROS2 Native</h3>
+    <p>Fully integrated with ROS2 for modern robotics infrastructures and workflows.</p>
+
+    <div class="feature-gif">
+      <img src="images/home/hr_interaction.gif" alt="Feature 1 demo">
+    </div>
+  </div>
+  
+  <div class="feature-card reveal" style="transition-delay: 0.7s;">
+    <h3>&#129470 Human-Robot Collaboration</h3>
+    <p>Enables dynamic and compliant interaction in collaborative settings.</p>
+
+    <div class="feature-gif">
+      <img src="images/home/hr_interaction.gif" alt="Feature 1 demo">
+    </div>
+  </div>
+
+  <div class="feature-card reveal" style="transition-delay: 0.85s;">
+    <h3>&#129302 Control any robot</h3>
+    <p>Support for easy integration for real-time control of bi-manual arms, mobile manipulators, comercial robots, custom-made robots, and even parallel robots.</p>
+    
+    <div class="feature-gif">
+      <img src="images/home/hr_interaction.gif" alt="Feature 1 demo">
+    </div>
+  </div>
+
+
+
+</section>
+
+<!-- CTA -->
+<div class="cta reveal">
+  <h2>Build advanced robotic applications today</h2>
+  <p>Start with the quickstart guide and explore easy-to-follow tutorials.</p>
+  <a href="/markdown/installation/regular_installation/#regular_installation" class="md-button md-button--primary">Install</a>
+  <a href="/markdown/introduction/about/#about" class="md-button">View Tutorials</a>
+</div>
+
+<!-- -------------------------
+   SCROLL PARALLAX SCRIPT
+-------------------------- -->
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+  const robot = document.querySelector(".scroll-robot-background img");
+  const speed = 0.25; // movement strength
+
+  const update = () => {
+    const offset = window.scrollY * speed;
+    robot.style.transform = `translate(-50%, calc(-50% + ${offset}px))`;
+    requestAnimationFrame(update);
+  };
+
+  requestAnimationFrame(update);
+});
+</script>
+
+{% endblock %}
