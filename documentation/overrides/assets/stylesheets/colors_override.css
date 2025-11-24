@@ -3,9 +3,13 @@
 [data-md-color-scheme="default"] {
     --md-primary-fg-color:        #316da9;
     --md-crospi-cta-color:        #e2e2e2;
+    --md-crospi-gradient-color:        #eaeaea;
+    --md-crospi-feature-color:        #eaeaea;
 }
 
 [data-md-color-scheme="slate"] {
     --md-primary-fg-color:        #316da9;
     --md-crospi-cta-color:       var(--md-code-bg-color);
+    --md-crospi-gradient-color:   #383c47;
+    --md-crospi-feature-color:   #383c47;
 }
