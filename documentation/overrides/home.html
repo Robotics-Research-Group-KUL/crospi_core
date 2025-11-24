@@ -3,14 +3,7 @@
 {% block content %}
 
 <style>
-/* -------------------------
-   HIDE MD SIDEBAR SCROLLBAR WITH TABLE OF CONTENTS
--------------------------- */
-.md-sidebar__scrollwrap {
-    display: none;
-  }
 
-  
 /* -------------------------
    SCROLL ANIMATION TO APPEAR FEATURES
 -------------------------- */
@@ -102,6 +95,8 @@
   text-align: center;
   border-radius: 0.6rem;
   color: white;
+  max-width: 900px;     /* 👈 adjust to your preferred width */
+  margin: 0 auto;       /* 👈 center the hero block */
   background: linear-gradient(135deg, #84aed9, var(--md-crospi-gradient-color));
 }
 
@@ -123,9 +118,19 @@
   padding: 0 1rem;
   display: grid;
   gap: 1.6rem;
-  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-  position: relative;
-  z-index: 1;
+  grid-template-columns: repeat(3, minmax(0, 1fr));   /* 👈 hard limit: 3 columns */
+}
+
+@media (max-width: 900px) {
+  .features {
+    grid-template-columns: repeat(2, minmax(0, 1fr)); /* 2 columns on medium screens */
+  }
+}
+
+@media (max-width: 600px) {
+  .features {
+    grid-template-columns: 1fr;                      /* 1 column on mobile */
+  }
 }
 
 .feature-card {

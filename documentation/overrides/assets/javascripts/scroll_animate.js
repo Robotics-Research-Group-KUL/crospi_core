@@ -12,6 +12,3 @@ document.addEventListener("DOMContentLoaded", () => {
   
     elements.forEach(el => observer.observe(el));
   });
-  
-
-  
