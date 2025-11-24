@@ -12,7 +12,7 @@
 
   
 /* -------------------------
-   GLOBAL SCROLL ANIMATION
+   SCROLL ANIMATION TO APPEAR FEATURES
 -------------------------- */
 .reveal {
   opacity: 0;
@@ -28,7 +28,7 @@
    FEATURE CARD HOVER EFFECT
 -------------------------- */
 .feature-card {
-  background: var(--md-default-bg-color);
+  background: var(--md-code-bg-color);
   border-radius: 0.6rem;
   padding: 1.6rem;
   box-shadow: 0 0.2rem 0.8rem rgba(0,0,0,.06);
@@ -56,7 +56,7 @@
 /* Reveal GIF on hover */
 .feature-card:hover .feature-gif {
   opacity: 1;
-  height: 200px;   /* adjust depending on your GIF size */
+  height: 250px;   /* adjust depending on your GIF size */
 }
 
 /* Optional: scale GIF nicely */
@@ -70,26 +70,26 @@
 
 
 /* -------------------------
-   BACKGROUND ROBOT IMAGE
+   BACKGROUND ROBOT IMAGE WITH SCROLL EFFECT
 -------------------------- */
 
 .scroll-robot-background {
   position: fixed;        /* stays in the background */
-  top: 50%;
-  left: 50%;
-  transform: translate(0%, -50%);
-  width: 100vw;
-  height: auto;
-  pointer-events: none;   /* clicks pass through */
-  z-index: 0;             /* behind everything */
-  opacity: 0.3;          /* subtle background effect */
+  top: -40%;
+  left: 0%;
+  width: 100vw;           /* full viewport width */
+  height: 150vh;          /* full viewport height */
+  pointer-events: none;
+  z-index: 0;
+  opacity: 0.5;
 }
 
 .scroll-robot-background img {
   width: 100%;
-  height: auto;
+  height: 100%;
+  object-fit: cover;      /* image fills container, crops if needed */
+  object-position: center;/* center the image */
   display: block;
-  will-change: transform;
 }
 
 /* -------------------------
@@ -102,7 +102,7 @@
   text-align: center;
   border-radius: 0.6rem;
   color: white;
-  background: linear-gradient(135deg, #84aed9, var(--md-default-bg-color));
+  background: linear-gradient(135deg, #84aed9, var(--md-code-bg-color));
 }
 
 /* hero text */
@@ -129,7 +129,7 @@
 }
 
 .feature-card {
-  background: var(--md-default-bg-color);
+  background: var(--md-code-bg-color);
   border-radius: 0.6rem;
   padding: 1.6rem;
   box-shadow: 0 0.2rem 0.8rem rgba(0,0,0,.06);
@@ -158,7 +158,7 @@
   padding: 2.2rem 1.6rem;
   text-align: center;
   border-radius: 0.6rem;
-  background: var(--md-code-bg-color);
+  background: var(--md-crospi-cta-color);
   position: relative;
   z-index: 1;
 }
@@ -167,7 +167,7 @@
 
 <!-- BACKGROUND ROBOT IMAGE -->
 <div class="scroll-robot-background">
-  <img src="images/home/robot_image_test.png" alt="Robot Illustration" class="scroll-robot" />
+  <img src="images/home/website_background_gemini.png" alt="Robot Illustration" class="scroll-robot" />
 </div>
 
 <!-- HERO -->
@@ -202,57 +202,59 @@
 <!-- FEATURES -->
 <section class="features">
 
-  <div class="feature-card reveal" style="transition-delay: 0.25s;">
-    <h3>&#128640 Easy and fast development</h3>
-    <p>Allows beginner users to reuse existing libraries to easily program complex robotic applications.</p>
-
-    <div class="feature-gif">
-      <img src="images/home/hr_interaction.gif" alt="Feature 1 demo">
-    </div>
-  </div>
-  
   <div class="feature-card reveal" style="transition-delay: 0.1s;">
-    <h3>&#129504 Powered by eTaSL</h3>
-    <p>Reuse or develop your own smart and reactive robot behaviors by defining constraints in a high-level interpreted language eTaSL.</p>
+    <h3>&#129504 Create advanced reactive behaviors</h3>
+    <p>Reuse or develop your own smart and <b>reactive</b> robot behaviors by defining constraints in a high-level <b>interpreted language eTaSL</b> (based on LUA). This allows you to easily create advanced reactive behaviors with multisensory inputs.</p>
 
     <div class="feature-gif">
-      <img src="images/home/hr_interaction.gif" alt="Feature 1 demo">
+      <img src="images/home/neura_cable.gif" alt="neura_cable.gif">
     </div>
   </div>
-  
+
+  <div class="feature-card reveal" style="transition-delay: 0.25s;">
+    <h3>&#129470 Seamless multimodal interaction</h3>
+    <p>Seamlessly integrate sensor and HMI signals as <b>ROS2</b> topics or <b>non-ROS</b> channels, enabling human-robot interaction, teleoperation, shared-control, autonomous compliant behaviors, and more.</p>
+
+    <div class="feature-gif">
+      <img src="images/home/hr_interaction.gif" alt="hr_interaction.gif">
+    </div>
+  </div>
+
+
   <div class="feature-card reveal" style="transition-delay: 0.4s;">
-    <h3>&#129467 Sensor Integration</h3>
-    <p>Built-in support for ROS2 and non-ROS sensor feedback to create reactive robotic behaviors easier than ever.</p>
+    <h3>&#128640 Easy and fast development</h3>
+    <p>Empower beginners to build advanced robotic applications by reusing task-specification libraries that can be orchestrated in <b>Python</b>. Configuration is effortless thanks to <b>JSON Schema–driven</b> self-documentation and intelligent parameter autocompletion.</p>
 
     <div class="feature-gif">
-      <img src="images/home/hr_interaction.gif" alt="Feature 1 demo">
+      <img src="images/home/task_parameters_json.gif" alt="task_parameters_json.gif">
     </div>
   </div>
+
   
   <div class="feature-card reveal" style="transition-delay: 0.55s;">
-    <h3> &#127775 ROS2 Native</h3>
-    <p>Fully integrated with ROS2 for modern robotics infrastructures and workflows.</p>
+    <h3> &#127775 ROS2 native</h3>
+    <p>Enhance your application with <b>other ROS2 packages</b> and take advantage of tools such as RViz, PlotJuggler, URDF, ChArUco detection and more.</p>
 
     <div class="feature-gif">
-      <img src="images/home/hr_interaction.gif" alt="Feature 1 demo">
+      <img src="images/home/neura_nullspace.gif" alt="neura_nullspace.gif">
     </div>
   </div>
   
   <div class="feature-card reveal" style="transition-delay: 0.7s;">
-    <h3>&#129470 Human-Robot Collaboration</h3>
-    <p>Enables dynamic and compliant interaction in collaborative settings.</p>
+    <h3>&#129470 Fully extensible architecture</h3>
+    <p>Use existing or custom C++ <b>plugins</b> to add new simulators, I/O handlers, solvers or low-latency robot drivers. After installation, plugins are <b>automatically detected</b> and fully configurable within your setup.</p>
 
     <div class="feature-gif">
-      <img src="images/home/hr_interaction.gif" alt="Feature 1 demo">
+      <img src="images/home/input_handlers_config.gif" alt="hr_interaction.gif">
     </div>
   </div>
 
   <div class="feature-card reveal" style="transition-delay: 0.85s;">
     <h3>&#129302 Control any robot</h3>
-    <p>Support for easy integration for real-time control of bi-manual arms, mobile manipulators, comercial robots, custom-made robots, and even parallel robots.</p>
+    <p>Support easy integration for <b>real-time control</b> of: single arms, bimanual arms, mobile manipulators, parallel robots, and other configurations.</p>
     
     <div class="feature-gif">
-      <img src="images/home/hr_interaction.gif" alt="Feature 1 demo">
+      <img src="images/home/oring_assembly.gif" alt="oring_assembly.gif">
     </div>
   </div>
 
@@ -268,22 +270,5 @@
   <a href="/markdown/introduction/about/#about" class="md-button">View Tutorials</a>
 </div>
 
-<!-- -------------------------
-   SCROLL PARALLAX SCRIPT
--------------------------- -->
-<script>
-document.addEventListener("DOMContentLoaded", () => {
-  const robot = document.querySelector(".scroll-robot-background img");
-  const speed = 0.25; // movement strength
-
-  const update = () => {
-    const offset = window.scrollY * speed;
-    robot.style.transform = `translate(-50%, calc(-50% + ${offset}px))`;
-    requestAnimationFrame(update);
-  };
-
-  requestAnimationFrame(update);
-});
-</script>
 
 {% endblock %}

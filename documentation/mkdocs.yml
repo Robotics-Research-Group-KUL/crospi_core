@@ -150,7 +150,7 @@ extra_javascript:
 
 extra_css:
   - assets/stylesheets/scroll_animate.css
-  - assets/stylesheets/extra.css
+  - assets/stylesheets/colors_override.css
 
 # extra_javascript:
   # - https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS_HTML
