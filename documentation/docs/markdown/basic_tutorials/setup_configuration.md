@@ -1,4 +1,4 @@
-# Configuration for an application setup
+# Setup Configuration
 
 !!! abstract
     This tutorial explains how to specify the robot setup. This implies the specification of: 1) **initialization properties** that determine how to the feature variables of the task specifications are initialized 2) **solver properties** that influence how the eTaSL optimization problem is solved online, 3) **robot hardware** to use (e.g. UR10 in simulation or with a real robot), 4) **outputs** to enable (e.g. stream joint positions or task-related variables through ROS topics), 5) **inputs** from sensors or other sources to be used in constraints of the task specification (e.g. twist topic streamed by a joystick ros node). We treat all the above as properties specific to a certain robot setup or specific to a certain application, and therefore are only defined once before execution.

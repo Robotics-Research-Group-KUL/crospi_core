@@ -1,3 +1,3 @@
-# Citations
+# How to cite
 
 TODO

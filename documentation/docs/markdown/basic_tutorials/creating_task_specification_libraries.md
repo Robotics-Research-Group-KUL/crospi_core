@@ -1,4 +1,8 @@
-# Reusable task specifications 
+# Creating Task Specification Libraries
+
+- TODO: Mention to be sure to develop the libraries within an application template, since it contains the code to generate the json schemas automatically
+- TODO: Mention conventions of folder to be the library name, but it is not necessary. For example when having multiple versions of the same library, one can change the name of the folders and be able to use both.
+
 
 This tutorial shows how to configure task specifications and give some suggestions for them to be configurable in favor of reusability. When using a configurable *task specification* coming from a library, it is important to configure it according to the *task* at hand (see Fig. 1). Such configuration is facilitated by the use of JSON Schemas that are **automatically generated**, which provide documentation, autocompletion, validation, among others. This tutorial explains how to make the task specification in such way that the JSON Schemas can be then automatically generated (i.e. from **task specification developer's perspective**).
 

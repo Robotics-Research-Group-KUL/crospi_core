@@ -1,4 +1,4 @@
-# Starting a new application
+# Application template
 
 This tutorial explains how to start a new robot application using etasl_ros2 framework. To facilitate this, we provide a useful [application template](https://gitlab.kuleuven.be/rob-expressiongraphs/ros2/etasl_ros2_application_template) that you can use to create a new package that involves the use of eTaSL in ROS2. 
 

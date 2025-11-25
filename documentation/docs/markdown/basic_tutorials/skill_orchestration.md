@@ -1,17 +1,11 @@
-# Configuring Tasks
+# Skill Orchestration
 
-This tutorial shows how to configure task specifications and give some suggestions for them to be configurable in favor of reusability. When using a configurable *task specification* coming from a library, it is important to configure it according to the *task* at hand (see Fig. 1). Such configuration is facilitated by the use of JSON Schemas that are **automatically generated**, which provide documentation, autocompletion, validation, among others. This tutorial explains how to perform such configuration, which are facilitated by the generated JSON Schemas, so that later on skills can be created with these configured tasks. 
+## Task Configuration
 
-
-<figure>
-<p align="center" width="100%">
-<img src="/images/task_hierarchy_complete.png" alt="init_result" style="width:60%; display: block; margin: 0 auto">
-<figcaption><h6 align="center">Fig. 1 - hierarchy diagram of used terms.</h6></figcaption>
-</p>
-</figure>
+This tutorial shows how to configure task specifications and give some suggestions for them to be configurable in favor of reusability. When using a configurable *task specification* coming from a library, it is important to configure it according to the *task* at hand. Such configuration is facilitated by the use of JSON Schemas that are **automatically generated**, which provide documentation, autocompletion, validation, among others. This tutorial explains how to perform such configuration, which are facilitated by the generated JSON Schemas, so that later on skills can be created with these configured tasks. 
 
 
-Instances of task specifications can be created by defining a proper configuration of the task parameters. Such configuration can be in a JSON format and aided through the usage of JSON SCHEMAS that are automatically generated (and updated) when building the package that contains the task specifications (i.e. by running `colcon build`).
+Instances of task specifications can be created by defining a proper configuration of the task parameters. Such configuration can be in a JSON format and aided through the usage of JSON SCHEMAS that are automatically generated (and updated) when building the package that contains the task specifications (i.e. by running `colcon build --symlink-install`).
 
 Fig. 2 shows how easy it is to configure a task from a desired task specification, thanks to the automatically generated JSON schemas. Once the move_cartesianspace task specification is selected in this example (by typing `"is-move_cartesianspace": true`), only the corresponding `file_path` of the LUA code and only the corresponding parameters of the task specification can be filled in. 
 
@@ -33,7 +27,11 @@ However, some parameters are sometimes not known before the execution but need t
 }
 ```
 
-The above indicates that the parameter `delta_pos` should be found within the application blackboard (e.g. structured in a dictionary in python) in the specified path. It is important that the path starts with `$blackboard` so that the program interprets it as a path of the blackboard and not as a regular string. A python helper script `etasl_params.py` is provided within the `etasl_ros2` package easily manage the parameters with a blackboard. An example on how to use this script is provided below:
+The above indicates that the parameter `delta_pos` should be found within the application blackboard (e.g. structured in a dictionary in python) in the specified path. It is important that the path starts with `$blackboard` so that the program interprets it as a path of the blackboard and not as a regular string. 
+
+## Reading Tasks in Python
+
+A python helper script `etasl_params.py` is provided within the `etasl_ros2` package easily manage the parameters with a blackboard. An example on how to use this script is provided below:
 
 
 ```python
@@ -60,4 +58,10 @@ task_specification file_path = task["task_specification"]["file_path"]
 ```
 
 !!! note
-    The blackboard in the example is a simple dictionary. However, depending on the coordination scheme for the application, this blackboard could be protected with locks/mutexes for shared memory between different threads. 
+    The blackboard in the example is a simple dictionary. However, depending on the coordination scheme for the application, this blackboard could be protected with locks/mutexes for shared memory between different threads in case that it is required. If you are using an existing coordinator such as BetFSM or Yasmin, probably you don't need to worry about this. BetFSM uses cooperative concurrency so the above is not necessary, and Yasmin (as far as we know) protects its blackboard with a mutex.
+
+## Monitoring of Events
+
+## Skills with BetFSM
+
+TODO: show examples of skills with BetFSM

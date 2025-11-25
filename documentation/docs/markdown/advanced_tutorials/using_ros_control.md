@@ -1,3 +1,0 @@
-# Using ROS control
-
-TODO

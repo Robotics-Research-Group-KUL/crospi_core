@@ -1,3 +1,0 @@
-# Output handlers
-
-TODO

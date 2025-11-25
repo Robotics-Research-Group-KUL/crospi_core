@@ -1,3 +1,0 @@
-# Monitoring of events
-
-TODO
