@@ -1,4 +1,4 @@
-site_name: "eTaSL"
+site_name: ""
 site_description: How to get started with eTaSL in ROS2.
 repo_url: https://gitlab.kuleuven.be/rob-expressiongraphs/ros2/etasl_ros2
 edit_uri: edit/devel/documentation/docs/
@@ -7,6 +7,7 @@ theme:
   name: "material"
   custom_dir: 'overrides'
   favicon: img/favicon.ico
+  logo: "images/home/crospi_logo_alternative.svg"
   icon:
     annotation: material/chevron-right-circle
   palette: 
@@ -36,6 +37,9 @@ theme:
     - navigation.instant
     - navigation.instant.progress
     - navigation.tabs
+    - navigation.footer
+
+
     # - navigation.tabs.sticky #navigation tabs remain always visible at the top when scrolling down
 
 
@@ -140,6 +144,8 @@ extra_javascript:
 extra_css:
   - assets/stylesheets/scroll_animate.css
   - assets/stylesheets/colors_override.css
+  - assets/stylesheets/text_override.css
+  - assets/stylesheets/iframe_override.css
   - assets/stylesheets/stakeholder_and_task_scheme_buttons.css
 
 # extra_javascript:

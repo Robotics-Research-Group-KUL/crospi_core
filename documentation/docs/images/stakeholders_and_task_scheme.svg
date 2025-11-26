@@ -797,15 +797,15 @@
      inkscape:pageopacity="0.0"
      inkscape:pageshadow="2"
      inkscape:zoom="0.49497475"
-     inkscape:cx="1307.1374"
-     inkscape:cy="924.28956"
+     inkscape:cx="1306.1272"
+     inkscape:cy="924.28957"
      inkscape:document-units="mm"
      inkscape:current-layer="layer1"
      showgrid="false"
-     inkscape:window-width="2484"
-     inkscape:window-height="1363"
-     inkscape:window-x="1996"
-     inkscape:window-y="40"
+     inkscape:window-width="1844"
+     inkscape:window-height="1163"
+     inkscape:window-x="76"
+     inkscape:window-y="0"
      inkscape:window-maximized="1"
      inkscape:showpageshadow="2"
      inkscape:pagecheckerboard="0"
@@ -980,7 +980,7 @@
        xml:space="preserve"
        transform="matrix(0.26458333,0,0,0.26458333,0,-142)"
        id="text25"
-       style="font-style:normal;font-weight:normal;font-size:40px;line-height:1.25;font-family:sans-serif;white-space:pre;shape-inside:url(#rect25);fill:#000000;fill-opacity:1;stroke:none" />
+       style="font-style:normal;font-weight:normal;font-size:40px;line-height:1.25;font-family:sans-serif;white-space:pre;shape-inside:url(#rect25);display:inline;fill:#000000;fill-opacity:1;stroke:none" />
   </g>
   <g
      inkscape:label="Layer 1"
@@ -1257,13 +1257,13 @@
          style="fill:#8deab7;fill-opacity:1;stroke-width:0.248763"
          y="-120.9647"
          x="286.20587"
-         id="tspan1356-1"
-         sodipodi:role="line">provides skill </tspan><tspan
+         sodipodi:role="line"
+         id="tspan20">provides skill specification</tspan><tspan
          style="fill:#8deab7;fill-opacity:1;stroke-width:0.248763"
          y="-108.52659"
          x="286.20587"
          sodipodi:role="line"
-         id="tspan20">specifications to</tspan></text>
+         id="tspan3">libraries to</tspan></text>
     <text
        id="text1358-4-3"
        y="16.653059"
@@ -1275,7 +1275,12 @@
          y="16.653059"
          x="116.95588"
          sodipodi:role="line"
-         id="tspan20-4">provides plugins to</tspan></text>
+         id="tspan20-4">provides plugin</tspan><tspan
+         style="fill:#8deab7;fill-opacity:1;stroke-width:0.248763"
+         y="29.091171"
+         x="116.95588"
+         sodipodi:role="line"
+         id="tspan9">libraries to</tspan></text>
     <g
        transform="matrix(1.5951027,0,0,1.4680418,179.28676,-575.71712)"
        style="stroke:#f6d4b2;stroke-width:0.6;stroke-miterlimit:4;stroke-dasharray:2.4, 0.6;stroke-dashoffset:0;stroke-opacity:1"
@@ -1827,12 +1832,12 @@
          style="fill:#8deab7;fill-opacity:1;stroke-width:0.248763"
          y="-124.29222"
          x="457.41119"
-         id="tspan1356-1-5"
-         sodipodi:role="line">provides task </tspan><tspan
+         sodipodi:role="line"
+         id="tspan20-9">provides task specification</tspan><tspan
          style="fill:#8deab7;fill-opacity:1;stroke-width:0.248763"
          y="-111.85411"
          x="457.41119"
          sodipodi:role="line"
-         id="tspan20-9">specifications to</tspan></text>
+         id="tspan7">libraries to</tspan></text>
   </g>
 </svg>

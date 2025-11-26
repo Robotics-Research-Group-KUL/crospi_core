@@ -1,0 +1,6 @@
+  /* Center all iframes inside the documentation content */
+  .md-typeset iframe {
+    display: block;
+    margin-left: auto;
+    margin-right: auto;
+}
