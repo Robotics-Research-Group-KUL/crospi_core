@@ -54,11 +54,8 @@ theme:
 nav:
   - Home: index.md
   - About: 'markdown/introduction/about.md'
-  - eTaSL C++ library:
-    - 'markdown/introduction/about2.md'
-  - eTaSL Task Specifications:
-    - 'markdown/introduction/about2.md'
-  - ROS 2:
+  - Tutorials:
+    - 'markdown/basic_tutorials/tutorials_intro.md'
     - 'Installation':
       - 'markdown/installation/regular_installation.md'
       - 'markdown/installation/docker.md'
@@ -68,25 +65,25 @@ nav:
       - 'markdown/basic_tutorials/node_execution.md'
     - 'Examples':
       - 'markdown/basic_tutorials/running_examples.md'
-    - 'Developing Applications':
-      - Introduction: 'markdown/basic_tutorials/applications_intro.md'
-      - 'markdown/basic_tutorials/setup_configuration.md'
-      - 'markdown/basic_tutorials/application_orchestration.md'
-      - 'markdown/basic_tutorials/application_launch_files.md'
-    - 'Developing Skills (Python)':
-      - 'markdown/basic_tutorials/skills_intro.md'
-      - 'markdown/basic_tutorials/skill_specification_libraries.md'
-
-    - 'Developing Task Specifications (eTaSL)':
-      - 'markdown/basic_tutorials/task_specifications_intro.md'
-      - 'markdown/basic_tutorials/specification_of_constraints_in_etasl.md'
-      - 'markdown/basic_tutorials/creating_task_specification_libraries.md'
-      - Debugging: 'markdown/basic_tutorials/etasl_console.md'
-    - 'Plugins (C++)':
-      - 'markdown/advanced_tutorials/plugins_intro.md'
-      - 'markdown/advanced_tutorials/robot_drivers.md'
-      - 'markdown/advanced_tutorials/io_handlers.md'
-      - 'markdown/advanced_tutorials/solvers.md'
+    - 'Developing':
+      - 'Applications':
+        - Introduction: 'markdown/basic_tutorials/applications_intro.md'
+        - 'markdown/basic_tutorials/setup_configuration.md'
+        - 'markdown/basic_tutorials/application_orchestration.md'
+        - 'markdown/basic_tutorials/application_launch_files.md'
+      - 'Skills':
+        - 'markdown/basic_tutorials/skills_intro.md'
+        - 'markdown/basic_tutorials/skill_specification_libraries.md'
+      - 'Task Specifications':
+        - 'markdown/basic_tutorials/task_specifications_intro.md'
+        - 'markdown/basic_tutorials/specification_of_constraints_in_etasl.md'
+        - 'markdown/basic_tutorials/creating_task_specification_libraries.md'
+        - Debugging: 'markdown/basic_tutorials/etasl_console.md'
+      - 'Plugins':
+        - 'markdown/advanced_tutorials/plugins_intro.md'
+        - 'markdown/advanced_tutorials/robot_drivers.md'
+        - 'markdown/advanced_tutorials/io_handlers.md'
+        - 'markdown/advanced_tutorials/solvers.md'
     - 'Extras':
       - 'markdown/extras/changelog.md'
       - 'markdown/extras/glossary.md'

@@ -1,3 +1,9 @@
+---
+hide:
+  - navigation
+---
+
+
 # About
 
 Crospi was born after a long list of open-source constraint-based task specification methods developed at KU Leuven university. After several years of experience, we identified several flaws and improved upon them. 
@@ -66,24 +72,21 @@ Crospi enables powerful and reactive robotic behaviors, while reducing the exper
 
 **Background:** this usecase was fully implemented with Crospi and obtained the **second place** in the [Neura Robotics Challenge 2025](https://neura-robotics.com/neura-robotics-challenge/) and a price of **35 thousand** euros.
 
-The use case showcases mobile manipulation for a cable harnessing application. Our solution consists of the Neura's MAV platform working together with the Neura's MAiRA arm to deal with larger assembly boards and larger cable racks. Similarly to human operators, we use force-based skills where the robot actively keeps the cable under a desired tension while manipulating it. These force-based skills require low-level control (i.e. closed-loop control at 1kHz) that is handled by Crospi and configured by the user. The real-time controllers at each stage are automatically generated from higher-level eTaSL task specifications.  
-
-The use case uses MAV’s mobility while compensating for its slower dynamics using the faster dynamics of the MAiRA robot arm. This enables us to use MAV+MAiRA simultaneously and together to execute the sensor-based smart skills necessary to perform the cable routing in a reliable way. These smart skills also tackle the variability related to cables (i.e. mechanical and geometrical properties), allowing the robot to manipulate and route the cables with ease and robustness. Aditionally, in the mobile manipulation context, where the workpieces with respect to the robot cannot be fixed, having a combination of vision (to get approximate workpiece locations) and force (to deal robustly with geometric uncertainties) becomes essential. Crospi seamlessly enables this integration. 
-
 <iframe width="560" height="315" 
         src="https://www.youtube.com/embed/vRGSpFZ4Pgo?si=c3_73sTiIky0pddN" 
         title="YouTube video player" frameborder="0" 
         allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen>
 </iframe>
 
+The use case showcases mobile manipulation for a cable harnessing application. Our solution consists of the Neura's MAV platform working together with the Neura's MAiRA arm to deal with larger assembly boards and larger cable racks. Similarly to human operators, we use force-based skills where the robot actively keeps the cable under a desired tension while manipulating it. These force-based skills require low-level control (i.e. closed-loop control at 1kHz) that is handled by Crospi and configured by the user. The real-time controllers at each stage are automatically generated from higher-level eTaSL task specifications.  
+
+The use case uses MAV’s mobility while compensating for its slower dynamics using the faster dynamics of the MAiRA robot arm. This enables us to use MAV+MAiRA simultaneously and together to execute the sensor-based smart skills necessary to perform the cable routing in a reliable way. These smart skills also tackle the variability related to cables (i.e. mechanical and geometrical properties), allowing the robot to manipulate and route the cables with ease and robustness. Aditionally, in the mobile manipulation context, where the workpieces with respect to the robot cannot be fixed, having a combination of vision (to get approximate workpiece locations) and force (to deal robustly with geometric uncertainties) becomes essential. Crospi seamlessly enables this integration. 
+
+
+
 ### Case Study 2
 
 **Background:** This use case obtained the **first price** at the [Kuka Innovation Award 2021](https://www.kuka.com/en-be/future-production/innovation-and-research/kuka-innovation-award/kuka-innovation-award-2021) and a price of **20 thousand** euros. This usecase was not implemented with Crospi but with a previous version of eTaSL running on an Orocos component. Nevertheless, Crospi offers all the tools to implement the use case in a faster and cleaner way.
-
-Assume that a new robotic application needs to be developed and deployed for an SME. The batch sizes for an SME are small, so pursuing a hard automation solution is not economically feasible. Instead, an automation solution that can be deployed in a short time and at a low cost is desired.
-
-This is exactly the challenge tackled in this use case, enabling SMEs to comission dual-arm robotic tasks in a rapid way. The fast deployment was achied through a combination of constraint-based task specifications and learning from demonstrations. A total of four tasks where presented to demonstrate the idea: o-ring assembly by learning motions and interaction forces from human demonstrations, force-based contour-following inspection of previously-uncknown geometries, coordinated force-based solenoid insertions, and beer bottle opening by learning motions and interaction forces from human demonstrations.
-
 
 <iframe width="560" height="315" 
         src="https://www.youtube.com/embed/sCx1HB9-kgM?si=Fg9xeL2nWkKDEIns" 
@@ -91,10 +94,15 @@ This is exactly the challenge tackled in this use case, enabling SMEs to comissi
         allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen>
 </iframe>
 
+
+Assume that a new robotic application needs to be developed and deployed for an SME. The batch sizes for an SME are small, so pursuing a hard automation solution is not economically feasible. Instead, an automation solution that can be deployed in a short time and at a low cost is desired.
+
+This is exactly the challenge tackled in this use case, enabling SMEs to comission dual-arm robotic tasks in a rapid way. The fast deployment was achied through a combination of constraint-based task specifications and learning from demonstrations. A total of four tasks where presented to demonstrate the idea: o-ring assembly by learning motions and interaction forces from human demonstrations, force-based contour-following inspection of previously-uncknown geometries, coordinated force-based solenoid insertions, and beer bottle opening by learning motions and interaction forces from human demonstrations.
+
+
 ### Case Study 3
 
-**Background:** This use case run for several years at the factory of Audi Brussels. This usecase was not implemented with Crospi but with a previous version of eTaSL running on an Orocos component, and was not implemented directly by KU Leuven but by the company *FRS Robotics*. Nevertheless, Crospi offers all the robot-related and interfacing-related software tools (not the tools developed specifically by FRS robotics for this use case) to implement the use case.
-
+**Background:** This use case run for several years at the factory of Audi Brussels. This usecase was not implemented with Crospi but with a previous version of eTaSL running on an Orocos component, and was not implemented directly by KU Leuven but by the company *FRS Robotics*. Nevertheless, Crospi offers all the robot-related and interfacing-related software tools (not the tools developed specifically by FRS robotics for this use case) to implement ths advanced use case.
 
 
 <iframe width="560" height="315" 
@@ -103,20 +111,24 @@ This is exactly the challenge tackled in this use case, enabling SMEs to comissi
         allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen>
 </iframe>
 
+This use case automated ultrasonic quality control of the fold glue joints of Audi e-tron car body parts. The FRS Robotics cell was installed and commissioned at Audi Brussels late 2019. The robotic inspection replaces 100% manual inspection. The car manufacturer reduces/eliminates scrap as well as increases product quality and QC efficiency, and improves operator ergonomy. The robot adapts it's trajectory to the shape of the car reactively by a combination of force and ultrasonic measurements, enabling the robot to handle multiple car parts from multiple models without laborous workpiece calibrations. 
+
 ### Case Study 4
 
 **Background:** This usecase was not implemented with Crospi but with a previous version of eTaSL running on an Orocos component, and was implemented in collaboration between KU Leuven and *FRS Robotics*. Nevertheless, Crospi offers all the robot-related and interfacing-related software tools (not the tools developed specifically by FRS robotics for this use case) to implement the use case.
-
-Automating cheese decrusting is a challenging task since natural products such as cheese does not have a completely standard shape. Instead, there are a lot of variations related to the cheese geometry. Having these variations into account during the automation process is economically crucial, since all the wasted cheese will have a dramatical impact in the company's economy. 
-
-By sensing the geometry of the cheese with laser sensors during the decrusting, the robot is able to reactively adapt the trajectory based on the geometry of the cheese. With this strategy a lot of cheese-waste was avoided! 
-
 
 <iframe width="560" height="315" 
         src="https://www.youtube.com/embed/GAx9dE-vgBs?si=vL88qg-gLcqfz6GX&amp;start=270" 
         title="YouTube video player" frameborder="0" 
         allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen>
 </iframe>
+
+
+Automating cheese decrusting is a challenging task since natural products such as cheese does not have a completely standard shape. Instead, there are a lot of variations related to the cheese geometry. Having these variations into account during the automation process is economically crucial, since all the wasted cheese will have a dramatical impact in the company's economy. 
+
+By sensing the geometry of the cheese with laser sensors during the decrusting, the robot is able to reactively adapt the trajectory based on the geometry of the cheese. With this strategy a lot of cheese-waste was avoided! 
+
+
 
 
 
@@ -127,3 +139,7 @@ By sensing the geometry of the cheese with laser sensors during the decrusting, 
 </p>
 </figure> -->
 
+
+## How do I get started using Crospi?
+
+Easy! We prepared some easy-to-follow tutorials that you can follow to get familiar with the framework. 

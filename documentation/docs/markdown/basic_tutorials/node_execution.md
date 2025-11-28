@@ -1,4 +1,4 @@
-# Running the eTaSL Lifecycle Node
+# Running the Lifecycle Node
 
 !!! abstract
     This tutorial explains how to execute the `etasl_node`, which is part of the `etasl_ros2` package.  
