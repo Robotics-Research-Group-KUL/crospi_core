@@ -11,11 +11,6 @@ This package was created to be able to develop constraint-based reactive robot b
 For documentation and tutorials, checkout our [crospi website](https://crospi-website-907f83.pages.gitlab.kuleuven.be/).
 
 
-## Documentation
-
-TODO: point to website
-
-
 ## Authors
 
 - Santiago Iregui <santiago.iregui@kuleuven.be>
