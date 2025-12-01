@@ -1,5 +1,5 @@
-#ifndef ETASL_ROS2_SIMPLE_NODE_HPP
-#define ETASL_ROS2_SIMPLE_NODE_HPP
+#ifndef crospi_core_SIMPLE_NODE_HPP
+#define crospi_core_SIMPLE_NODE_HPP
 
 #include <chrono>
 #include <functional>

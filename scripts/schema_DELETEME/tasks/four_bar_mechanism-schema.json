@@ -34,7 +34,7 @@
         "etaslfile": {
             "description": "etaslfile, you normally leave this to the default",
             "type": "string",
-            "default": "$[etasl_ros2]/scripts/etasl/four_bar_mechanism.lua",
+            "default": "$[crospi_core]/scripts/etasl/four_bar_mechanism.lua",
             "interpolate": true
         },
         "etasl": {

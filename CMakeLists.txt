@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.8)
-project(etasl_ros2)
+project(crospi_core)
 
 message("Compiling package ${PROJECT_SOURCE_DIR}")
 
@@ -34,7 +34,7 @@ find_package(rosidl_default_generators REQUIRED)
 # find_package(<dependency> REQUIRED)
 
 
-install(DIRECTORY launch scripts
+install(DIRECTORY scripts
   DESTINATION share/${PROJECT_NAME})
 
 install(
@@ -43,11 +43,11 @@ install(
 )
 
 # install(
-#   FILES hook/package_etasl_ros2_lua_configure_paths.sh
+#   FILES hook/package_crospi_core_lua_configure_paths.sh
 #   DESTINATION share/${PROJECT_NAME}/hook
 # )
 
-ament_environment_hooks("${CMAKE_SOURCE_DIR}/env-hooks/package_etasl_ros2_lua_configure_paths.sh.in") 
+ament_environment_hooks("${CMAKE_SOURCE_DIR}/env-hooks/package_crospi_core_lua_configure_paths.sh.in") 
 
 ament_export_include_directories(
   include
@@ -72,8 +72,8 @@ include_directories(
 add_subdirectory(src/misc)
 
 
-# add_subdirectory(src/ros2_nodes/simple_etasl_node)
-add_subdirectory(src/ros2_nodes/etasl_node)
+# add_subdirectory(src/ros2_nodes/simple_crospi_node)
+add_subdirectory(src/ros2_nodes/crospi_node)
 # add_subdirectory(src/ros2_nodes/shared_memory_test_mutex)
 # add_subdirectory(src/ros2_nodes/shared_memory_test)
 # add_subdirectory(src/ros2_nodes/shared_memory_test_boost)
@@ -86,7 +86,7 @@ ament_export_dependencies(ament_cmake)
 
 
 # install(
-#   TARGETS etasl_node_utils
+#   TARGETS crospi_node_utils
 #   EXPORT export_${PROJECT_NAME}
 #   ARCHIVE DESTINATION lib
 #   LIBRARY DESTINATION lib
@@ -96,8 +96,8 @@ ament_export_dependencies(ament_cmake)
 
 # Install the Python package
 find_package(Python3 REQUIRED COMPONENTS Interpreter Development)
-# ament_python_install_package(scripts/python/etasl_ros2_py)
-ament_python_install_package(etasl_ros2_py)
+# ament_python_install_package(scripts/python/crospi_py)
+ament_python_install_package(crospi_py)
 
 
 

@@ -1,3 +1,0 @@
-# Application Launch Files
-
-TODO

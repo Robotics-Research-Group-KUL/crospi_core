@@ -26,7 +26,7 @@
         "/workspaces/colcon_ws/install/examples_rclpy_guard_conditions/lib/python3.10/site-packages",
         "/workspaces/colcon_ws/build/examples_rclpy_executors",
         "/workspaces/colcon_ws/install/examples_rclpy_executors/lib/python3.10/site-packages",
-        "/workspaces/colcon_ws/install/etasl_interfaces/local/lib/python3.10/dist-packages",
+        "/workspaces/colcon_ws/install/crospi_interfaces/local/lib/python3.10/dist-packages",
         "/opt/ros/humble/lib/python3.10/site-packages",
         "/opt/ros/humble/local/lib/python3.10/dist-packages"
     ],
@@ -57,7 +57,7 @@
         "/workspaces/colcon_ws/install/examples_rclpy_guard_conditions/lib/python3.10/site-packages",
         "/workspaces/colcon_ws/build/examples_rclpy_executors",
         "/workspaces/colcon_ws/install/examples_rclpy_executors/lib/python3.10/site-packages",
-        "/workspaces/colcon_ws/install/etasl_interfaces/local/lib/python3.10/dist-packages",
+        "/workspaces/colcon_ws/install/crospi_interfaces/local/lib/python3.10/dist-packages",
         "/opt/ros/humble/lib/python3.10/site-packages",
         "/opt/ros/humble/local/lib/python3.10/dist-packages"
     ],

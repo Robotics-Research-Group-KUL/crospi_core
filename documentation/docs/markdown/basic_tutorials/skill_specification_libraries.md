@@ -1,3 +1,0 @@
-# Skill Specification Libraries
-
-TODO

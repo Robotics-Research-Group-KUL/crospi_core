@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
 <package format="3">
-  <name>etasl_ros2</name>
+  <name>crospi_core</name>
   <version>0.0.0</version>
   <description>Package that allows running eTaSL task specifications in a ROS2 environment</description>
   <maintainer email="santiago.iregui@kuleuven.be">santiregui</maintainer>
@@ -14,7 +14,7 @@
 
   <depend>std_msgs</depend>
   <depend>etasl_wrapper</depend>
-  <depend>etasl_interfaces</depend>
+  <depend>crospi_interfaces</depend>
   <depend>lua-dev</depend>
   <depend>tree</depend>
   <depend>cmake</depend>
@@ -24,11 +24,11 @@
   
   <exec_depend>python3-colorama</exec_depend>
 
-  <!-- <build_depend>etasl_interfaces</build_depend> -->
+  <!-- <build_depend>crospi_interfaces</build_depend> -->
 
   <buildtool_depend>rosidl_default_generators</buildtool_depend>
   <exec_depend>rosidl_default_runtime</exec_depend>
-  <!-- <exec_depend>etasl_ros2_default_plugins</exec_depend> -->
+  <!-- <exec_depend>crospi_core_default_plugins</exec_depend> -->
   <member_of_group>rosidl_interface_packages</member_of_group>
 
   <!-- For python library: -->

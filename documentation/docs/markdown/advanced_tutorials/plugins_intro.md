@@ -1,3 +1,0 @@
-# Plugins Intro
-
-TODO

@@ -1,4 +1,4 @@
-#include "simple_etasl_node.hpp"
+#include "simple_crospi_node.hpp"
 #include "IO_handlers_deleteme.hpp"
 
 // For real-time control loop
@@ -16,19 +16,19 @@ using namespace Eigen;
 * member function as a callback from the timer. */
 
 
-etaslNode::etaslNode(): Node("simple_etasl_node")
+etaslNode::etaslNode(): Node("simple_crospi_node")
 , count_(0)
 , periodicity_param(10) //Expressed in milliseconds
 , time(0.0)
 {
   //Used unless the ROS parameters are modified externally (e.g. through terminal or launchfile)
 
-  outpfilename = "/workspaces/colcon_ws/src/etasl_ros2/etasl/log_test.csv";
+  outpfilename = "/workspaces/colcon_ws/src/crospi_core/etasl/log_test.csv";
   this->declare_parameter("outpfilename",  outpfilename);
   this->declare_parameter("task_specification_file",  rclcpp::PARAMETER_STRING);
   this->declare_parameter("jointnames",  rclcpp::PARAMETER_STRING_ARRAY);
 
-  // fname = "/workspaces/colcon_ws/src/etasl_ros2/etasl/taskspec2.lua";
+  // fname = "/workspaces/colcon_ws/src/crospi_core/etasl/taskspec2.lua";
   // this->declare_parameter("outpfilename",  outpfilename); //outpfilename as default val
   // this->declare_parameter("task_specification_file",  fname); //fname as default val
 
@@ -433,16 +433,16 @@ int main(int argc, char * argv[])
     rclcpp::init(argc, argv);
     rclcpp::executors::StaticSingleThreadedExecutor executor;
 
-    std::shared_ptr<etaslNode> my_etasl_node = std::make_shared<etaslNode>();
+    std::shared_ptr<etaslNode> my_crospi_node = std::make_shared<etaslNode>();
 
-    executor.add_node(my_etasl_node);
+    executor.add_node(my_crospi_node);
     
-    my_etasl_node->configure_etasl();
-    my_etasl_node->configure_jointstate_msg();
+    my_crospi_node->configure_etasl();
+    my_crospi_node->configure_jointstate_msg();
 
 
     // Preparation for control loop
-    int periodicity_param = my_etasl_node->get_periodicity_param();
+    int periodicity_param = my_crospi_node->get_periodicity_param();
     const std::chrono::nanoseconds periodicity = std::chrono::milliseconds(periodicity_param);
     std::chrono::steady_clock::time_point  end_time_sleep = std::chrono::steady_clock::now() + periodicity;
 
@@ -451,11 +451,11 @@ int main(int argc, char * argv[])
     ***************************************************/
     while (rclcpp::ok()) {
  
-        my_etasl_node->update();
+        my_crospi_node->update();
         // if you need to send output to a robot, do it here, using jvel_etasl or jpos_etasl
-        my_etasl_node->publishJointState();
-        // rclcpp::spin(my_etasl_node);
-        // rclcpp::spin_some(my_etasl_node);//TODO: change to executor::spin_some()
+        my_crospi_node->publishJointState();
+        // rclcpp::spin(my_crospi_node);
+        // rclcpp::spin_some(my_crospi_node);//TODO: change to executor::spin_some()
         executor.spin_some();//TODO: change to executor::spin_some()
 
         std::this_thread::sleep_until(end_time_sleep);

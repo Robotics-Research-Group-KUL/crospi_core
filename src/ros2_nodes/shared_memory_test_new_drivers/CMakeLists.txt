@@ -29,8 +29,8 @@ add_executable(shared_memory_test_new_drivers shared_memory_test_new_drivers.cpp
 
 target_link_libraries(shared_memory_test_new_drivers 
         etasl_misc_lib 
-        etasl_task_utils
-        etasl_node_utils
+        crospi_utils
+        crospi_node_utils
         robot_interfacing_utils
         # kuka_iiwa_driver
         # simple_kinematic_simulation

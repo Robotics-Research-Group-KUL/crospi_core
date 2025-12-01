@@ -7,7 +7,7 @@
             "type": "cppdbg",
             "miDebuggerServerAddress": "localhost:3000",
             "cwd": "/",
-            "program": "/workspaces/colcon_ws/install/etasl_ros2/lib/etasl_ros2/etasl_node",
+            "program": "/workspaces/colcon_ws/install/crospi_core/lib/crospi_core/crospi_node",
             "preLaunchTask": "source_all",      
         }
     ]

@@ -19,7 +19,7 @@ class etaslNode : public rclcpp::Node
 {
   public:
     etaslNode()
-    : Node("etasl_node"), count_(0)
+    : Node("crospi_node"), count_(0)
     {
       // publisher_ = this->create_publisher<std_msgs::msg::String>("topic", 10);
       // timer_ = this->create_wall_timer(500ms, std::bind(&etaslNode::timer_callback, this));

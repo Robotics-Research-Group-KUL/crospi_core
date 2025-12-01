@@ -18,7 +18,7 @@
                     "description":"JSON worldmodel describing the robot and its environment",
                     "type":"string",
                     "interpolate": true,
-                    "default":"$[etasl_ros2]/scripts/worldmodels/ur10_robot.json"
+                    "default":"$[crospi_core]/scripts/worldmodels/ur10_robot.json"
                 }
             },
             "additionalProperties": false,
@@ -29,7 +29,7 @@
         "etaslfile": {
             "description": "etaslfile, you normally leave this to the default",
             "type": "string",
-            "default": "$[etasl_ros2]/scripts/etasl/default-task.lua",
+            "default": "$[crospi_core]/scripts/etasl/default-task.lua",
             "interpolate": true
         },
         "etasl": {

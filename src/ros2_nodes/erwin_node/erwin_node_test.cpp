@@ -1,6 +1,6 @@
-#include "etasl_node_utils/rostask.hpp"
-#include "etasl_task_utils/blackboard.hpp"
-#include "etasl_task_utils/string_interpolate.hpp"
+#include "crospi_node_utils/rostask.hpp"
+#include "crospi_utils/blackboard.hpp"
+#include "crospi_utils/string_interpolate.hpp"
 #include "rclcpp/rclcpp.hpp"
 #include "rclcpp_lifecycle/lifecycle_node.hpp"
 #include <chrono>
@@ -9,15 +9,15 @@
 #include <thread>
 
 // factories:
-#include "etasl_task_utils/qpoasessolverfactory.hpp"
+#include "crospi_utils/qpoasessolverfactory.hpp"
 
-#include "etasl_node_utils/topicinputhandlerfactory.hpp"
+#include "crospi_node_utils/topicinputhandlerfactory.hpp"
 
-#include "etasl_node_utils/jointstateoutputhandlerfactory.hpp"
-#include "etasl_node_utils/jointstateinputhandlerfactory.hpp"
-#include "etasl_node_utils/topicoutputhandlerfactory.hpp"
-#include "etasl_task_utils/fileoutputhandlerfactory.hpp"
-#include "etasl_node_utils/tfoutputhandlerfactory.hpp"
+#include "crospi_node_utils/jointstateoutputhandlerfactory.hpp"
+#include "crospi_node_utils/jointstateinputhandlerfactory.hpp"
+#include "crospi_node_utils/topicoutputhandlerfactory.hpp"
+#include "crospi_utils/fileoutputhandlerfactory.hpp"
+#include "crospi_node_utils/tfoutputhandlerfactory.hpp"
 
 #include <fmt/format.h>
 #include <sstream>
@@ -115,14 +115,14 @@ int main(int argc, char* argv[])
     rclcpp::init(argc, argv);
     //rclcpp::NodeOptions options;
     //options.allow_undeclared_parameters(true);
-    auto node = std::make_shared<rclcpp_lifecycle::LifecycleNode>("etasl_node");
+    auto node = std::make_shared<rclcpp_lifecycle::LifecycleNode>("crospi_node");
 
     BlackBoard board(1);
     std::cout << " loading blackboard" << std::endl;
-    board.setSearchPath("$[etasl_ros2]/scripts/schema:$[etasl_ros2]/scripts/schema/tasks");
+    board.setSearchPath("$[crospi_core]/scripts/schema:$[crospi_core]/scripts/schema/tasks");
 
     std::cout << " +++++++++++++" << std::endl;
-    board.load_process_and_validate("$[etasl_ros2]/scripts/json/blackboard.json");
+    board.load_process_and_validate("$[crospi_core]/scripts/json/blackboard.json");
     std::cout << " +++++++++++++---------------------" << std::endl;
     fmt::print("{:->80}\n", "-");
     fmt::print("blackboard/default-etasl : ");
@@ -137,7 +137,7 @@ int main(int argc, char* argv[])
         std::cout<< "contains: " << h << std::endl;
     }
 
-    // const std::string cmd_filename = string_interpolate("$[etasl_ros2]/scripts/etasl/move_circle.json");
+    // const std::string cmd_filename = string_interpolate("$[crospi_core]/scripts/etasl/move_circle.json");
     // Json::Value cmd = loadJSONFile(cmd_filename);
     // if (!cmd) {
     //     throw etasl_error(etasl_error::FAILED_TO_LOAD, "Cannot find file '{}'", cmd_filename);

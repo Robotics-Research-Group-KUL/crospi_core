@@ -19,7 +19,7 @@
                     "description":"Path of the urdf. Use $[colcon_package] to make the path relative to a colcon package",
                     "type":"string",
                     "pattern": ".*\\.urdf$",
-                    "default": "$[etasl_ros2_application_template]/robot_description/urdf/ur10/use_case_setup_ur10.urdf"
+                    "default": "$[crospi_application_template]/robot_description/urdf/ur10/use_case_setup_ur10.urdf"
                 },
                 "robot_joints": {
                     "description":"Names of the joints in order from the world to the end effector. This names need to be consistent with the ones declared in the URDF file of the robot.",

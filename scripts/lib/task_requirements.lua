@@ -519,7 +519,7 @@ local function parameters(task_description, param_tab)
         }
 
 
-        local filepath_lua =  "$[etasl_ros2_application_template]/task_specifications/libraries/" .. lib_directory_name .. "/task_specifications/" .. filename_lua
+        local filepath_lua =  "$[crospi_application_template]/task_specifications/libraries/" .. lib_directory_name .. "/task_specifications/" .. filename_lua
         schema.dependencies[task_identifier].properties["file_path"] = {description="File path of the corresponding task specification", type="string", const=filepath_lua}
         schema.dependencies[task_identifier].properties["parameters"] = {type="object", description= "List of parameters needed to define an instance of the task specification",required=required_parameters,additionalProperties=false, properties={}}
 
@@ -683,7 +683,7 @@ local function load_robot(required_frames)
     if _JSON_ROBOTSPECIFICATION_STRING~= nil then
         json_robot_tab,_,err = JSON:decode(_JSON_ROBOTSPECIFICATION_STRING)
     else
-        error("_JSON_ROBOTSPECIFICATION_STRING does not exist. This must be defined by the etasl_node and must contain the JSON robot specification")
+        error("_JSON_ROBOTSPECIFICATION_STRING does not exist. This must be defined by the crospi_node and must contain the JSON robot specification")
     end
 
     if err then
@@ -702,7 +702,7 @@ local function load_robot(required_frames)
         urdfreader=require("urdfreader")
 
 
-        -- local f = io.open("/home/santiregui/ros2_ws/src/etasl_ros2_application_template/config_files/config_ur10_simulation.json", "rb")
+        -- local f = io.open("/home/santiregui/ros2_ws/src/crospi_application_template/config_files/config_ur10_simulation.json", "rb")
         -- local json_string = f:read("*all")
         -- f:close()
 
@@ -775,7 +775,7 @@ local function load_robot(required_frames)
         end
     end
 
-    -- ======== Checks if the world model is compatible with the configuration of etasl_node (by checking the that all the robot_joints exist in the worldmodel)
+    -- ======== Checks if the world model is compatible with the configuration of crospi_node (by checking the that all the robot_joints exist in the worldmodel)
     local elements = {}
     for name, _ in pairs(robot_worldmodel.connections) do
         table.insert(elements,name)

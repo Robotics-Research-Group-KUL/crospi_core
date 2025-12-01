@@ -1,7 +1,7 @@
 {
     "configurations": [
         {   "name": "cmake_prop",
-            "compileCommands": "~/ros2_ws/build/etasl_ros2/compile_commands.json",
+            "compileCommands": "~/ros2_ws/build/crospi_core/compile_commands.json",
             "configurationProvider": "ms-vscode.cmake-tools"
         }
     ],

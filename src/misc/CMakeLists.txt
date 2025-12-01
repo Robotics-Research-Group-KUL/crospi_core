@@ -31,8 +31,8 @@ target_compile_features(etasl_misc_lib PUBLIC c_std_99 cxx_std_17)  # Require C9
 install(TARGETS etasl_misc_lib
   DESTINATION lib/${PROJECT_NAME})
 
-add_subdirectory(etasl_node_utils)
-add_subdirectory(etasl_task_utils)
+add_subdirectory(crospi_node_utils)
+add_subdirectory(crospi_utils)
 add_subdirectory(robot_interfacing_utils)
 # add_subdirectory(simple_kinematic_simulation)
 

@@ -9,7 +9,7 @@ find_package(ament_index_cpp REQUIRED)
 # find_package(rclcpp_action REQUIRED)
 # find_package(etasl REQUIRED)
 # find_package(resource_retriever REQUIRED)
-# find_package(etasl_interfaces REQUIRED)
+# find_package(crospi_interfaces REQUIRED)
 # find_package(sensor_msgs REQUIRED)
 # find_package(std_msgs REQUIRED)
 # find_package(Lua51 REQUIRED)
@@ -34,7 +34,7 @@ set(src_simple_kinematic_simulation
 )
 
 set(rosdependencies
-  "etasl_ros2"
+  "crospi_core"
   "pluginlib"
 )
 
@@ -54,7 +54,7 @@ target_include_directories(simple_kinematic_simulation
   $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/include/simple_kinematic_simulation>
   $<INSTALL_INTERFACE:include/simple_kinematic_simulation>)
 
-ament_export_dependencies(etasl_ros2)
+ament_export_dependencies(crospi_core)
 
 
 ament_export_libraries(
