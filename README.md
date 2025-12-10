@@ -14,13 +14,14 @@ Published under the GNU LESSER GENERAL PUBLIC LICENSE Version 3, 29 June 2007.
 
 <a href="https://aiprism.eu/"><img src="./Ai-Prism_Logo_Horizontal.png" alt="AI-PRISM Logo" width="150" /></a>
 This work was funded by the European Union’s Horizon 2020 research and innovation program 
-under <a href="https://aiprism.eu/">grant agreement No. 101058589 AI-Prism</a>
+under the grant agreement No. <a href="https://cordis.europa.eu/project/id/101058589">101058589</a> ( <a href="https://aiprism.eu/">AI-Prism</a>) 
 
 <p/>
 
 <p/>
 
 <p/>
+
 
 
 
