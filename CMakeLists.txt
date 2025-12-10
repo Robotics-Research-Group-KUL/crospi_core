@@ -28,6 +28,7 @@ if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
 endif()
 
 # -- start --Stuff for triple buffer implementation of boost 1.89
+set(Boost_NO_SYSTEM_PATHS ON)
 set(BOOST_ROOT "$ENV{HOME}/.local/lib/boost/1.89.0")
 message(STATUS "CMAKE_PREFIX_PATH before: ${CMAKE_PREFIX_PATH}")
 set(CMAKE_PREFIX_PATH "${HOME}/.local/boost/1.89.0" ${CMAKE_PREFIX_PATH})
