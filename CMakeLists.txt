@@ -32,7 +32,7 @@ set(Boost_NO_SYSTEM_PATHS ON)
 set(BOOST_ROOT "$ENV{HOME}/.local/lib/boost/1.89.0")
 set(Boost_INCLUDE_DIR "$ENV{HOME}/.local/lib/boost/1.89.0/include")
 message(STATUS "CMAKE_PREFIX_PATH before: ${CMAKE_PREFIX_PATH}")
-set(CMAKE_PREFIX_PATH "${HOME}/.local/boost/1.89.0" ${CMAKE_PREFIX_PATH})
+set(CMAKE_PREFIX_PATH "$ENV{HOME}/.local/lib/boost/1.89.0" ${CMAKE_PREFIX_PATH})
 message(STATUS "CMAKE_PREFIX_PATH after: ${CMAKE_PREFIX_PATH}")
 message(STATUS "Using Boost version ${Boost_VERSION}")
 
