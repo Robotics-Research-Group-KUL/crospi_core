@@ -29,14 +29,46 @@ endif()
 
 # -- start --Stuff for triple buffer implementation of boost 1.89
 set(Boost_NO_SYSTEM_PATHS ON)
-set(BOOST_ROOT "$ENV{HOME}/.local/lib/boost/1.89.0")
-set(Boost_INCLUDE_DIR "$ENV{HOME}/.local/lib/boost/1.89.0/include")
-message(STATUS "CMAKE_PREFIX_PATH before: ${CMAKE_PREFIX_PATH}")
-set(CMAKE_PREFIX_PATH "$ENV{HOME}/.local/lib/boost/1.89.0" ${CMAKE_PREFIX_PATH})
-message(STATUS "CMAKE_PREFIX_PATH after: ${CMAKE_PREFIX_PATH}")
-message(STATUS "Using Boost version ${Boost_VERSION}")
 
-find_package(Boost 1.89 REQUIRED)
+# --------------------------------------------------
+# Resolve Boost 1.89 root. This is done because in github, docker, and local home might or might not be defined.
+# If BOOST_189_ROOT is defined in the environment, use that (e.g. as done manually for github actions).
+# --------------------------------------------------
+if(DEFINED ENV{BOOST_189_ROOT} AND NOT "$ENV{BOOST_189_ROOT}" STREQUAL "")
+  set(_BOOST_1_89_CUSTOM_ROOT "$ENV{BOOST_189_ROOT}")
+  message(STATUS "Using Boost 1.89 from BOOST_189_ROOT=${_BOOST_1_89_CUSTOM_ROOT}")
+else()
+  if(DEFINED ENV{HOME} AND NOT "$ENV{HOME}" STREQUAL "")
+    set(_BOOST_1_89_CUSTOM_ROOT "$ENV{HOME}/.local/lib/boost/1.89.0")
+    message(STATUS "Using Boost 1.89 from HOME fallback: ${_BOOST_1_89_CUSTOM_ROOT}")
+  else()
+    message(FATAL_ERROR
+      "Boost 1.89 requested, but neither BOOST_189_ROOT nor HOME is defined")
+  endif()
+endif()
+
+# --------------------------------------------------
+# Find Boost (headers-only or full, as needed)
+# --------------------------------------------------
+find_package(Boost 1.89 REQUIRED
+  HINTS
+    ${_BOOST_1_89_CUSTOM_ROOT}
+  PATHS
+    ${_BOOST_1_89_CUSTOM_ROOT}
+)
+
+# Optional but useful for debugging
+message(STATUS "Boost include dir: ${Boost_INCLUDE_DIRS}")
+
+
+# set(BOOST_ROOT "$ENV{HOME}/.local/lib/boost/1.89.0")
+# set(Boost_INCLUDE_DIR "$ENV{HOME}/.local/lib/boost/1.89.0/include")
+# message(STATUS "CMAKE_PREFIX_PATH before: ${CMAKE_PREFIX_PATH}")
+# set(CMAKE_PREFIX_PATH "$ENV{HOME}/.local/lib/boost/1.89.0" ${CMAKE_PREFIX_PATH})
+# message(STATUS "CMAKE_PREFIX_PATH after: ${CMAKE_PREFIX_PATH}")
+# message(STATUS "Using Boost version ${Boost_VERSION}")
+
+# find_package(Boost 1.89 REQUIRED)
 # -- end -- Stuff for triple buffer implementation of boost 1.89
 
 
