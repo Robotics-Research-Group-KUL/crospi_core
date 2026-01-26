@@ -50,25 +50,25 @@ endif()
 # --------------------------------------------------
 # Find Boost (headers-only or full, as needed)
 # --------------------------------------------------
-find_package(Boost 1.89 REQUIRED
-  HINTS
-    ${_BOOST_1_89_CUSTOM_ROOT}
-  PATHS
-    ${_BOOST_1_89_CUSTOM_ROOT}
-)
+# find_package(Boost 1.89 REQUIRED
+#   HINTS
+#     ${_BOOST_1_89_CUSTOM_ROOT}
+#   PATHS
+#     ${_BOOST_1_89_CUSTOM_ROOT}
+# )
 
 # Optional but useful for debugging
-message(STATUS "Boost include dir: ${Boost_INCLUDE_DIRS}")
 
 
-# set(BOOST_ROOT "$ENV{HOME}/.local/lib/boost/1.89.0")
-# set(Boost_INCLUDE_DIR "$ENV{HOME}/.local/lib/boost/1.89.0/include")
-# message(STATUS "CMAKE_PREFIX_PATH before: ${CMAKE_PREFIX_PATH}")
-# set(CMAKE_PREFIX_PATH "$ENV{HOME}/.local/lib/boost/1.89.0" ${CMAKE_PREFIX_PATH})
-# message(STATUS "CMAKE_PREFIX_PATH after: ${CMAKE_PREFIX_PATH}")
-# message(STATUS "Using Boost version ${Boost_VERSION}")
+set(BOOST_ROOT "${_BOOST_1_89_CUSTOM_ROOT}")
+set(Boost_INCLUDE_DIR "${_BOOST_1_89_CUSTOM_ROOT}/include")
+message(STATUS "CMAKE_PREFIX_PATH before: ${CMAKE_PREFIX_PATH}")
+set(CMAKE_PREFIX_PATH "${_BOOST_1_89_CUSTOM_ROOT}" ${CMAKE_PREFIX_PATH})
+message(STATUS "CMAKE_PREFIX_PATH after: ${CMAKE_PREFIX_PATH}")
+message(STATUS "Using Boost version ${Boost_VERSION}")
 
-# find_package(Boost 1.89 REQUIRED)
+find_package(Boost 1.89 REQUIRED)
+message(STATUS "Boost include dirs after find_package: ${Boost_INCLUDE_DIRS}")
 # -- end -- Stuff for triple buffer implementation of boost 1.89
 
 
