@@ -32,7 +32,7 @@ set(Boost_NO_SYSTEM_PATHS ON)
 
 # --------------------------------------------------
 # Resolve Boost 1.89 root. This is done because in github, docker, and local home might or might not be defined.
-# If BOOST_189_ROOT is defined in the environment, use that (e.g. as done manually for github actions).
+# If BOOST_189_ROOT is defined in the environment, use that installation directory instead (e.g. as done manually for github actions).
 # --------------------------------------------------
 if(DEFINED ENV{BOOST_189_ROOT} AND NOT "$ENV{BOOST_189_ROOT}" STREQUAL "")
   set(_BOOST_1_89_CUSTOM_ROOT "$ENV{BOOST_189_ROOT}")
