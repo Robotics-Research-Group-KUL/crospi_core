@@ -170,7 +170,7 @@ void BlackBoard::setSearchPath(const std::string& spth)
 Json::Value BlackBoard::loadSchemaReference(const std::string& raw_ref, const std::string& ctx, const Json::Value schema = Json::Value())
 {
     auto p = resolveSchemaReference(raw_ref);
-    if (schema) {
+    if (!schema.isNull()) {
         auto schema_id = resolveSchemaReference(schema["$id"].asString());
         if (schema_id != p) {
             throw etasl_error(etasl_error::SCHEMA_REFERENCE_NOT_FOUND,
@@ -422,7 +422,7 @@ Json::Value BlackBoard::process_and_validate(Json::Value& schema,
     if (type == "object") {
         // check if required properties are present:
         Json::Value required = schema["required"];
-        if (required) {
+        if (!required.isNull()) {
             if (!required.isArray()) {
                 throw std::logic_error(fmt::format("{} : 'required' member of schema should be an array of strings", ctx));
             }
@@ -511,7 +511,7 @@ Json::Value BlackBoard::process_and_validate(Json::Value& schema,
         }
         Json::Value interp = schema["interpolate"];
         retval = Json::Value(data.asString());
-        if (interp) {
+        if (!interp.isNull()) {
             if (!interp.isBool()) {
                 throw std::logic_error(fmt::format("{} : interpolate property of schema should be boolean", ctx));
             }
