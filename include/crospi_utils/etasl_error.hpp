@@ -64,13 +64,29 @@ public:
     {
     }*/
 
-    template <typename... T>
-    etasl_error(ErrorCode _code, fmt::format_string<T...> fmt, T&&... args)
-    : descript( fmt::vformat(fmt, fmt::make_format_args(args...)) )
-    , code(_code)
-    {
-    }
+    // WARNING: REMOVED THIS FANCY CONSTRUCTOR BECAUSE IT FAILS FOR ROS2 FOXY AND GALACTIC (i.e. not compatible with fmt 6–7) 
+    // To allow formatted description, example:
+    // throw etasl_error(
+    //     etasl_error::JSON_PARSE_ERROR,
+    //     "'..' cannot go up in path '{}'",
+    //     path
+    //     );
+    // template <typename... T>
+    // etasl_error(ErrorCode _code, fmt::format_string<T...> fmt, T&&... args)
+    // : descript( fmt::vformat(fmt, fmt::make_format_args(args...)) )
+    // , code(_code)
+    // {
+    // }
 
+    // TO admit description with fmt function, example:
+    // throw etasl_error(
+    //     etasl_error::JSON_PARSE_ERROR,
+    //     fmt::format("'..' cannot go up in path '{}' ", path)
+    //     );
+    etasl_error(ErrorCode _code, std::string msg)
+    : descript(msg)
+    , code(_code)
+    {}
 
     virtual const char* what() const noexcept override
     {

@@ -174,8 +174,8 @@ Json::Value BlackBoard::loadSchemaReference(const std::string& raw_ref, const st
         auto schema_id = resolveSchemaReference(schema["$id"].asString());
         if (schema_id != p) {
             throw etasl_error(etasl_error::SCHEMA_REFERENCE_NOT_FOUND,
-                "{}: request to load schema with $id='{}', but expected schema with $id='{}'",
-                ctx, p.c_str(), schema_id.c_str());
+                fmt::format("{}: request to load schema with $id='{}', but expected schema with $id='{}'",
+                ctx, p.c_str(), schema_id.c_str()));
         }
     }
     if (defs->isMember(p.c_str())) {
@@ -184,16 +184,16 @@ Json::Value BlackBoard::loadSchemaReference(const std::string& raw_ref, const st
     auto fp = searchpath.find(p);
     if (fp.empty()) {
         throw etasl_error(etasl_error::SCHEMA_REFERENCE_NOT_FOUND,
-            "{}: Could not resolve the reference '{}' using '{}' parts of the path, using the searchpath '{}'",
-            ctx, raw_ref, path_components_used, searchpath);
+            fmt::format("{}: Could not resolve the reference '{}' using '{}' parts of the path, using the searchpath '{}'",
+            ctx, raw_ref, path_components_used, searchpath));
     }
     std::cout << "loading reference " << fp.c_str() << std::endl;
     Json::Value newschema = loadJSONFile(fp.c_str());
     auto new_id = resolveSchemaReference(newschema["$id"].asString());
     if (new_id != p) {
         throw etasl_error(etasl_error::SCHEMA_REFERENCE_NOT_FOUND,
-            "{}: raw reference '{}' leading to local reference $id='{}' , I found file '{}' but the file contains another reference with local $id='{}'.",
-            ctx, raw_ref, p.c_str(), fp.c_str(), new_id.c_str());
+            fmt::format("{}: raw reference '{}' leading to local reference $id='{}' , I found file '{}' but the file contains another reference with local $id='{}'.",
+            ctx, raw_ref, p.c_str(), fp.c_str(), new_id.c_str()));
     }
     return newschema;
 }
@@ -353,7 +353,7 @@ Json::Value BlackBoard::process_and_validate(Json::Value& schema,
             // std::cout << "root : " << *root << std::endl;
             // std::cout << "resolved data reference " << p << std::endl;
             if (!p) {
-                throw etasl_error(etasl_error::JSON_PARSE_ERROR, "could not find blackboard reference '{}'", r.asString());
+                throw etasl_error(etasl_error::JSON_PARSE_ERROR, fmt::format("could not find blackboard reference '{}'", r.asString()));
             }
             std::cout << "schema " << schema << std::endl;
             Json::Value retval = process_and_validate(schema, p, ctx + "." + "default");

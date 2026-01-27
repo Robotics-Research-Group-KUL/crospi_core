@@ -81,7 +81,7 @@ public:
         Registry<Factory>& reg = Registry<Factory>::instance();
         auto r = reg.m.find(name);
         if (r == reg.m.end()) {
-            throw etasl_error(etasl_error::NOT_REGISTERED, fmt::format("name '{}' hellooofofofo is not registered", name));
+            throw etasl_error(etasl_error::NOT_REGISTERED, fmt::format("name '{}' is not registered", name));
         }
     }
 
