@@ -18,6 +18,7 @@
 
 #include "crospi_utils/json_checker.hpp"
 #include <fmt/format.h>
+#include <sstream>
 
 namespace etasl {
 
