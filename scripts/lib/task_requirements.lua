@@ -467,6 +467,7 @@ local function parameters(task_description, param_tab)
 
         local task_library_json = {name="",version="",description="", authors={}} --During execution (and not generation of schemas) this is not relevant
         local lib_directory_name = "" --During execution (and not generation of schemas) this is not relevant. This is not necessarily the same as lib_name
+        local application_name = _APPLICATION_NAME
 
         if _LUA_FILEPATH_TO_GENERATE_JSON_SCHEMA then -- _LUA_FILEPATH_TO_GENERATE_JSON_SCHEMA is only defined during generation of schemas and NOT during execution of tasks
             task_library_json = load_json_file(_LUA_FILEPATH_TO_GENERATE_JSON_SCHEMA .. "../task_library.json")
@@ -532,7 +533,7 @@ local function parameters(task_description, param_tab)
         }
 
 
-        local filepath_lua =  "$[crospi_application_template]/task_specifications/libraries/" .. lib_directory_name .. "/task_specifications/" .. filename_lua
+        local filepath_lua =  "$["..  application_name .. "]/task_specifications/libraries/" .. lib_directory_name .. "/task_specifications/" .. filename_lua
         schema.dependencies[task_identifier].properties["file_path"] = {description="File path of the corresponding task specification", type="string", const=filepath_lua}
         schema.dependencies[task_identifier].properties["parameters"] = {type="object", description= "List of parameters needed to define an instance of the task specification",required=required_parameters,additionalProperties=false, properties={}}
 
