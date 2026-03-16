@@ -467,7 +467,7 @@ local function parameters(task_description, param_tab)
 
         local task_library_json = {name="",version="",description="", authors={}} --During execution (and not generation of schemas) this is not relevant
         local lib_directory_name = "" --During execution (and not generation of schemas) this is not relevant. This is not necessarily the same as lib_name
-        local application_name = _APPLICATION_NAME
+        local application_name = _APPLICATION_NAME or "application_name_not_defined"
 
         if _LUA_FILEPATH_TO_GENERATE_JSON_SCHEMA then -- _LUA_FILEPATH_TO_GENERATE_JSON_SCHEMA is only defined during generation of schemas and NOT during execution of tasks
             task_library_json = load_json_file(_LUA_FILEPATH_TO_GENERATE_JSON_SCHEMA .. "../task_library.json")
