@@ -30,6 +30,12 @@ endif()
 # -- start --Stuff for triple buffer implementation of boost 1.89
 set(Boost_NO_SYSTEM_PATHS ON)
 
+
+# find dependencies
+find_package(ament_cmake REQUIRED)
+find_package(std_msgs REQUIRED)
+find_package(rosidl_default_generators REQUIRED)
+
 # --------------------------------------------------
 # Resolve Boost 1.89 root. This is done because in github, docker, and local home might or might not be defined.
 # If BOOST_189_ROOT is defined in the environment, use that installation directory instead (e.g. as done manually for github actions).
@@ -68,16 +74,14 @@ message(STATUS "CMAKE_PREFIX_PATH after: ${CMAKE_PREFIX_PATH}")
 message(STATUS "Using Boost version ${Boost_VERSION}")
 
 find_package(Boost 1.89 REQUIRED)
+ament_export_dependencies(Boost)
+
 message(STATUS "Boost include dirs after find_package: ${Boost_INCLUDE_DIRS}")
 # -- end -- Stuff for triple buffer implementation of boost 1.89
 
 
 add_definitions(-DBOOST_DISABLE_PRAGMA_MESSAGE)
 
-# find dependencies
-find_package(ament_cmake REQUIRED)
-find_package(std_msgs REQUIRED)
-find_package(rosidl_default_generators REQUIRED)
 # find_package(pluginlib REQUIRED)
 
 
@@ -103,6 +107,7 @@ ament_environment_hooks("${CMAKE_SOURCE_DIR}/env-hooks/package_crospi_core_lua_c
 
 ament_export_include_directories(
   include
+  ${Boost_INCLUDE_DIRS}
 )
 
 
