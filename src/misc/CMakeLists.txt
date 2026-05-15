@@ -18,6 +18,7 @@
 
 message("Compiling misc libraries ${CMAKE_CURRENT_SOURCE_DIR}")
 
+find_package(ament_cmake REQUIRED)
 find_package(etasl REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(std_msgs REQUIRED)
