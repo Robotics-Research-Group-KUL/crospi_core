@@ -54,8 +54,8 @@ set(src_simple_kinematic_simulation
 )
 
 set(rosdependencies
-  "crospi_core"
-  "pluginlib"
+  crospi_core
+  pluginlib
 )
 
 
@@ -65,6 +65,12 @@ set(dependencies
     jsoncpp
     robot_interfacing_utils
 )
+
+set(ros_targets
+  crospi_core::crospi_core
+  pluginlib::pluginlib
+)
+
 
 
 add_library(simple_kinematic_simulation SHARED ${src_simple_kinematic_simulation})
@@ -90,11 +96,6 @@ ament_export_libraries(
 
 
 #The following is done because ROS2 deprecated ament_target_dependencies in favor of target_link_libraries, but the former is still required for older (legacy) ROS2 versions. 
-set(ros_targets "")
-foreach(pkg IN LISTS rosdependencies)
-  list(APPEND ros_targets "${pkg}::${pkg}") #This might not work for all packages. ${pkg_TARGETS} might be needed for some. Check https://github.com/ament/ament_cmake/issues/584#issuecomment-2931061571
-endforeach()
-
 if(DEFINED ENV{ROS_DISTRO} AND (
   "$ENV{ROS_DISTRO}" STREQUAL "foxy" OR
   "$ENV{ROS_DISTRO}" STREQUAL "galactic" OR

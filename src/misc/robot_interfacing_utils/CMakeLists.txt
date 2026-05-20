@@ -61,6 +61,7 @@ set(src_robot_interfacing_utils
 )
 
 set(rosdependencies)
+set(ros_targets)
 
 set(dependencies
     fmt   
@@ -82,10 +83,6 @@ ament_export_libraries(
 )
 
 #The following is done because ROS2 deprecated ament_target_dependencies in favor of target_link_libraries, but the former is still required for older (legacy) ROS2 versions. 
-set(ros_targets "")
-foreach(pkg IN LISTS rosdependencies)
-  list(APPEND ros_targets "${pkg}::${pkg}") #This might not work for all packages. ${pkg_TARGETS} might be needed for some. Check https://github.com/ament/ament_cmake/issues/584#issuecomment-2931061571
-endforeach()
 
 if(DEFINED ENV{ROS_DISTRO} AND (
   "$ENV{ROS_DISTRO}" STREQUAL "foxy" OR

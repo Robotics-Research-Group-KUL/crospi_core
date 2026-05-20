@@ -46,12 +46,12 @@ add_executable(crospi_node crospi_node.cpp)
 
 set(rosdependencies 
     rclcpp
-    lifecycle_msgs
     rclcpp_lifecycle
+    pluginlib
     std_msgs
     std_srvs
     sensor_msgs
-    pluginlib
+    lifecycle_msgs
 )
 
 set(dependencies
@@ -68,13 +68,18 @@ set(dependencies
         # simple_kinematic_simulation
 )
 
+set(ros_targets 
+    rclcpp::rclcpp
+    rclcpp_lifecycle::rclcpp_lifecycle
+    pluginlib::pluginlib
+    ${std_msgs_TARGETS}
+    ${std_srvs_TARGETS}
+    ${sensor_msgs_TARGETS}
+    ${lifecycle_msgs_TARGETS}
+)
+
 
 #The following is done because ROS2 deprecated ament_target_dependencies in favor of target_link_libraries, but the former is still required for older (legacy) ROS2 versions. 
-set(ros_targets "")
-foreach(pkg IN LISTS rosdependencies)
-  list(APPEND ros_targets "${pkg}::${pkg}") #This might not work for all packages. ${pkg_TARGETS} might be needed for some. Check https://github.com/ament/ament_cmake/issues/584#issuecomment-2931061571
-endforeach()
-
 if(DEFINED ENV{ROS_DISTRO} AND (
   "$ENV{ROS_DISTRO}" STREQUAL "foxy" OR
   "$ENV{ROS_DISTRO}" STREQUAL "galactic" OR

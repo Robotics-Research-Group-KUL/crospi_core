@@ -70,17 +70,17 @@ set(rosdependencies
     crospi_interfaces
     resource_retriever
     ament_index_cpp
-    Eigen3
-    sensor_msgs
-    geometry_msgs
     tf2
-    tf2_geometry_msgs
     tf2_ros
     pluginlib
+    sensor_msgs
+    geometry_msgs
+    tf2_geometry_msgs
 )
 
 set(dependencies
     fmt
+    Eigen3::Eigen
     etasl::expressiongraph_context 
     etasl::expressiongraph_solver_qpoases 
     etasl::expressiongraph_context_lua    
@@ -88,6 +88,20 @@ set(dependencies
     jsoncpp
 )
 
+set(ros_targets 
+    rclcpp::rclcpp
+    rclcpp_lifecycle::rclcpp_lifecycle
+    rclcpp_action::rclcpp_action
+    crospi_interfaces::crospi_interfaces
+    resource_retriever::resource_retriever
+    ament_index_cpp::ament_index_cpp
+    tf2::tf2
+    tf2_ros::tf2_ros
+    pluginlib::pluginlib
+    ${sensor_msgs_TARGETS}
+    ${geometry_msgs_TARGETS}
+    ${tf2_geometry_msgs_TARGETS}
+)
 
 add_library(crospi_utils SHARED ${src_crospi_utils})
 
@@ -102,10 +116,6 @@ ament_export_libraries(
 )
 
 #The following is done because ROS2 deprecated ament_target_dependencies in favor of target_link_libraries, but the former is still required for older (legacy) ROS2 versions. 
-set(ros_targets "")
-foreach(pkg IN LISTS rosdependencies)
-  list(APPEND ros_targets "${pkg}::${pkg}") #This might not work for all packages. ${pkg_TARGETS} might be needed for some. Check https://github.com/ament/ament_cmake/issues/584#issuecomment-2931061571
-endforeach()
 
 if(DEFINED ENV{ROS_DISTRO} AND (
   "$ENV{ROS_DISTRO}" STREQUAL "foxy" OR
