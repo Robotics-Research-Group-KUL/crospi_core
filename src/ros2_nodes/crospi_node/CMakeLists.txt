@@ -43,7 +43,18 @@ add_executable(crospi_node crospi_node.cpp)
 
 # add_executable(crospi_node src/crospi_node.cpp)
 
-target_link_libraries(crospi_node 
+
+set(rosdependencies 
+    rclcpp
+    lifecycle_msgs
+    rclcpp_lifecycle
+    std_msgs
+    std_srvs
+    sensor_msgs
+    pluginlib
+)
+
+set(dependencies
         etasl::expressiongraph_context 
         etasl::expressiongraph_solver_qpoases 
         etasl::expressiongraph_context_lua 
@@ -55,20 +66,29 @@ target_link_libraries(crospi_node
         # triple_buffer
         # kuka_iiwa_driver
         # simple_kinematic_simulation
-        )
-
-# ament_target_dependencies(crospi_node rclcpp std_msgs sensor_msgs)
-
-ament_target_dependencies(crospi_node
-  # "crospi_core" #Needed to read srv and msgs generated with rosidl_generate_interfaces
-  "rclcpp"
-  "lifecycle_msgs"
-  "rclcpp_lifecycle"
-  "std_msgs"
-  "std_srvs"
-  "sensor_msgs"
-  "pluginlib"
 )
+
+
+#The following is done because ROS2 deprecated ament_target_dependencies in favor of target_link_libraries, but the former is still required for older (legacy) ROS2 versions. 
+set(ros_targets "")
+foreach(pkg IN LISTS rosdependencies)
+  list(APPEND ros_targets "${pkg}::${pkg}") #This might not work for all packages. ${pkg_TARGETS} might be needed for some. Check https://github.com/ament/ament_cmake/issues/584#issuecomment-2931061571
+endforeach()
+
+if(DEFINED ENV{ROS_DISTRO} AND (
+  "$ENV{ROS_DISTRO}" STREQUAL "foxy" OR
+  "$ENV{ROS_DISTRO}" STREQUAL "galactic" OR
+  "$ENV{ROS_DISTRO}" STREQUAL "humble" OR
+  "$ENV{ROS_DISTRO}" STREQUAL "iron" OR
+  "$ENV{ROS_DISTRO}" STREQUAL "jazzy"
+))
+      ament_target_dependencies(crospi_node ${rosdependencies})
+      target_link_libraries(crospi_node ${dependencies})
+      message(STATUS "Legacy ROS_DISTRO is $ENV{ROS_DISTRO}, using ament_target_dependencies")
+else()
+    target_link_libraries(crospi_node  ${dependencies} ${ros_targets})
+    message(STATUS "Modern ROS_DISTRO detected ($ENV{ROS_DISTRO}), using target_link_libraries")
+endif()
 
 
 # TODO: change the directories of  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include> and $<INSTALL_INTERFACE:include>

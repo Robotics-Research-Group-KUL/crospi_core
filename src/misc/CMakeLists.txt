@@ -36,11 +36,38 @@ target_link_libraries(etasl_misc_lib
                       etasl::expressiongraph_context_lua )
 
 
-ament_target_dependencies(etasl_misc_lib
-                          "rclcpp"
-                          "std_msgs"
-                          "sensor_msgs"
-                        )
+#The following is done because ROS2 deprecated ament_target_dependencies in favor of target_link_libraries, but the former is still required for older (legacy) ROS2 versions. 
+if(DEFINED ENV{ROS_DISTRO} AND (
+  "$ENV{ROS_DISTRO}" STREQUAL "foxy" OR
+  "$ENV{ROS_DISTRO}" STREQUAL "galactic" OR
+  "$ENV{ROS_DISTRO}" STREQUAL "humble" OR
+  "$ENV{ROS_DISTRO}" STREQUAL "iron" OR
+  "$ENV{ROS_DISTRO}" STREQUAL "jazzy"
+))
+      target_link_libraries(etasl_misc_lib 
+                            etasl::expressiongraph_context 
+                            etasl::expressiongraph_solver_qpoases 
+                            etasl::expressiongraph_context_lua )
+
+      ament_target_dependencies(etasl_misc_lib
+                                rclcpp
+                                std_msgs
+                                sensor_msgs
+                              )
+      message(STATUS "Legacy ROS_DISTRO is $ENV{ROS_DISTRO}, using ament_target_dependencies")
+else()
+    target_link_libraries(etasl_misc_lib 
+                          etasl::expressiongraph_context 
+                          etasl::expressiongraph_solver_qpoases 
+                          etasl::expressiongraph_context_lua 
+                          rclcpp::rclcpp
+                          std_msgs::std_msgs
+                          sensor_msgs::sensor_msgs
+                          )
+
+    message(STATUS "Modern ROS_DISTRO detected ($ENV{ROS_DISTRO}), using target_link_libraries")
+endif()
+                      
 
 target_include_directories(etasl_misc_lib PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>

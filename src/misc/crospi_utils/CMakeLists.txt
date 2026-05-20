@@ -101,9 +101,26 @@ ament_export_libraries(
   crospi_utils
 )
 
-ament_target_dependencies(crospi_utils ${rosdependencies}) 
+#The following is done because ROS2 deprecated ament_target_dependencies in favor of target_link_libraries, but the former is still required for older (legacy) ROS2 versions. 
+set(ros_targets "")
+foreach(pkg IN LISTS rosdependencies)
+  list(APPEND ros_targets "${pkg}::${pkg}") #This might not work for all packages. ${pkg_TARGETS} might be needed for some. Check https://github.com/ament/ament_cmake/issues/584#issuecomment-2931061571
+endforeach()
 
-target_link_libraries(crospi_utils ${dependencies})
+if(DEFINED ENV{ROS_DISTRO} AND (
+  "$ENV{ROS_DISTRO}" STREQUAL "foxy" OR
+  "$ENV{ROS_DISTRO}" STREQUAL "galactic" OR
+  "$ENV{ROS_DISTRO}" STREQUAL "humble" OR
+  "$ENV{ROS_DISTRO}" STREQUAL "iron" OR
+  "$ENV{ROS_DISTRO}" STREQUAL "jazzy"
+))
+      ament_target_dependencies(crospi_utils ${rosdependencies})
+      target_link_libraries(crospi_utils ${dependencies})
+      message(STATUS "Legacy ROS_DISTRO is $ENV{ROS_DISTRO}, using ament_target_dependencies")
+else()
+    target_link_libraries(crospi_utils  ${dependencies} ${ros_targets})
+    message(STATUS "Modern ROS_DISTRO detected ($ENV{ROS_DISTRO}), using target_link_libraries")
+endif()
 
 
 install(
@@ -114,9 +131,23 @@ install(
   RUNTIME DESTINATION bin
 )
 
+# ---------------- FOR AMENT LUA PACKAGE --------------------- 
 add_library(amentlua SHARED amentlua.cpp )
-ament_target_dependencies(amentlua ${rosdependencies})
-target_link_libraries(amentlua ${dependencies})
+if(DEFINED ENV{ROS_DISTRO} AND (
+  "$ENV{ROS_DISTRO}" STREQUAL "foxy" OR
+  "$ENV{ROS_DISTRO}" STREQUAL "galactic" OR
+  "$ENV{ROS_DISTRO}" STREQUAL "humble" OR
+  "$ENV{ROS_DISTRO}" STREQUAL "iron" OR
+  "$ENV{ROS_DISTRO}" STREQUAL "jazzy"
+))
+      ament_target_dependencies(amentlua ${rosdependencies})
+      target_link_libraries(amentlua ${dependencies})
+      message(STATUS "Legacy ROS_DISTRO is $ENV{ROS_DISTRO}, using ament_target_dependencies")
+else()
+    target_link_libraries(amentlua  ${dependencies} ${ros_targets})
+    message(STATUS "Modern ROS_DISTRO detected ($ENV{ROS_DISTRO}), using target_link_libraries")
+endif()
+
 install(TARGETS amentlua
     DESTINATION lib)
   
