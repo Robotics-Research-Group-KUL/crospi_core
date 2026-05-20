@@ -92,12 +92,12 @@ set(ros_targets
     rclcpp::rclcpp
     rclcpp_lifecycle::rclcpp_lifecycle
     rclcpp_action::rclcpp_action
-    crospi_interfaces::crospi_interfaces
     resource_retriever::resource_retriever
     ament_index_cpp::ament_index_cpp
     tf2::tf2
     tf2_ros::tf2_ros
     pluginlib::pluginlib
+    ${crospi_interfaces_TARGETS}
     ${sensor_msgs_TARGETS}
     ${geometry_msgs_TARGETS}
     ${tf2_geometry_msgs_TARGETS}
