@@ -28,12 +28,35 @@ find_package(etasl REQUIRED)
 find_package(pluginlib REQUIRED)
 
 # -- start --Stuff for triple buffer implementation of boost 1.89
-set(BOOST_ROOT "$ENV{HOME}/.local/lib/boost/1.89.0")
-set(CMAKE_PREFIX_PATH "$ENV{HOME}/.local/lib/boost/1.89.0" ${CMAKE_PREFIX_PATH})
-find_package(Boost 1.89 REQUIRED)
-message(STATUS "Using Boost version ${Boost_VERSION}")
-message(STATUS "Boost include dirs: ${Boost_INCLUDE_DIRS}")
+set(Boost_NO_SYSTEM_PATHS ON)
+# --------------------------------------------------
+# Resolve Boost 1.89 root. This is done because in github, docker, and local home might or might not be defined.
+# If BOOST_189_ROOT is defined in the environment, use that installation directory instead (e.g. as done manually for github actions).
+# --------------------------------------------------
+if(DEFINED ENV{BOOST_189_ROOT} AND NOT "$ENV{BOOST_189_ROOT}" STREQUAL "")
+  set(_BOOST_1_89_CUSTOM_ROOT "$ENV{BOOST_189_ROOT}")
+  message(STATUS "Using Boost 1.89 from BOOST_189_ROOT=${_BOOST_1_89_CUSTOM_ROOT}")
+else()
+  if(DEFINED ENV{HOME} AND NOT "$ENV{HOME}" STREQUAL "")
+    set(_BOOST_1_89_CUSTOM_ROOT "$ENV{HOME}/.local/lib/boost/1.89.0")
+    message(STATUS "Using Boost 1.89 from HOME fallback: ${_BOOST_1_89_CUSTOM_ROOT}")
+  else()
+    message(FATAL_ERROR
+      "Boost 1.89 requested, but neither BOOST_189_ROOT nor HOME is defined")
+  endif()
+endif()
 
+set(BOOST_ROOT "${_BOOST_1_89_CUSTOM_ROOT}")
+set(Boost_INCLUDE_DIR "${_BOOST_1_89_CUSTOM_ROOT}/include")
+message(STATUS "CMAKE_PREFIX_PATH before: ${CMAKE_PREFIX_PATH}")
+set(CMAKE_PREFIX_PATH "${_BOOST_1_89_CUSTOM_ROOT}" ${CMAKE_PREFIX_PATH})
+message(STATUS "CMAKE_PREFIX_PATH after: ${CMAKE_PREFIX_PATH}")
+message(STATUS "Using Boost version ${Boost_VERSION}")
+
+find_package(Boost 1.89 REQUIRED)
+ament_export_dependencies(Boost)
+
+message(STATUS "Boost include dirs after find_package: ${Boost_INCLUDE_DIRS}")
 # -- end -- Stuff for triple buffer implementation of boost 1.89
 
 
