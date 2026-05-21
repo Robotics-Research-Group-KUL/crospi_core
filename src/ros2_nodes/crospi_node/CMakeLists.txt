@@ -26,7 +26,6 @@ find_package(rclcpp_lifecycle REQUIRED)
 find_package(lifecycle_msgs REQUIRED)
 find_package(etasl REQUIRED)
 find_package(pluginlib REQUIRED)
-# find_package(crospi_core REQUIRED) #Needed to read srv and msgs generated with rosidl_generate_interfaces
 
 # -- start --Stuff for triple buffer implementation of boost 1.89
 set(BOOST_ROOT "$ENV{HOME}/.local/lib/boost/1.89.0")
@@ -37,11 +36,9 @@ message(STATUS "Boost include dirs: ${Boost_INCLUDE_DIRS}")
 
 # -- end -- Stuff for triple buffer implementation of boost 1.89
 
-include_directories(.)
 
 add_executable(crospi_node crospi_node.cpp)
 
-# add_executable(crospi_node src/crospi_node.cpp)
 
 
 set(rosdependencies 
@@ -62,10 +59,6 @@ set(dependencies
         crospi_utils
         crospi_node_utils
         robot_interfacing_utils
-        # buffer_utils
-        # triple_buffer
-        # kuka_iiwa_driver
-        # simple_kinematic_simulation
 )
 
 set(ros_targets 
@@ -100,6 +93,7 @@ endif()
 target_include_directories(crospi_node PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
   $<INSTALL_INTERFACE:include>
+  ${LUA_INCLUDE_DIR}
   ${Boost_INCLUDE_DIRS})
 
 target_compile_features(crospi_node PUBLIC c_std_99 cxx_std_17)  # Require C99 and C++17

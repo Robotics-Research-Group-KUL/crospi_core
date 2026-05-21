@@ -41,25 +41,17 @@ find_package(tf2_geometry_msgs REQUIRED)
 find_package(tf2_ros REQUIRED)
 find_package(pluginlib REQUIRED)
 
-#add_subdirectory( doc )
 
 set(CMAKE_CXX_STANDARD 17)
 
-include_directories(include ${LUA_INCLUDE_DIR})
 
 
 set(src_crospi_utils
     featurevariableinitializer.cpp
     outputhandler.cpp #TODO: Remove after pasing cut_global method somewhere else
-    # task.cpp
     blackboard.cpp
-    # printobserver.cpp
     string_interpolate.cpp
-    #solverregistry.cpp
-    #solverfactory_qpoases.cpp
     qpoasessolverfactory.cpp
-    # fileoutputhandler.cpp
-    # fileoutputhandlerfactory.cpp
     json_checker.cpp
 )
 
@@ -108,7 +100,9 @@ add_library(crospi_utils SHARED ${src_crospi_utils})
 target_include_directories(crospi_utils 
   PUBLIC
   $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/include>
-  $<INSTALL_INTERFACE:include>)
+  $<INSTALL_INTERFACE:include>
+  ${LUA_INCLUDE_DIR}
+  ${Boost_INCLUDE_DIRS})
 
 
 ament_export_libraries(

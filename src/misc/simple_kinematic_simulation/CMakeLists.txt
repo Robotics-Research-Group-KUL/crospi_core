@@ -25,28 +25,11 @@ message("Compiling misc/simple_kinematic_simulation libraries ${CMAKE_CURRENT_SO
 # find dependencies
 find_package(ament_cmake REQUIRED)
 find_package(ament_index_cpp REQUIRED)
-# find_package(rclcpp REQUIRED)
-# find_package(rclcpp_action REQUIRED)
-# find_package(etasl REQUIRED)
-# find_package(resource_retriever REQUIRED)
-# find_package(crospi_interfaces REQUIRED)
-# find_package(sensor_msgs REQUIRED)
-# find_package(std_msgs REQUIRED)
-# find_package(Lua51 REQUIRED)
-# find_package(Eigen3 REQUIRED)
-# find_package(pugixml REQUIRED)
 find_package(jsoncpp REQUIRED)
-# find_package(Sphinx REQUIRED)
-# find_package(tf2 REQUIRED)
-# find_package(tf2_geometry_msgs REQUIRED)
-# find_package(tf2_ros REQUIRED)
-#add_subdirectory( doc )
 find_package(pluginlib REQUIRED)
 
 
 set(CMAKE_CXX_STANDARD 17)
-
-include_directories(include ${LUA_INCLUDE_DIR})
 
 
 set(src_simple_kinematic_simulation
@@ -57,7 +40,6 @@ set(rosdependencies
   crospi_core
   pluginlib
 )
-
 
 set(dependencies
     fmt   
@@ -71,17 +53,16 @@ set(ros_targets
   pluginlib::pluginlib
 )
 
-
-
 add_library(simple_kinematic_simulation SHARED ${src_simple_kinematic_simulation})
 
 target_include_directories(simple_kinematic_simulation 
   PUBLIC
   $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/include/simple_kinematic_simulation>
-  $<INSTALL_INTERFACE:include/simple_kinematic_simulation>)
+  $<INSTALL_INTERFACE:include/simple_kinematic_simulation>
+  ${LUA_INCLUDE_DIR}
+  ${Boost_INCLUDE_DIRS})
 
 ament_export_dependencies(crospi_core)
-
 
 ament_export_libraries(
   simple_kinematic_simulation
@@ -110,7 +91,6 @@ else()
     target_link_libraries(simple_kinematic_simulation  ${dependencies} ${ros_targets})
     message(STATUS "Modern ROS_DISTRO detected ($ENV{ROS_DISTRO}), using target_link_libraries")
 endif()
-
 
 
 

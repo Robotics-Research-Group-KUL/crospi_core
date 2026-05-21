@@ -22,42 +22,15 @@ find_package(tf2_geometry_msgs REQUIRED)
 find_package(tf2_ros REQUIRED)
 find_package(pluginlib REQUIRED)
 
-#add_subdirectory( doc )
 
 set(CMAKE_CXX_STANDARD 17)
 
-# include_directories(include ${LUA_INCLUDE_DIR})
-
 
 set( src_crospi_node_utils
-    # rosloghandler.cpp
-    # rostask.cpp
-
     io_handler_manager.cpp
     # robot_driver_manager.cpp
     robot_driver_manager_lockfree.cpp
     multiple_drivers_manager.cpp
-
-    # topicoutputhandler.cpp
-    # jointstateoutputhandler.cpp
-    # tfoutputhandler.cpp
-    # topicinputhandler.cpp
-    # twistinputhandler.cpp
-    # wrenchinputhandler.cpp
-    # tfinputhandler.cpp
-    # jointstateinputhandler.cpp
-
-    # topicoutputhandlerfactory.cpp
-    # jointstateoutputhandlerfactory.cpp
-    # jointstateinputhandlerfactory.cpp    
-    # topicinputhandlerfactory.cpp
-    # tfoutputhandlerfactory.cpp
-    # # twistinputhandlerfactory.cpp
-    # wrenchinputhandlerfactory.cpp
-    # tfinputhandlerfactory.cpp
-
-    #robotsimulator.cpp
-    # robotsimulatorfactory.cpp    
 )
 
 set(rosdependencies 

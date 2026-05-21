@@ -67,8 +67,10 @@ endif()
 
 
 target_include_directories(etasl_misc_lib PUBLIC
-  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
-  $<INSTALL_INTERFACE:include>)
+  $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>
+  $<INSTALL_INTERFACE:include>
+  ${LUA_INCLUDE_DIR}
+  ${Boost_INCLUDE_DIRS})
 target_compile_features(etasl_misc_lib PUBLIC c_std_99 cxx_std_17)  # Require C99 and C++17
 
 install(TARGETS etasl_misc_lib

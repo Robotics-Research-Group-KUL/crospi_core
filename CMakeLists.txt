@@ -27,15 +27,13 @@ if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
   # add_compile_options( -Wno-deprecated -Wno-unused-but-set-variable -Wno-unused-parameter -Wno-unused-variable -Wno-reorder)
 endif()
 
-# -- start --Stuff for triple buffer implementation of boost 1.89
-set(Boost_NO_SYSTEM_PATHS ON)
-
-
 # find dependencies
 find_package(ament_cmake REQUIRED)
 find_package(std_msgs REQUIRED)
 find_package(rosidl_default_generators REQUIRED)
 
+# -- start --Stuff for triple buffer implementation of boost 1.89
+set(Boost_NO_SYSTEM_PATHS ON)
 # --------------------------------------------------
 # Resolve Boost 1.89 root. This is done because in github, docker, and local home might or might not be defined.
 # If BOOST_189_ROOT is defined in the environment, use that installation directory instead (e.g. as done manually for github actions).
@@ -53,19 +51,6 @@ else()
   endif()
 endif()
 
-# --------------------------------------------------
-# Find Boost (headers-only or full, as needed)
-# --------------------------------------------------
-# find_package(Boost 1.89 REQUIRED
-#   HINTS
-#     ${_BOOST_1_89_CUSTOM_ROOT}
-#   PATHS
-#     ${_BOOST_1_89_CUSTOM_ROOT}
-# )
-
-# Optional but useful for debugging
-
-
 set(BOOST_ROOT "${_BOOST_1_89_CUSTOM_ROOT}")
 set(Boost_INCLUDE_DIR "${_BOOST_1_89_CUSTOM_ROOT}/include")
 message(STATUS "CMAKE_PREFIX_PATH before: ${CMAKE_PREFIX_PATH}")
@@ -79,15 +64,7 @@ ament_export_dependencies(Boost)
 message(STATUS "Boost include dirs after find_package: ${Boost_INCLUDE_DIRS}")
 # -- end -- Stuff for triple buffer implementation of boost 1.89
 
-
 add_definitions(-DBOOST_DISABLE_PRAGMA_MESSAGE)
-
-# find_package(pluginlib REQUIRED)
-
-
-# uncomment the following section in order to fill in
-# further dependencies manually.
-# find_package(<dependency> REQUIRED)
 
 
 install(DIRECTORY scripts
@@ -99,10 +76,6 @@ install(
   DESTINATION include
 )
 
-# install(
-#   FILES hook/package_crospi_core_lua_configure_paths.sh
-#   DESTINATION share/${PROJECT_NAME}/hook
-# )
 
 ament_environment_hooks("${CMAKE_SOURCE_DIR}/env-hooks/package_crospi_core_lua_configure_paths.sh.in") 
 
@@ -111,18 +84,6 @@ ament_export_include_directories(
   ${Boost_INCLUDE_DIRS}
 )
 
-
-include_directories(
-   include
-)
-
-# rosidl_generate_interfaces(${PROJECT_NAME}
-#   # "msg/Num.msg"
-#   "msg/Test.msg"
-#   "srv/TaskSpecificationString.srv"
-#   "srv/TaskSpecificationFile.srv"
-#   DEPENDENCIES std_msgs # Add packages that above messages depend on, in this case geometry_msgs for Sphere.msg
-# )
 
 add_subdirectory(src/misc)
 
@@ -136,43 +97,12 @@ add_subdirectory(src/ros2_nodes/crospi_node)
 # add_subdirectory(src/ros2_nodes/test_publisher_node)
 # add_subdirectory(src/ros2_nodes/erwin_node)
 
-
-ament_export_dependencies(
-  ament_cmake
-  )
+ament_export_dependencies(ament_cmake)
 ament_export_targets(export_${PROJECT_NAME} HAS_LIBRARY_TARGET)
-
-
-# Install package libraries.
-# ament_export_targets("export_${PROJECT_NAME}" HAS_LIBRARY_TARGET)
-# ament_export_libraries(crospi_utils robot_interfacing_utils crospi_node_utils)
-# install(
-#   TARGETS
-#     crospi_utils robot_interfacing_utils crospi_node_utils
-#   EXPORT
-#     "export_${PROJECT_NAME}"
-#   ARCHIVE DESTINATION "lib"
-#   LIBRARY DESTINATION "lib"
-#   RUNTIME DESTINATION "bin"
-#   # INCLUDES DESTINATION "include/${PROJECT_NAME}"
-# )
-
-
-# install(
-#   TARGETS crospi_node_utils
-#   EXPORT export_${PROJECT_NAME}
-#   ARCHIVE DESTINATION lib
-#   LIBRARY DESTINATION lib
-#   RUNTIME DESTINATION bin
-# )
-
 
 # Install the Python package
 find_package(Python3 REQUIRED COMPONENTS Interpreter Development)
-# ament_python_install_package(scripts/python/crospi_py)
 ament_python_install_package(crospi_py)
-
-
 
 
 if(BUILD_TESTING)
