@@ -16,7 +16,7 @@
 //  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 //  GNU Lesser General Public License for more details.
 
-#include "robot_driver_manager_lockfree.hpp"
+#include "crospi_node_utils/robot_driver_manager_lockfree.hpp"
 // #include "crospi_node_utils/robot_driver_manager.hpp"
 
 

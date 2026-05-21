@@ -26,7 +26,7 @@ find_package(pluginlib REQUIRED)
 
 set(CMAKE_CXX_STANDARD 17)
 
-include_directories(include ${LUA_INCLUDE_DIR})
+# include_directories(include ${LUA_INCLUDE_DIR})
 
 
 set( src_crospi_node_utils
@@ -107,8 +107,10 @@ add_library(crospi_node_utils SHARED ${src_crospi_node_utils})
 
 target_include_directories(crospi_node_utils 
   PUBLIC
-  $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/include/crospi_node_utils>
-  $<INSTALL_INTERFACE:include/crospi_node_utils>)
+  $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/include>
+  $<INSTALL_INTERFACE:include>
+  ${LUA_INCLUDE_DIR}
+  ${Boost_INCLUDE_DIRS})
 
 ament_export_libraries(
   crospi_node_utils
@@ -131,11 +133,12 @@ else()
     message(STATUS "Modern ROS_DISTRO detected ($ENV{ROS_DISTRO}), using target_link_libraries")
 endif()
 
- 
+ament_export_dependencies(${dependencies} ${rosdependencies})
+
 
 install(
   TARGETS crospi_node_utils
-  EXPORT export_crospi_node_utils
+  EXPORT export_${PROJECT_NAME}
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
   RUNTIME DESTINATION bin

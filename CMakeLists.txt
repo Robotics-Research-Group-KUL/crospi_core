@@ -95,6 +95,7 @@ install(DIRECTORY scripts
 
 install(
   DIRECTORY include/
+  # DESTINATION include
   DESTINATION include
 )
 
@@ -114,9 +115,6 @@ ament_export_include_directories(
 include_directories(
    include
 )
-
-# TODO: Delete the following. It is only used for debug in VSCODE:
-# include_directories("/home/santiregui/etasl-cmake/standalone-cmake/install/include")
 
 # rosidl_generate_interfaces(${PROJECT_NAME}
 #   # "msg/Num.msg"
@@ -139,7 +137,25 @@ add_subdirectory(src/ros2_nodes/crospi_node)
 # add_subdirectory(src/ros2_nodes/erwin_node)
 
 
-ament_export_dependencies(ament_cmake)
+ament_export_dependencies(
+  ament_cmake
+  )
+ament_export_targets(export_${PROJECT_NAME} HAS_LIBRARY_TARGET)
+
+
+# Install package libraries.
+# ament_export_targets("export_${PROJECT_NAME}" HAS_LIBRARY_TARGET)
+# ament_export_libraries(crospi_utils robot_interfacing_utils crospi_node_utils)
+# install(
+#   TARGETS
+#     crospi_utils robot_interfacing_utils crospi_node_utils
+#   EXPORT
+#     "export_${PROJECT_NAME}"
+#   ARCHIVE DESTINATION "lib"
+#   LIBRARY DESTINATION "lib"
+#   RUNTIME DESTINATION "bin"
+#   # INCLUDES DESTINATION "include/${PROJECT_NAME}"
+# )
 
 
 # install(

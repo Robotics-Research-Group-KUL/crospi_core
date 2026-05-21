@@ -44,14 +44,20 @@ find_package(jsoncpp REQUIRED)
 set(CMAKE_CXX_STANDARD 17)
 
 # -- start --Stuff for triple buffer implementation of boost 1.89
-set(BOOST_ROOT "$ENV{HOME}/.local/lib/boost/1.89.0")
-set(CMAKE_PREFIX_PATH "$ENV{HOME}/.local/lib/boost/1.89.0" ${CMAKE_PREFIX_PATH})
-find_package(Boost 1.89 REQUIRED)
-message(STATUS "Using Boost version ${Boost_VERSION}")
+# set(BOOST_ROOT "${_BOOST_1_89_CUSTOM_ROOT}")
+# set(Boost_INCLUDE_DIR "${_BOOST_1_89_CUSTOM_ROOT}/include")
+# message(STATUS "CMAKE_PREFIX_PATH before: ${CMAKE_PREFIX_PATH}")
+# set(CMAKE_PREFIX_PATH "${_BOOST_1_89_CUSTOM_ROOT}" ${CMAKE_PREFIX_PATH})
+# message(STATUS "CMAKE_PREFIX_PATH after: ${CMAKE_PREFIX_PATH}")
+# message(STATUS "Using Boost version ${Boost_VERSION}")
+# find_package(Boost 1.89 REQUIRED)
 # -- end -- Stuff for triple buffer implementation of boost 1.89
 
 
-include_directories(include ${LUA_INCLUDE_DIR})
+include_directories(include 
+${LUA_INCLUDE_DIR}
+${Boost_INCLUDE_DIRS}
+)
 
 
 set(src_robot_interfacing_utils
@@ -74,8 +80,10 @@ add_library(robot_interfacing_utils SHARED ${src_robot_interfacing_utils})
 
 target_include_directories(robot_interfacing_utils 
   PUBLIC
-  $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/include/robot_interfacing_utils>
-  $<INSTALL_INTERFACE:include/robot_interfacing_utils>)
+  $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/include>
+  $<INSTALL_INTERFACE:include>
+  ${LUA_INCLUDE_DIR}
+  ${Boost_INCLUDE_DIRS})
 
 
 ament_export_libraries(
@@ -99,10 +107,12 @@ else()
     message(STATUS "Modern ROS_DISTRO detected ($ENV{ROS_DISTRO}), using target_link_libraries")
 endif()
 
+ament_export_dependencies(${dependencies} ${rosdependencies})
+
 
 install(
   TARGETS robot_interfacing_utils
-  EXPORT export_robot_interfacing_utils
+  EXPORT export_${PROJECT_NAME}
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
   RUNTIME DESTINATION bin

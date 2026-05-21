@@ -107,8 +107,8 @@ add_library(crospi_utils SHARED ${src_crospi_utils})
 
 target_include_directories(crospi_utils 
   PUBLIC
-  $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/include/crospi_utils>
-  $<INSTALL_INTERFACE:include/crospi_utils>)
+  $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/include>
+  $<INSTALL_INTERFACE:include>)
 
 
 ament_export_libraries(
@@ -135,7 +135,7 @@ endif()
 
 install(
   TARGETS crospi_utils
-  EXPORT export_crospi_utils
+  EXPORT export_${PROJECT_NAME}
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
   RUNTIME DESTINATION bin
@@ -157,6 +157,8 @@ else()
     target_link_libraries(amentlua  ${dependencies} ${ros_targets})
     message(STATUS "Modern ROS_DISTRO detected ($ENV{ROS_DISTRO}), using target_link_libraries")
 endif()
+
+ament_export_dependencies(${dependencies} ${rosdependencies})
 
 install(TARGETS amentlua
     DESTINATION lib)

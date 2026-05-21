@@ -16,7 +16,7 @@
 //  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 //  GNU Lesser General Public License for more details.
 
-#include "multiple_drivers_manager.hpp"
+#include "crospi_node_utils/multiple_drivers_manager.hpp"
 
 
 namespace etasl {
