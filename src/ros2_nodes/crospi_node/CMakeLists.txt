@@ -53,7 +53,7 @@ set(CMAKE_PREFIX_PATH "${_BOOST_1_89_CUSTOM_ROOT}" ${CMAKE_PREFIX_PATH})
 message(STATUS "CMAKE_PREFIX_PATH after: ${CMAKE_PREFIX_PATH}")
 message(STATUS "Using Boost version ${Boost_VERSION}")
 
-find_package(Boost 1.89 REQUIRED)
+find_package(Boost 1.89 CONFIG REQUIRED)
 ament_export_dependencies(Boost)
 
 message(STATUS "Boost include dirs after find_package: ${Boost_INCLUDE_DIRS}")

@@ -34,7 +34,7 @@ message(STATUS "===================CMAKE_MODULE_PATH: ${CMAKE_MODULE_PATH}")
 set(BOOST_ROOT "$ENV{HOME}/.local/lib/boost/1.89.0")
 set(CMAKE_PREFIX_PATH "$ENV{HOME}/.local/lib/boost/1.89.0" ${CMAKE_PREFIX_PATH})
 
-find_package(Boost 1.89 REQUIRED)
+find_package(Boost 1.89 CONFIG REQUIRED)
 
 message(STATUS "Using Boost version ${Boost_VERSION}")
 
