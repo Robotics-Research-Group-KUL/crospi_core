@@ -20,6 +20,15 @@
 local JSON = require("JSON")
 local jsonschema = require 'jsonschema'
 
+--- Task Requirements module for defining and validating task parameters.
+-- This module provides functions to define JSON schemas for task input parameters
+-- of various types (scalar, integer, boolean, string, enum, array).
+-- Parameters can be marked as required, given default values, and constrained
+-- with minimum/maximum bounds or regex patterns.
+-- @module task_requirements
+-- @author Santiago Iregui
+-- @copyright 2025 KU Leuven, Belgium
+
 local M = {}
 M.params = {}
 M.robot = {}
