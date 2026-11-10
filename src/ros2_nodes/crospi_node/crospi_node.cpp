@@ -55,14 +55,14 @@ etaslNode::etaslNode(const std::string & node_name, bool intra_process_comms = f
   };
   jsonchecker = std::make_shared<etasl::JsonChecker>(error_callback);
 
-  srv_etasl_console_ = create_service<std_srvs::srv::Empty>("crospi_node/etasl_console", std::bind(&etaslNode::etasl_console, this, std::placeholders::_1, std::placeholders::_2));
+  srv_etasl_console_ = create_service<std_srvs::srv::Empty>("~/etasl_console", std::bind(&etaslNode::etasl_console, this, std::placeholders::_1, std::placeholders::_2));
 
-  srv_readTaskSpecificationFile_ = create_service<crospi_interfaces::srv::TaskSpecificationFile>("crospi_node/readTaskSpecificationFile", std::bind(&etaslNode::readTaskSpecificationFile, this, std::placeholders::_1, std::placeholders::_2));
-  srv_readRobotSpecification_ = create_service<crospi_interfaces::srv::TaskSpecificationFile>("crospi_node/readRobotSpecification", std::bind(&etaslNode::readRobotSpecification, this, std::placeholders::_1, std::placeholders::_2));
+  srv_readTaskSpecificationFile_ = create_service<crospi_interfaces::srv::TaskSpecificationFile>("~/readTaskSpecificationFile", std::bind(&etaslNode::readTaskSpecificationFile, this, std::placeholders::_1, std::placeholders::_2));
+  srv_readRobotSpecification_ = create_service<crospi_interfaces::srv::TaskSpecificationFile>("~/readRobotSpecification", std::bind(&etaslNode::readRobotSpecification, this, std::placeholders::_1, std::placeholders::_2));
 
-  srv_readTaskSpecificationString_ = create_service<crospi_interfaces::srv::TaskSpecificationString>("crospi_node/readTaskSpecificationString", std::bind(&etaslNode::readTaskSpecificationString, this, std::placeholders::_1, std::placeholders::_2));
+  srv_readTaskSpecificationString_ = create_service<crospi_interfaces::srv::TaskSpecificationString>("~/readTaskSpecificationString", std::bind(&etaslNode::readTaskSpecificationString, this, std::placeholders::_1, std::placeholders::_2));
 
-  srv_readTaskParameters_ = create_service<crospi_interfaces::srv::TaskSpecificationString>("crospi_node/readTaskParameters", std::bind(&etaslNode::readTaskParameters, this, std::placeholders::_1, std::placeholders::_2));
+  srv_readTaskParameters_ = create_service<crospi_interfaces::srv::TaskSpecificationString>("~/readTaskParameters", std::bind(&etaslNode::readTaskParameters, this, std::placeholders::_1, std::placeholders::_2));
 
   std::string configFilePath = this->declare_parameter<std::string>("config_file", "");
   bool simulation_param = this->declare_parameter<bool>("simulation", true);
@@ -136,7 +136,7 @@ etaslNode::etaslNode(const std::string & node_name, bool intra_process_comms = f
     .history(rmw_qos_history_policy_t::RMW_QOS_POLICY_HISTORY_KEEP_LAST) //Keeps the last msgs received in case buffer is fulll
     .keep_last(20); //Buffer size
 
-  events_pub_ = this->create_publisher<std_msgs::msg::String>(jsonchecker->asString(etasl_param, "general/event_topic"), qos_profile); 
+  events_pub_ = this->create_publisher<std_msgs::msg::String>(etasl::node_scoped_topic(*this, jsonchecker->asString(etasl_param, "general/event_topic")), qos_profile); 
 
   std::string message = "\n+++++++++++++++++++++++++++++++++++++++++++++++++\nThe following configuration file was loaded correctly:" + file_path + "\n+++++++++++++++++++++++++++++++++++++++++++++++++";
   RCUTILS_LOG_INFO_NAMED(get_name(), message.c_str());
@@ -913,7 +913,7 @@ int main(int argc, char * argv[])
     // Initialize node
     rclcpp::init(argc, argv);
 
-    std::shared_ptr<etaslNode> my_crospi_node = std::make_shared<etaslNode>("crospi_node");
+    std::shared_ptr<etaslNode> my_crospi_node = std::make_shared<etaslNode>(etasl::DEFAULT_NODE_NAME); // can be changed with --ros-args -r __node:=<node_name>
 
     std::atomic<bool> stopFlag(false); 
 

@@ -134,7 +134,17 @@
           if (handler_ptr){
             RCLCPP_INFO(node->get_logger(), "register_output_handler");
             outputhandlers.push_back(handler_ptr);
-            bool is_constructed = handler_ptr->construct(handler_name, node, par, jsonchecker);
+            // When the node has a non-default name, the output topics are published under /<node_name>/...
+            Json::Value handler_param = par;
+            if (handler_param.isMember("topic-name") && handler_param["topic-name"].isString()) {
+              std::string topic = handler_param["topic-name"].asString();
+              std::string scoped_topic = etasl::node_scoped_topic(*node, topic);
+              if (scoped_topic != topic) {
+                RCLCPP_INFO(node->get_logger(), "Output handler %s publishes topic %s as %s", handler_name.c_str(), topic.c_str(), scoped_topic.c_str());
+                handler_param["topic-name"] = scoped_topic;
+              }
+            }
+            bool is_constructed = handler_ptr->construct(handler_name, node, handler_param, jsonchecker);
             if(!is_constructed){
               std::string message = "The output handler " + handler_name + " could not be constructed. Shutting down.";
               RCLCPP_ERROR(node->get_logger(), message.c_str());

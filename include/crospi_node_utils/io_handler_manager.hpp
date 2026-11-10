@@ -29,6 +29,7 @@
 
 #include <jsoncpp/json/json.h>
 #include "crospi_utils/json_checker.hpp"
+#include "crospi_node_utils/node_naming.hpp"
 #include <pluginlib/class_loader.hpp> //For plugins such as robot drivers
 
 namespace etasl {
