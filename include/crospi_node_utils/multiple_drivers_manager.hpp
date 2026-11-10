@@ -156,6 +156,10 @@ namespace etasl {
              */
             void finalize();
 
+            /**
+             * @brief Creates one thread data structure per driver. The global /robot/thread_scheduling configuration is
+             * used for the drivers that do not define their own thread_scheduling.
+             */
             std::vector<std::shared_ptr<t_manager::thread_t>> create_driver_threads_structures(std::atomic<bool> & stopFlag);
 
             std::vector<std::string> get_robot_joints();

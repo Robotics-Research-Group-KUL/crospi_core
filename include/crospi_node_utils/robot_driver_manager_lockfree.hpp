@@ -141,7 +141,17 @@ namespace etasl {
              */
             void finalize();
 
-            std::shared_ptr<t_manager::thread_t> create_thread_str(std::atomic<bool> & stopFlag);
+            /**
+             * @brief Creates the data structure used to run the driver in its own thread.
+             *
+             * The thread scheduling is taken from the "thread_scheduling" field of the driver. If the driver does not
+             * define it, default_scheduling is used. If neither is defined, the default scheduler (SCHED_OTHER) is kept.
+             * An invalid scheduling configuration is a fatal error.
+             *
+             * @param stopFlag flag that stops the thread loop
+             * @param default_scheduling global scheduling configuration, i.e. {"policy": ..., "priority": ...} (can be null)
+             */
+            std::shared_ptr<t_manager::thread_t> create_thread_str(std::atomic<bool> & stopFlag, const Json::Value& default_scheduling);
 
             /**
              * @brief Destroy the Robot Driver object

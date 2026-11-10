@@ -180,6 +180,30 @@ bool sleep_clock_nanosleep(const struct timespec& next_wakeup_time, int& err_int
     return true;
 }
 
+std::string parse_scheduling(const std::string& policy_name, int priority, int& sched_policy) {
+    if (policy_name == "SCHED_OTHER") {
+        sched_policy = SCHED_OTHER;
+        if (priority != 0) {
+            return "The priority of policy SCHED_OTHER must be 0, but " + std::to_string(priority) + " was given.";
+        }
+        return "";
+    }
+    if (policy_name == "SCHED_FIFO") {
+        sched_policy = SCHED_FIFO;
+    } else if (policy_name == "SCHED_RR") {
+        sched_policy = SCHED_RR;
+    } else {
+        return "Unknown scheduling policy '" + policy_name + "'. Valid policies are SCHED_OTHER, SCHED_FIFO and SCHED_RR.";
+    }
+    const int min_priority = std::max(1, sched_get_priority_min(sched_policy));
+    const int max_priority = std::min(MAX_RT_PRIORITY, sched_get_priority_max(sched_policy));
+    if (priority < min_priority || priority > max_priority) {
+        return "The priority of policy " + policy_name + " must be in [" + std::to_string(min_priority) + ", "
+            + std::to_string(max_priority) + "], but " + std::to_string(priority) + " was given.";
+    }
+    return "";
+}
+
 void setScheduling(std::thread &th, int sched_policy, int priority) {
     sched_param sch_params;
     int current_sched_policy;
@@ -187,8 +211,10 @@ void setScheduling(std::thread &th, int sched_policy, int priority) {
 
     sch_params.sched_priority = priority;
 
-    if(pthread_setschedparam(th.native_handle(), sched_policy, &sch_params)) {
-        std::cerr << "Failed to set Thread scheduling : " << std::strerror(errno) << std::endl;
+    int err = pthread_setschedparam(th.native_handle(), sched_policy, &sch_params);
+    if(err) {
+        std::cerr << "Failed to set Thread scheduling : " << std::strerror(err) <<"\n A possible reason is that the process does not have the necessary privileges to set the scheduling policy, or that there is not a real-time kernel available." << std::endl;
+        
     }
     else{
         std::cout << "The priority of the thread was changed succesfully to " << priority << std::endl;

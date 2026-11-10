@@ -405,7 +405,7 @@ namespace etasl {
           }
     }
 
-    std::shared_ptr<t_manager::thread_t> RobotDriverManagerLockFree::create_thread_str(std::atomic<bool> & stopFlag){
+    std::shared_ptr<t_manager::thread_t> RobotDriverManagerLockFree::create_thread_str(std::atomic<bool> & stopFlag, const Json::Value& default_scheduling){
 
         double periodicity = jsonchecker_->asDouble(parameters_, "periodicity");
         thread_str_driver = std::make_shared<t_manager::thread_t>();
@@ -413,6 +413,22 @@ namespace etasl {
         thread_str_driver->periodicity = std::chrono::nanoseconds(static_cast<long long>(periodicity * 1E9)); //*1E9 to convert seconds to nanoseconds
         thread_str_driver->update_hook = std::bind(&etasl::RobotDriver::update, robotdriver_, std::ref(stopFlag));
         thread_str_driver->finalize_hook = std::bind(&etasl::RobotDriver::finalize, robotdriver_);
+
+        // The scheduling defined in the driver takes precedence over the global one
+        const Json::Value& scheduling = parameters_.isMember("thread_scheduling") ? parameters_["thread_scheduling"] : default_scheduling;
+        if (!scheduling.isNull()) {
+            std::string policy_name = jsonchecker_->asString(scheduling, "policy");
+            int priority = jsonchecker_->is_member(scheduling, "priority") ? jsonchecker_->asInt(scheduling, "priority") : 0;
+            int sched_policy = SCHED_OTHER;
+            std::string error = t_manager::parse_scheduling(policy_name, priority, sched_policy);
+            if (!error.empty()) {
+                RCLCPP_ERROR(node_->get_logger(), "Invalid thread_scheduling in the configuration file: %s", error.c_str());
+                rclcpp::shutdown();
+                exit(1);
+            }
+            thread_str_driver->sched_policy = sched_policy;
+            thread_str_driver->sched_priority = priority;
+        }
 
         return thread_str_driver;
 

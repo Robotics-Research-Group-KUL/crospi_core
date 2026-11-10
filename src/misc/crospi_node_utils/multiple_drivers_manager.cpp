@@ -219,8 +219,10 @@ namespace etasl {
         int number_of_drivers = 0;
         std::vector<std::shared_ptr<t_manager::thread_t>> thread_str_drivers_vector_;
 
+        const Json::Value& default_scheduling = parameters_["robot"]["thread_scheduling"]; // null if not defined
+
         for (const auto& driver_manager : robotdriver_manager_vector_){
-          thread_str_drivers_vector_.push_back(driver_manager->create_thread_str(stopFlag));
+          thread_str_drivers_vector_.push_back(driver_manager->create_thread_str(stopFlag, default_scheduling));
         }
 
         return thread_str_drivers_vector_;

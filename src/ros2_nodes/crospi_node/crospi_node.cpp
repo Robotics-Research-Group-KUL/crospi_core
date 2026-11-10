@@ -927,7 +927,13 @@ int main(int argc, char * argv[])
     for (unsigned int i = 0; i < thread_str_drivers_vec.size(); ++i) {
       std::shared_ptr<t_manager::thread_t> thread_str_driver = thread_str_drivers_vec[i];
       driver_threads_vec[i] = std::thread(t_manager::do_thread_loop, thread_str_driver, std::ref(stopFlag));
-      t_manager::setScheduling(driver_threads_vec[i], SCHED_FIFO, 90);
+      if (thread_str_driver->sched_policy == SCHED_OTHER) {
+        RCUTILS_LOG_INFO_NAMED("crospi_node", "Driver thread %u uses the default scheduler (SCHED_OTHER).", i+1);
+      }
+      else {
+        // Real-time scheduling (SCHED_FIFO or SCHED_RR), configured with thread_scheduling in the configuration file
+        t_manager::setScheduling(driver_threads_vec[i], thread_str_driver->sched_policy, thread_str_driver->sched_priority);
+      }
     }
 
     rclcpp::ExecutorOptions options;
