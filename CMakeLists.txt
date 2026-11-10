@@ -21,7 +21,6 @@ project(crospi_core)
 
 message("Compiling package ${PROJECT_SOURCE_DIR}")
 
-
 if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
   # add_compile_options(-Wall -Wextra -Wpedantic)
   # add_compile_options( -Wno-deprecated -Wno-unused-but-set-variable -Wno-unused-parameter -Wno-unused-variable -Wno-reorder)
@@ -66,16 +65,13 @@ message(STATUS "Boost include dirs after find_package: ${Boost_INCLUDE_DIRS}")
 
 add_definitions(-DBOOST_DISABLE_PRAGMA_MESSAGE)
 
-
 install(DIRECTORY scripts
   DESTINATION share/${PROJECT_NAME})
 
 install(
   DIRECTORY include/
-  # DESTINATION include
   DESTINATION include
 )
-
 
 ament_environment_hooks("${CMAKE_SOURCE_DIR}/env-hooks/package_crospi_core_lua_configure_paths.sh.in") 
 
@@ -84,9 +80,7 @@ ament_export_include_directories(
   ${Boost_INCLUDE_DIRS}
 )
 
-
 add_subdirectory(src/misc)
-
 
 # add_subdirectory(src/ros2_nodes/simple_crospi_node)
 add_subdirectory(src/ros2_nodes/crospi_node)
@@ -103,7 +97,6 @@ ament_export_targets(export_${PROJECT_NAME} HAS_LIBRARY_TARGET)
 # Install the Python package
 find_package(Python3 REQUIRED COMPONENTS Interpreter Development)
 ament_python_install_package(crospi_py)
-
 
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)

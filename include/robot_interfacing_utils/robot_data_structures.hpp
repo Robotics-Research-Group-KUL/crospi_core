@@ -18,17 +18,11 @@
 
 #pragma once
 
-// #include <std>
-
 #include <vector>
 #include <array>
 #include <mutex>
 #include <chrono>
 #include <algorithm>
-
-
-
-// #include "crospi_utils/flowstatus.hpp"
 
 using SteadyTimePoint = std::chrono::time_point<std::chrono::steady_clock>;
 
@@ -36,18 +30,8 @@ using SteadyTimePoint = std::chrono::time_point<std::chrono::steady_clock>;
 // #define INCLUDE_TIMESTAMP_IN_DATA_STRUCTURE
 
 namespace robotdrivers {
-    // using namespace KDL;
-
-
-    // template <typename T> 
-    // struct FeedbackField { 
-    //     bool is_available = false; //To indicate if the robot has that type of data available
-    //     T *data; // Template of data
-        
-    // }; 
 
     struct JointDataField { 
-        // bool is_available = false; //To indicate if the robot has that type of data available
         #ifdef INCLUDE_TIMESTAMP_IN_DATA_STRUCTURE
         SteadyTimePoint timestamp;
         #endif
@@ -59,17 +43,15 @@ namespace robotdrivers {
         }
     };
 
-
     template<std::size_t NJOINTS>
     struct FixedJointDataField: public JointDataField { 
-        // bool is_available = false; //To indicate if the robot has that type of data available
         std::array<float, NJOINTS> data; // std::vector of joint values
 
         FixedJointDataField(): JointDataField() {
             data.fill(0.0f);
         }
     };
-    
+
     struct DynamicJointDataField: public JointDataField { 
 
         std::vector<float> data; // std::vector of joint values
@@ -82,10 +64,9 @@ namespace robotdrivers {
 
         static DynamicJointDataField Zeros(int num_of_joints) {
             DynamicJointDataField joint_data(num_of_joints);
-            // joint_data.data.resize(num_of_joints, 0.0);
             return joint_data;
         }
-        
+
     }; 
 
     struct Vector3Field { 
@@ -134,7 +115,6 @@ namespace robotdrivers {
             #endif
         }
     }; 
-
 
     /** @struct FeedbackMsg
      *  @brief This structure defines the supported feedback data types coming from a robot...
@@ -226,15 +206,9 @@ namespace robotdrivers {
             {}
         }flags;
 
-        // #ifdef PROTECT_DATA_STRUCTURES_WITH_MUTEX
-        // std::mutex mtx; // Mutex to protect the data
-        // #endif
-
-
         FeedbackMsg(int num_of_joints): joint(num_of_joints), cartesian(), base(), flags()
         {}
     };
-
 
     /** @struct SetpointMsg
      *  @brief This structure defines the supported setpoint data types coming from a robot...
@@ -243,15 +217,8 @@ namespace robotdrivers {
 
         DynamicJointDataField velocity;
 
-        // #ifdef PROTECT_DATA_STRUCTURES_WITH_MUTEX
-        // std::mutex mtx; // Mutex to protect the data
-        // #endif
-
         SetpointMsg(int num_of_dofs): velocity(num_of_dofs)
         {}
     };
-
-
-
 
 } // namespace robotdrivers

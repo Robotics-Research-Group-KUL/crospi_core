@@ -16,11 +16,8 @@
 //  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 //  GNU Lesser General Public License for more details.
 
-
 // Some ament utility functions for lua
 //
-//#include "luabind/luabind.hpp"
-//s#include <luabind/class_info.hpp>
 
 #include "lauxlib.h"
 #include "lua.h"
@@ -51,9 +48,6 @@ class AmentIndex
 
         AmentIndex() {  
           package_map = ament_index_cpp::get_packages_with_prefixes();
-          // for (auto it = package_map.begin(); it!= package_map.end(); it++) {
-          //   std::cout << it->first << ":" << it->second << std::endl;
-          // }
         } 
 
     public:
@@ -79,7 +73,6 @@ class AmentIndex
             }
         }
 
-
         /// @brief gets the share directory of a package
         /// @param pkg string with package name
         /// @return string with the share directory of the package
@@ -87,39 +80,6 @@ class AmentIndex
           return get_package_prefix(pkg) + "/share/" + pkg;
         }
 };
-
-// debugging routine:
-// static void stackDump (lua_State *L) {
-//       int i;
-//       int top = lua_gettop(L);
-//       for (i = 1; i <= top; i++) {  /* repeat for each level */
-//         int t = lua_type(L, i);
-//         switch (t) {
-    
-//           case LUA_TSTRING:  /* strings */
-//             printf("`%s'", lua_tostring(L, i));
-//             break;
-    
-//           case LUA_TBOOLEAN:  /* booleans */
-//             printf(lua_toboolean(L, i) ? "true" : "false");
-//             break;
-    
-//           case LUA_TNUMBER:  /* numbers */
-//             printf("%g", lua_tonumber(L, i));
-//             break;
-    
-//           default:  /* other values */
-//             printf("%s", lua_typename(L, t));
-//             break;
-    
-//         }
-//         printf("  ");  /* put a separator */
-//       }
-//       printf("\n");  /* end the listing */
-//     }
-
-
-
 
 static int l_get_package_share_directory (lua_State *L) {
       std::string package = luaL_checkstring(L, 1);
@@ -133,7 +93,6 @@ static int l_get_package_share_directory (lua_State *L) {
         return 0;
       }
     }
-
 
 static int l_get_package_prefix (lua_State *L) {
       std::string package = luaL_checkstring(L, 1);
@@ -151,16 +110,11 @@ static int l_get_package_prefix (lua_State *L) {
 static const struct luaL_reg ros2lua[] = {
     {"get_package_share_directory", l_get_package_share_directory},
     {"get_package_prefix", l_get_package_prefix},
-    //{"create_ros_node", l_create_ros_node},
-    //{"get_nr_of_rosnodes",l_get_nr_of_rosnodes},
     {NULL, NULL}  /* sentinel */
 };
 
-
 extern "C" int luaopen_libamentlua(lua_State* L)
 {
-    //lua_pushcfunction(l, get_package_share_directory);
-    //lua_setglobal(l, "get_package_share_directory");
     luaL_openlib(L, "ros2lua", ros2lua, 0);
     return 1;
 }

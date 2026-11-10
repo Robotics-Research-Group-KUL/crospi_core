@@ -18,18 +18,8 @@
 
 #pragma once
 
-// #include <vector>
-// #include <mutex>
-// #include <chrono>
 #include <functional>
 #include "jsoncpp/json/json.h"
-// #include "rclcpp_lifecycle/lifecycle_node.hpp"
-
-// #include <algorithm>
-// #include <atomic>
-// #include <thread>
-// #include <time.h>
-
 
 namespace etasl {
 
@@ -64,7 +54,6 @@ namespace etasl {
              * @param error_cb A callable that receives a descriptive error message string.
              */
             JsonChecker(std::function<void(const std::string&)> error_cb);
-
 
             /**
              * @brief Extract a double value from the JSON configuration.
@@ -178,7 +167,6 @@ namespace etasl {
              *         key was not found.
              */
             bool getPath(Json::Value & current, const std::string& key_path, std::string& key);
-
 
         private:
             /**

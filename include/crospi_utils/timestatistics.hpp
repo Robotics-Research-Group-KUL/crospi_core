@@ -114,7 +114,6 @@ public:
 
     double std() const
     {
-        // double mean = sum / n;
         return sqrt(sum_sq / n);
     }
 

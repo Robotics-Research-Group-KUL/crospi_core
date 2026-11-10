@@ -16,19 +16,15 @@ find_package(Lua51 REQUIRED)
 find_package(Eigen3 REQUIRED)
 # find_package(pugixml REQUIRED)
 find_package(jsoncpp REQUIRED)
-# find_package(Sphinx REQUIRED)
 find_package(tf2 REQUIRED)
 find_package(tf2_geometry_msgs REQUIRED)
 find_package(tf2_ros REQUIRED)
 find_package(pluginlib REQUIRED)
 
-
 set(CMAKE_CXX_STANDARD 17)
-
 
 set( src_crospi_node_utils
     io_handler_manager.cpp
-    # robot_driver_manager.cpp
     robot_driver_manager_lockfree.cpp
     multiple_drivers_manager.cpp
 )
@@ -55,7 +51,6 @@ set(dependencies
     etasl::expressiongraph_context 
     etasl::expressiongraph_solver_qpoases 
     etasl::expressiongraph_context_lua    
-    # pugixml
     jsoncpp
     crospi_utils
 )
@@ -108,7 +103,6 @@ endif()
 
 ament_export_dependencies(${dependencies} ${rosdependencies})
 
-
 install(
   TARGETS crospi_node_utils
   EXPORT export_${PROJECT_NAME}
@@ -116,6 +110,3 @@ install(
   LIBRARY DESTINATION lib
   RUNTIME DESTINATION bin
 )
-
-
-

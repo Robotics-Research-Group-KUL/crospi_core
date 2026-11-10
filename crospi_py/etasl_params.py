@@ -68,7 +68,6 @@ def expand_env_ref( pth: str ) -> str:
             raise Exception( f"not find environment variable '{var}' while expanding '{pth}'")
         return value
     pth= re.sub(r"\$\{(\w+)\}",lookup, pth)
-    #pth= re.sub(r"\$(\w+)",lookup, pth)
     return pth
 
 
@@ -149,7 +148,6 @@ def get_value_from_path(key_path: str, dictionary: dict) -> any:
         if key in current:
             current = current[key]
         else:
-            print(dictionary)
             raise KeyError(f"Key '{key}' from provided path '{key_path}' was not found in the dictionary.")
     
     return current

@@ -23,26 +23,15 @@
 #include <vector>
 #include <array>
 #include <chrono>
-// #include <boost/chrono.hpp>
-// #include <boost/shared_ptr.hpp>
 
-// #include "feedback_struct.hpp"
-// #include "robot_data_structures.hpp"
 #include <jsoncpp/json/json.h>
 #include "crospi_utils/json_checker.hpp"
 
 #include <boost/lockfree/spsc_value.hpp>
 #include "robot_interfacing_utils/robot_data_structures.hpp"
 
-
-
-
-// #include <expressiongraph/context.hpp>
-
-
 namespace etasl {
-    
-    
+
     /**
      * @brief Abstract base class for robot drivers in the Crospi framework.
      *
@@ -88,7 +77,6 @@ namespace etasl {
          */
         typedef boost::lockfree::spsc_value< robotdrivers::ScrewField > triple_buffer_screw_type;
 
-
         /**
          * @brief Collection of triple-buffered feedback ports.
          *
@@ -109,7 +97,6 @@ namespace etasl {
             std::shared_ptr<triple_buffer_quaternion_type> base_quat;
             std::shared_ptr<triple_buffer_screw_type> base_twist;
         } feedback_ports;
-
 
         /**
          * @brief Flags indicating which feedback types are supported by the robot hardware.
@@ -146,7 +133,7 @@ namespace etasl {
         struct SetpointTripleBuffers {
             std::shared_ptr<triple_buffer_joint_type> joint_vel;
         } setpoint_ports;
-        
+
         /**
          * @brief Allocate and initialize the triple-buffered communication ports.
          *
@@ -204,27 +191,9 @@ namespace etasl {
                 feedback_ports.base_twist = std::make_shared<triple_buffer_screw_type>(robotdrivers::ScrewField());
             }
 
-
         };
 
         // -----------Functions for this driver -------------- 
-
-        // bool readSetpointJointVelocity(robotdrivers::FixedJointDataField<NUM_JOINTS>& sp ) noexcept{
-
-        //     // std::cout << "3 im reading joint velocity setpoints" << std::endl;
-        //     return setpoint_ports.joint_vel->read(sp);
-
-        //     // #ifdef INCLUDE_TIMESTAMP_IN_DATA_STRUCTURE
-        //     // buff.timestamp = std::chrono::steady_clock::now();
-        //     //TODO: benchmark
-        //     // #endif
-        // } 
-
-        // void writeFeedbackJointPosition(const robotdrivers::FixedJointDataField<NUM_JOINTS>& fb ) noexcept{
-
-        //     // std::cout << "4 im writing joint position feedback" << std::endl;
-        //     feedback_ports.joint_pos->write(fb);
-        // }
 
         //Dynamic (std::vector) implementation
 
@@ -299,8 +268,6 @@ namespace etasl {
          */
         virtual void writeFeedbackBaseTwist(const robotdrivers::ScrewField& fb ) noexcept{feedback_ports.base_twist->write(fb);}
 
-        
-
         public:
             /**
              * @brief Shared pointer alias for RobotDriver.
@@ -327,7 +294,7 @@ namespace etasl {
              *          This function should be called after construct() and before update(). It is expected that the derived class will implement this.
              */
             [[nodiscard]] virtual bool initialize() = 0;
-            
+
             /**
              * @brief Real-time control loop callback executed periodically by the Crospi framework.
              *
@@ -354,7 +321,6 @@ namespace etasl {
              *                 The derived implementation should not check this flag, but rather change it's value if there is an error with the robot communication, so that Crospi can handle the error and stop the control loop.
              */
             virtual void update(volatile std::atomic<bool>& stopFlag) = 0;
-
 
             /**
              * @brief Callback invoked when the Crospi node enters the configured state.
@@ -475,59 +441,8 @@ namespace etasl {
              * @return true if the base twist port was allocated during constructPorts().
              */
             bool isBaseTwistAvailable() {return (feedback_ports.base_twist != nullptr);}
-    
-
-
-            // virtual void* getSetpointJointPositionTripleBufferPtr() { return nullptr; }
-            // virtual void* getSetpointJointVelocityBufferPtr() { return nullptr; }
-            // virtual void* getJointPositionBufferPtr() { return nullptr; }
-
-            // virtual void writeSetpointJointVelocity(const std::vector<float>& sp ) noexcept = 0;
-            // virtual bool readFeedbackJointPosition(std::vector<float>& fb ) noexcept = 0;
 
             // -----------Functions for thread communicating with this driver -------------- 
-
-            // void writeSetpointJointVelocity(const std::vector<float>& sp ) noexcept{
-
-            //     // std::cout << "1 im writing joint velocity setpoints" << std::endl;
-
-            //     static robotdrivers::FixedJointDataField<NUM_JOINTS> buff{};
-
-            //     assert(sp.size() == buff.data.size());
-                
-            //     for (unsigned int i=0; i<buff.data.size(); ++i) {
-            //         buff.data[i] = sp[i]; //copy
-            //     }
-                
-
-            //     #ifdef INCLUDE_TIMESTAMP_IN_DATA_STRUCTURE
-            //     buff.timestamp = std::chrono::steady_clock::now();
-            //     #endif
-
-            //     setpoint_ports.joint_vel->write(buff);
-
-            // }
-
-            // bool readFeedbackJointPosition(std::vector<float>& fb ) noexcept{
-            //     // std::cout << "2 im reading joint position feedback" << std::endl;
-
-
-            //     static robotdrivers::FixedJointDataField<NUM_JOINTS> joint_local_buff;
-            //     bool ret = feedback_ports.joint_pos->read(joint_local_buff);
-
-            //     assert(fb.size() == joint_local_buff.data.size());
-
-            //     for (unsigned int i=0; i<joint_local_buff.data.size(); ++i) {
-            //         fb[i] = joint_local_buff.data[i]; //copy
-            //     }
-
-            //     return ret;
-
-            //     // #ifdef INCLUDE_TIMESTAMP_IN_DATA_STRUCTURE
-            //     // buff.timestamp = std::chrono::steady_clock::now();
-            //     //TODO: benchmark
-            //     // #endif
-            // } 
 
             /**
              * @brief Write a joint velocity setpoint into the triple buffer.
@@ -618,12 +533,6 @@ namespace etasl {
              */
             virtual bool readFeedbackBaseTwist(robotdrivers::ScrewField& fb ) noexcept{return (isBaseTwistAvailable() && feedback_ports.base_twist->read(fb));}
 
-
-            
-
-
-
-
             /**
              * @brief Get the name of the robot
              * 
@@ -633,7 +542,6 @@ namespace etasl {
             {
                 return name;
             }
-            // virtual const std::string& getName() const = 0;
 
             /**
              * @brief Destroy the Robot Driver object

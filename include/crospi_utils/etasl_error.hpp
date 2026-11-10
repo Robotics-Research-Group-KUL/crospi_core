@@ -22,7 +22,6 @@
 #include <string>
 #include <stdexcept>
 #include <fmt/format.h>
-// #include <source_location>
 
 namespace etasl {
 class etasl_error : public std::exception {
@@ -58,27 +57,8 @@ public:
         SCHEMA_REFERENCE_NOT_FOUND
     };
 
-    /*etasl_error(int _code, const std::string _descript)
-        : code(_code)
-        , descript(_descript)
-    {
-    }*/
-
-    // WARNING: REMOVED THIS FANCY CONSTRUCTOR BECAUSE IT FAILS FOR ROS2 FOXY AND GALACTIC (i.e. not compatible with fmt 6–7) 
-    // To allow formatted description, example:
-    // throw etasl_error(
-    //     etasl_error::JSON_PARSE_ERROR,
-    //     "'..' cannot go up in path '{}'",
-    //     path
-    //     );
-    // template <typename... T>
-    // etasl_error(ErrorCode _code, fmt::format_string<T...> fmt, T&&... args)
-    // : descript( fmt::vformat(fmt, fmt::make_format_args(args...)) )
-    // , code(_code)
-    // {
-    // }
-
-    // TO admit description with fmt function, example:
+    // A variadic fmt-style constructor is intentionally not provided, since it is not compatible
+    // with fmt 6-7 (ROS2 Foxy and Galactic). Build formatted descriptions with fmt::format, e.g.:
     // throw etasl_error(
     //     etasl_error::JSON_PARSE_ERROR,
     //     fmt::format("'..' cannot go up in path '{}' ", path)

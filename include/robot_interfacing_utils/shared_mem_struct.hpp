@@ -18,28 +18,14 @@
 
 #pragma once
 
-// #include <std>
-
 #include <vector>
 #include <array>
 #include <mutex>
 #include <chrono>
 
-
 #include "crospi_utils/flowstatus.hpp"
 
-
 namespace etasl {
-    // using namespace KDL;
-
-
-    // template <typename T> 
-    // struct FeedbackField { 
-    //     bool is_available = false; //To indicate if the robot has that type of data available
-    //     T *data; // Template of data
-        
-    // }; 
-
 
     struct JointData { 
         bool is_available = false; //To indicate if the robot has that type of data available
@@ -69,9 +55,6 @@ namespace etasl {
         {}
     }; 
 
-
-
-
     struct ScrewField { 
         bool is_available = false; //To indicate if the robot has that type of data available
         struct ForceField { 
@@ -81,7 +64,7 @@ namespace etasl {
             ForceField(): x(0.0), y(0.0), z(0.0)
             {}
         } linear; 
-    
+
         struct TorqueField { 
             float x;
             float y;
@@ -93,8 +76,6 @@ namespace etasl {
         ScrewField(): linear(), angular()
         {}
     }; 
-
-
 
     /** @struct FeedbackMsg
      *  @brief This structure defines the supported feedback data types coming from a robot...
@@ -155,42 +136,22 @@ namespace etasl {
 
         std::mutex mtx; // Mutex to protect the data
 
-
         FeedbackMsg(int num_of_joints): joint(num_of_joints), cartesian(), base(), flags()
         {}
     };
 
-
     /** @struct SetpointMsg
      *  @brief This structure defines the supported setpoint data types coming from a robot...
      */
-    // struct SetpointMsg {
-
-    //     struct Setpoint_s { 
-    //         FlowStatus fs;
-    //         std::vector<float> data; // std::vector of joint values
-            
-    //         Setpoint_s(int num_of_joints): fs(NoData){
-    //             data.resize(num_of_joints,0.0);
-    //         }
-    //     } velocity; 
-        
-    //     std::mutex mtx; // Mutex to protect the data
-        
-    //     std::chrono::steady_clock::time_point timestamp;
-    //     SetpointMsg(int num_of_dofs): velocity(num_of_dofs)
-    //     {}
-    // };
 
     struct Setpoint_s { 
         FlowStatus fs;
         std::array<float, 7 > data; // std::vector of joint values
-        
+
         Setpoint_s(): fs(NoData){
             data.fill(0.0f);
         }
     };
-
 
     struct SetpointMsg {
 
@@ -205,13 +166,10 @@ namespace etasl {
         struct Setpoint_s load8; 
         struct Setpoint_s load9; 
         struct Setpoint_s load10; 
-        
-        
+
         std::chrono::steady_clock::time_point timestamp;
         SetpointMsg(): velocity(), load1(), load2(), load3(), load4(), load5(), load6(), load7(), load8(), load9(), load10()
         {}
     };
-    
-    
 
 } // namespace etasl

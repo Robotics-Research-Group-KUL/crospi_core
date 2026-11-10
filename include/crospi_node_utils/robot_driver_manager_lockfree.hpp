@@ -20,23 +20,18 @@
 
 #include <memory>
 #include <atomic>
-// #include <boost/chrono.hpp>
 #include <boost/shared_ptr.hpp>
 
-// #include "robot_interfacing_utils/feedback_struct.hpp"
 #include "robot_interfacing_utils/robot_data_structures.hpp"
-// #include "robot_data_structures.hpp"
 #include <jsoncpp/json/json.h>
 #include "crospi_utils/json_checker.hpp"
 
 #include <pluginlib/class_loader.hpp> //For plugins such as robot drivers
 
-
 // For logging in ros2
 #include "rclcpp/rclcpp.hpp"
 #include "rcutils/logging_macros.h"
 #include "rclcpp_lifecycle/lifecycle_node.hpp"
-
 
 #include <expressiongraph/context.hpp>
 #include <expressiongraph/context_scripting.hpp>
@@ -44,12 +39,9 @@
 #include "robot_interfacing_utils/thread_manager.hpp"
 #include "robot_interfacing_utils/robotdriver.hpp"
 
-
-// using namespace KDL;
-
 namespace etasl {
     using namespace KDL;
-    
+
     class RobotDriverManagerLockFree {
 
         private: 
@@ -64,7 +56,6 @@ namespace etasl {
         const Json::Value parameters_;
         std::shared_ptr<etasl::JsonChecker> jsonchecker_;
         std::atomic<bool>* stopFlagPtr_;
-
 
         robotdrivers::DynamicJointDataField jvel_etasl_copy;
         std::shared_ptr<robotdrivers::FeedbackMsg> feedback_copy_ptr;
@@ -84,30 +75,11 @@ namespace etasl {
             etasl::VariableType<KDL::Twist>::Ptr base_twist;
         } input_channels_feedback;
 
-
         KDL::Vector vector_inp_;
         KDL::Twist twist_inp_;
         KDL::Wrench wrench_inp_;
 
         std::shared_ptr<t_manager::thread_t> thread_str_driver;
-
-        // protected:
-        // /**
-        //  * @brief FeedbackMsg structure that stores feedback message
-        //  * 
-        //  */
-        // FeedbackMsg feedback_struct_;
-
-        // /**
-        //  * @brief SetpointMsg structure that stores feedback message
-        //  * 
-        //  */
-        // SetpointMsg setpoint_struct_;
-
-
-
-        // boost::lockfree::spsc_value< std::vector<double> > inputport_joint_vel_setpoints;
-
 
         public:
             typedef std::shared_ptr<RobotDriverManagerLockFree> SharedPtr;
@@ -123,7 +95,6 @@ namespace etasl {
                 const bool& simulation,
                 std::atomic<bool>* stopFlagPtr_p);
 
-
             void construct_driver(int num_joints, std::shared_ptr<pluginlib::ClassLoader<etasl::RobotDriver>>  driver_loader);
 
             /**
@@ -135,9 +106,7 @@ namespace etasl {
              */
             [[nodiscard]] bool initialize(Context::Ptr ctx);
 
-            
             void update(robotdrivers::DynamicJointDataField& joint_positions, const Eigen::VectorXd& jvel_etasl);
-
 
             /**
              * @brief brief doc 
@@ -173,8 +142,6 @@ namespace etasl {
             void finalize();
 
             std::shared_ptr<t_manager::thread_t> create_thread_str(std::atomic<bool> & stopFlag);
-
-
 
             /**
              * @brief Destroy the Robot Driver object

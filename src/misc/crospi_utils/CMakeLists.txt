@@ -16,7 +16,6 @@
 #  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 #  GNU Lesser General Public License for more details.
 
-
 message("Compiling misc/crospi_utils libraries ${CMAKE_CURRENT_SOURCE_DIR}")
 
 # find dependencies
@@ -33,18 +32,13 @@ find_package(geometry_msgs REQUIRED)
 find_package(std_msgs REQUIRED)
 find_package(Lua51 REQUIRED)
 find_package(Eigen3 REQUIRED)
-# find_package(pugixml REQUIRED)
 find_package(jsoncpp REQUIRED)
-# find_package(Sphinx REQUIRED)
 find_package(tf2 REQUIRED)
 find_package(tf2_geometry_msgs REQUIRED)
 find_package(tf2_ros REQUIRED)
 find_package(pluginlib REQUIRED)
 
-
 set(CMAKE_CXX_STANDARD 17)
-
-
 
 set(src_crospi_utils
     featurevariableinitializer.cpp
@@ -76,7 +70,6 @@ set(dependencies
     etasl::expressiongraph_context 
     etasl::expressiongraph_solver_qpoases 
     etasl::expressiongraph_context_lua    
-    # pugixml
     jsoncpp
 )
 
@@ -104,7 +97,6 @@ target_include_directories(crospi_utils
   ${LUA_INCLUDE_DIR}
   ${Boost_INCLUDE_DIRS})
 
-
 ament_export_libraries(
   crospi_utils
 )
@@ -125,7 +117,6 @@ else()
     target_link_libraries(crospi_utils  ${dependencies} ${ros_targets})
     message(STATUS "Modern ROS_DISTRO detected ($ENV{ROS_DISTRO}), using target_link_libraries")
 endif()
-
 
 install(
   TARGETS crospi_utils
@@ -156,4 +147,3 @@ ament_export_dependencies(${dependencies} ${rosdependencies})
 
 install(TARGETS amentlua
     DESTINATION lib)
-  

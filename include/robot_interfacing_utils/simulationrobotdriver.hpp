@@ -22,18 +22,14 @@
 #include "controlmodes_enum.hpp"
 #include <string>
 
-
-
-
 namespace etasl {
 
 class SimulationRobotDriver : public RobotDriver {
     public:
         typedef std::shared_ptr<SimulationRobotDriver> SharedPtr;
 
-
     private:
-        
+
         // FeedbackMsg* feedback_ptr; Defined in super class RobotDriver at header file robotdriver.hpp
         // SetpointMsg* setpoint_ptr; Defined in super class RobotDriver at header file robotdriver.hpp
         // std::string name;; Defined in super class RobotDriver at header file robotdriver.hpp
@@ -43,7 +39,6 @@ class SimulationRobotDriver : public RobotDriver {
 
         std::vector<double> initial_joints;
         std::vector<double> joint_pos;
-        
 
     public:
         SimulationRobotDriver();
@@ -70,8 +65,6 @@ class SimulationRobotDriver : public RobotDriver {
         virtual void on_cleanup() override;
 
         virtual void finalize() override;
-
-        // virtual const std::string& getName() const override;
 
         virtual ~SimulationRobotDriver();
 };

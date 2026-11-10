@@ -18,15 +18,12 @@
 
 message("Compiling misc/robot_interfacing_utils libraries ${CMAKE_CURRENT_SOURCE_DIR}")
 
-
-
 # find dependencies
 find_package(ament_cmake REQUIRED)
 find_package(ament_index_cpp REQUIRED)
 find_package(jsoncpp REQUIRED)
 
 set(CMAKE_CXX_STANDARD 17)
-
 
 set(src_robot_interfacing_utils
     thread_manager.cpp
@@ -37,10 +34,8 @@ set(ros_targets)
 
 set(dependencies
     fmt   
-    # pugixml
     jsoncpp
 )
-
 
 add_library(robot_interfacing_utils SHARED ${src_robot_interfacing_utils})
 
@@ -50,7 +45,6 @@ target_include_directories(robot_interfacing_utils
   $<INSTALL_INTERFACE:include>
   ${LUA_INCLUDE_DIR}
   ${Boost_INCLUDE_DIRS})
-
 
 ament_export_libraries(
   robot_interfacing_utils
@@ -75,7 +69,6 @@ endif()
 
 ament_export_dependencies(${dependencies} ${rosdependencies})
 
-
 install(
   TARGETS robot_interfacing_utils
   EXPORT export_${PROJECT_NAME}
@@ -83,5 +76,3 @@ install(
   LIBRARY DESTINATION lib
   RUNTIME DESTINATION bin
 )
-
-

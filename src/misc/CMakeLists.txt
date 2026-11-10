@@ -26,7 +26,6 @@ find_package(sensor_msgs REQUIRED)
 
 add_library(etasl_misc_lib 
             featurevariableinitializer.cpp 
-            IO_handlers_deleteme.cpp 
             port_observer.cpp )
 
 
@@ -79,6 +78,5 @@ install(TARGETS etasl_misc_lib
 add_subdirectory(crospi_node_utils)
 add_subdirectory(crospi_utils)
 add_subdirectory(robot_interfacing_utils)
-# add_subdirectory(simple_kinematic_simulation)
 
 

@@ -16,7 +16,6 @@
 //  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 //  GNU Lesser General Public License for more details.
 
-
 #include "crospi_utils/string_interpolate.hpp"
 #include "ament_index_cpp/get_package_prefix.hpp"
 #include "ament_index_cpp/get_package_share_directory.hpp"
@@ -47,10 +46,7 @@ std::string basename(const std::string& pth)
     return p.str();
 }
 
-// static const std::regex URIregex("(http|https)://([^/ :]+):?([^/ ]*)(/?[^ #?]*)\\x3f?([^ #]*)#?([^ ]*)");
 static const std::regex URIregex("(?:(http://|https://)([^/ :]+):?"  "([^/ ]*))?(/?[^ :#?/][^ :#?]*)\\x3f?([^ :#]*)#?([^ :]*)");
-
-// static const std::regex URIregex("(?:(http):|(https):)?//([^/ :]+):?([^/ ]*)(/?[^ #?]*)\\x3f?([^ #]*)#?([^ ]*)");
 
 URI::URI(const std::string& uri)
     : uri_(uri)
@@ -94,7 +90,6 @@ const std::string_view URI::port() const
 const std::filesystem::path URI::path() const
 {
     if (result) {
-        //return std::string_view(what[4].first, what[4].second - what[4].first);
         auto p = std::string_view(what[4].first, what[4].second - what[4].first);
         return p;
     } else {
@@ -166,7 +161,6 @@ std::filesystem::path keepLastNPartsOfPath(const std::filesystem::path& path, si
 
     return result;
 }
-
 
 std::string execute_with_captured_output_old(const std::string& cmd)
 {
@@ -319,7 +313,6 @@ std::string string_interpolate(const std::string& s)
                         output = execute_with_captured_output(execstr + " 2> /tmp/captured_stderr"); // throws if error
 
                     } catch (etasl::etasl_error&) {
-                        // std::cout << fmt::format("str='{}' loc_defv={}  i={}, i-loc_defv={}", s, loc_defv, i, i - loc_defv) << std::endl;
                         output = s.substr(loc_defv, i - loc_defv);
                     }
                     result += trim(output, true);
@@ -329,17 +322,15 @@ std::string string_interpolate(const std::string& s)
             break;
         }
     }
+    // Unclosed brackets are not an error: the remaining text is copied literally.
     if (state == envref_encountered) {
         result += s.substr(loc_opening);
-        // throw etasl::etasl_error(etasl::etasl_error::STRING_INTERPOLATION_ERROR, "Syntax error during string interpolation: opening bracket '{' never closed");
     }
     if (state == packageref_encountered) {
         result += s.substr(loc_opening);
-        // throw etasl::etasl_error(etasl::etasl_error::STRING_INTERPOLATION_ERROR, "Syntax error during string interpolation: opening bracket '[' never closed");
     }
     if (state == execref_encountered) {
         result += s.substr(loc_opening);
-        // throw etasl::etasl_error(etasl::etasl_error::STRING_INTERPOLATION_ERROR, "Syntax error during string interpolation: opening bracket '(' never closed");
     }
     return result;
 }
@@ -353,15 +344,11 @@ std::filesystem::path find_local_alternative(SearchPath& sp, const URI& uri, int
         return sp.find(uri.path());
     } else {
         std::filesystem::path base = uri.path();
-        std::cout << "original path " << base << std::endl;
         while (path_components_used >= 0) {
             base = base.parent_path();
-            std::cout << "parent : " << base << std::endl;
             path_components_used--;
         }
-        std::cout << base.lexically_normal() << std::endl;
         std::filesystem::path retval = sp.find(uri.path().lexically_relative(base));
-        std::cout << retval << std::endl;
         return retval;
     }
 }
