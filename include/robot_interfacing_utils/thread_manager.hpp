@@ -41,13 +41,13 @@ typedef struct thread_s {
     std::function<void()> finalize_hook;  // Callback function that stops the robot's control after the real-time control loop stops (i.e. make sure that the robot stops correctly)
     std::function<void()> benchmark_hook;  // Callback function that benchmarks the loop by measuring execution times
     int sched_policy = SCHED_OTHER;  // Scheduling policy of the thread (SCHED_OTHER keeps the default Linux scheduler)
-    int sched_priority = 0;          // Scheduling priority of the thread (must be 0 for SCHED_OTHER)
+    int sched_priority = 0;          // Scheduling priority of the thread (not used for SCHED_OTHER)
 }thread_t;
 
 /**
  * @brief Converts a scheduling policy name and priority into a POSIX scheduling policy, validating the priority range.
  *
- * - "SCHED_OTHER": default Linux scheduler (no real-time kernel needed). The priority must be 0.
+ * - "SCHED_OTHER": default Linux scheduler (no real-time kernel needed). The priority is ignored.
  * - "SCHED_FIFO" / "SCHED_RR": real-time schedulers. The priority must be in [1, MAX_RT_PRIORITY].
  *
  * @param[in] policy_name name of the policy: "SCHED_OTHER", "SCHED_FIFO" or "SCHED_RR"

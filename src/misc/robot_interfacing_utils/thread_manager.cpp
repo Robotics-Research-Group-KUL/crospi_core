@@ -182,10 +182,7 @@ bool sleep_clock_nanosleep(const struct timespec& next_wakeup_time, int& err_int
 
 std::string parse_scheduling(const std::string& policy_name, int priority, int& sched_policy) {
     if (policy_name == "SCHED_OTHER") {
-        sched_policy = SCHED_OTHER;
-        if (priority != 0) {
-            return "The priority of policy SCHED_OTHER must be 0, but " + std::to_string(priority) + " was given.";
-        }
+        sched_policy = SCHED_OTHER; // the priority is ignored
         return "";
     }
     if (policy_name == "SCHED_FIFO") {

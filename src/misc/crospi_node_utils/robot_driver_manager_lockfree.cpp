@@ -427,7 +427,7 @@ namespace etasl {
                 exit(1);
             }
             thread_str_driver->sched_policy = sched_policy;
-            thread_str_driver->sched_priority = priority;
+            thread_str_driver->sched_priority = (sched_policy == SCHED_OTHER) ? 0 : priority; // the priority is ignored for SCHED_OTHER
         }
 
         return thread_str_driver;

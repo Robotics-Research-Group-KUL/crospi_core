@@ -415,6 +415,20 @@ Json::Value BlackBoard::process_and_validate(Json::Value& schema,
     // expand $ref in data using the blackboard
     // if (data.isMember("$ref"))
 
+    // allOf: the data must be valid for all the schemas. Since process_and_validate also transforms the data (e.g. filling
+    // in default values), the schemas are applied one after the other, each one on the result of the previous one.
+    if (schema.isMember("allOf")) {
+        Json::Value allof = schema["allOf"];
+        if (!allof.isArray()) {
+            throw std::logic_error(fmt::format("{} : allOf key should point to an array of schemas", ctx));
+        }
+        Json::Value result = data;
+        for (auto subschema : allof) {
+            result = process_and_validate(subschema, result, ctx);
+        }
+        return result;
+    }
+
     if (schema.isMember("oneOf")) {
         Json::Value& oneof = schema["oneOf"];
         if (!oneof.isArray()) {
@@ -434,6 +448,28 @@ Json::Value BlackBoard::process_and_validate(Json::Value& schema,
             }
         }
         throw std::logic_error(fmt::format("{} : none of the schema's indicatd by oneOf match the data :\n", ctx) + ss.str());
+    }
+
+    if (schema.isMember("enum")) {
+        Json::Value enumv = schema["enum"];
+        if (!enumv.isArray()) {
+            throw std::logic_error(fmt::format("{} : enum property of schema should be an array", ctx));
+        }
+        bool found = false;
+        for (auto v : enumv) {
+            if (v == data) {
+                found = true;
+                break;
+            }
+        }
+        if (!found) {
+            Json::StreamWriterBuilder writer;
+            writer["indentation"] = "";
+            throw std::logic_error(fmt::format("{} : value {} should be one of {}", ctx, Json::writeString(writer, data), Json::writeString(writer, enumv)));
+        }
+        if (!schema.isMember("type")) {
+            return data;
+        }
     }
 
     Json::Value typev = schema["type"];
