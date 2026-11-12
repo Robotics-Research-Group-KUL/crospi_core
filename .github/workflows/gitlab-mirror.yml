@@ -1,18 +1,29 @@
 name: Mirror to GitLab via SSH
 
+# Backup copy of this repository in the KU Leuven GitLab. GitHub is the source of truth: all branches and tags are
+# force-pushed, so the GitLab copy follows GitHub, also after a history rewrite. Branches and tags deleted on GitHub
+# are kept in the GitLab copy (it is a backup).
+
 on:
   push:
     branches:
       - '**' # trigger on all branches
+    tags:
+      - '**'
+  workflow_dispatch: # allows re-synchronizing the copy manually (Actions tab)
+
+concurrency:
+  group: gitlab-mirror
+  cancel-in-progress: false # queue the runs, so that the pushes happen in order
 
 jobs:
   mirror:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout source
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
-          fetch-depth: 0 # important to push all branches/tags
+          fetch-depth: 0 # all branches (as refs/remotes/origin/*) and tags, with their full history
 
       - name: Setup SSH
         run: |
@@ -22,9 +33,13 @@ jobs:
           ssh-keyscan gitlab.kuleuven.be >> ~/.ssh/known_hosts
 
       - name: Push to GitLab
+        # --force (not --force-with-lease): --force-with-lease compares with the remote-tracking branch of the gitlab
+        # remote, which never exists in this fresh checkout, so it always failed with "rejected (stale info)".
+        # The branches are pushed from refs/remotes/origin/*, since a CI checkout only has one local branch (which is
+        # all that "git push --all" would push).
         run: |
-          git config --global user.email "ci@example.com"
-          git config --global user.name "GitHub CI Mirror"
           git remote add gitlab git@gitlab.kuleuven.be:rob-expressiongraphs/ros2/crospi_github_mirror/crospi_core.git
-          git push --force-with-lease --all gitlab
-          git push --force-with-lease --tags gitlab
+          # origin/HEAD is a pointer to the default branch, not a branch: do not mirror it as a branch called "HEAD"
+          git symbolic-ref --delete refs/remotes/origin/HEAD 2>/dev/null || true
+          git push --force gitlab 'refs/remotes/origin/*:refs/heads/*'
+          git push --force gitlab 'refs/tags/*:refs/tags/*'
