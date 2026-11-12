@@ -18,58 +18,25 @@
 
 message("Compiling misc libraries ${CMAKE_CURRENT_SOURCE_DIR}")
 
-find_package(ament_cmake REQUIRED)
-find_package(etasl REQUIRED)
-find_package(rclcpp REQUIRED)
-find_package(std_msgs REQUIRED)
-find_package(sensor_msgs REQUIRED)
+# Dependencies are found in the top-level CMakeLists.txt
 
-add_library(etasl_misc_lib 
-            featurevariableinitializer.cpp 
-            port_observer.cpp )
-
-
-set(rosdependencies 
-    rclcpp
-    std_msgs
-    sensor_msgs
-)
-
-set(ros_targets 
-    rclcpp::rclcpp
-    ${std_msgs_TARGETS}
-    ${sensor_msgs_TARGETS}
-)
-
-set(dependencies
-    etasl::expressiongraph_context 
-    etasl::expressiongraph_solver_qpoases 
-    etasl::expressiongraph_context_lua 
-)
-
-#The following is done because ROS2 deprecated ament_target_dependencies in favor of target_link_libraries, but the former is still required for older (legacy) ROS2 versions. 
-
-if(DEFINED ENV{ROS_DISTRO} AND (
-  "$ENV{ROS_DISTRO}" STREQUAL "foxy" OR
-  "$ENV{ROS_DISTRO}" STREQUAL "galactic" OR
-  "$ENV{ROS_DISTRO}" STREQUAL "humble" OR
-  "$ENV{ROS_DISTRO}" STREQUAL "iron" OR
-  "$ENV{ROS_DISTRO}" STREQUAL "jazzy"
-))
-      ament_target_dependencies(etasl_misc_lib ${rosdependencies})
-      target_link_libraries(etasl_misc_lib ${dependencies})
-      message(STATUS "Legacy ROS_DISTRO is $ENV{ROS_DISTRO}, using ament_target_dependencies")
-else()
-    target_link_libraries(etasl_misc_lib  ${dependencies} ${ros_targets})
-    message(STATUS "Modern ROS_DISTRO detected ($ENV{ROS_DISTRO}), using target_link_libraries")
-endif()
-
+add_library(etasl_misc_lib
+            featurevariableinitializer.cpp
+            port_observer.cpp)
 
 target_include_directories(etasl_misc_lib PUBLIC
   $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>
   $<INSTALL_INTERFACE:include>
-  ${LUA_INCLUDE_DIR}
-  ${Boost_INCLUDE_DIRS})
+  ${LUA_INCLUDE_DIR})
+
+target_link_libraries(etasl_misc_lib PUBLIC
+  etasl::expressiongraph_context
+  etasl::expressiongraph_solver_qpoases
+  etasl::expressiongraph_context_lua
+  rclcpp::rclcpp
+  ${std_msgs_TARGETS}
+  ${sensor_msgs_TARGETS})
+
 target_compile_features(etasl_misc_lib PUBLIC c_std_99 cxx_std_17)  # Require C99 and C++17
 
 install(TARGETS etasl_misc_lib
@@ -78,5 +45,3 @@ install(TARGETS etasl_misc_lib
 add_subdirectory(crospi_node_utils)
 add_subdirectory(crospi_utils)
 add_subdirectory(robot_interfacing_utils)
-
-

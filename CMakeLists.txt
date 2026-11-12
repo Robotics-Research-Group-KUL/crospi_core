@@ -28,40 +28,36 @@ endif()
 
 # find dependencies
 find_package(ament_cmake REQUIRED)
-find_package(std_msgs REQUIRED)
 find_package(rosidl_default_generators REQUIRED)
 
-# -- start --Stuff for triple buffer implementation of boost 1.89
-set(Boost_NO_SYSTEM_PATHS ON)
-# --------------------------------------------------
-# Resolve Boost 1.89 root. This is done because in github, docker, and local home might or might not be defined.
-# If BOOST_189_ROOT is defined in the environment, use that installation directory instead (e.g. as done manually for github actions).
-# --------------------------------------------------
-if(DEFINED ENV{BOOST_189_ROOT} AND NOT "$ENV{BOOST_189_ROOT}" STREQUAL "")
-  set(_BOOST_1_89_CUSTOM_ROOT "$ENV{BOOST_189_ROOT}")
-  message(STATUS "Using Boost 1.89 from BOOST_189_ROOT=${_BOOST_1_89_CUSTOM_ROOT}")
-else()
-  if(DEFINED ENV{HOME} AND NOT "$ENV{HOME}" STREQUAL "")
-    set(_BOOST_1_89_CUSTOM_ROOT "$ENV{HOME}/.local/lib/boost/1.89.0")
-    message(STATUS "Using Boost 1.89 from HOME fallback: ${_BOOST_1_89_CUSTOM_ROOT}")
-  else()
-    message(FATAL_ERROR
-      "Boost 1.89 requested, but neither BOOST_189_ROOT nor HOME is defined")
-  endif()
-endif()
+set(CMAKE_CXX_STANDARD 17)
 
-set(BOOST_ROOT "${_BOOST_1_89_CUSTOM_ROOT}")
-set(Boost_INCLUDE_DIR "${_BOOST_1_89_CUSTOM_ROOT}/include")
-message(STATUS "CMAKE_PREFIX_PATH before: ${CMAKE_PREFIX_PATH}")
-set(CMAKE_PREFIX_PATH "${_BOOST_1_89_CUSTOM_ROOT}" ${CMAKE_PREFIX_PATH})
-message(STATUS "CMAKE_PREFIX_PATH after: ${CMAKE_PREFIX_PATH}")
-message(STATUS "Using Boost version ${Boost_VERSION}")
-
-find_package(Boost 1.89 CONFIG REQUIRED)
-ament_export_dependencies(Boost)
-
-message(STATUS "Boost include dirs after find_package: ${Boost_INCLUDE_DIRS}")
-# -- end -- Stuff for triple buffer implementation of boost 1.89
+# Dependencies of the exported crospi_core libraries. They are found once here and exported with
+# ament_export_dependencies (below), so a package that links a crospi_core target inherits all of them
+# with just find_package(crospi_core). Keep this list in sync with the <depend> entries of package.xml.
+set(crospi_core_exported_dependencies
+  ament_index_cpp
+  rclcpp
+  rclcpp_lifecycle
+  rclcpp_action
+  pluginlib
+  resource_retriever
+  tf2
+  tf2_ros
+  tf2_geometry_msgs
+  std_msgs
+  sensor_msgs
+  geometry_msgs
+  crospi_interfaces
+  etasl
+  Eigen3
+  jsoncpp
+  fmt
+)
+foreach(dependency IN LISTS crospi_core_exported_dependencies)
+  find_package(${dependency} REQUIRED)
+endforeach()
+find_package(Lua51 REQUIRED)
 
 add_definitions(-DBOOST_DISABLE_PRAGMA_MESSAGE)
 
@@ -77,10 +73,15 @@ ament_environment_hooks("${CMAKE_SOURCE_DIR}/env-hooks/package_crospi_core_lua_c
 
 ament_export_include_directories(
   include
-  ${Boost_INCLUDE_DIRS}
 )
 
 add_subdirectory(src/misc)
+
+# Umbrella target with everything needed to write a crospi plugin (input/output handlers, robot drivers and
+# simulators): target_link_libraries(my_plugin PUBLIC crospi_core::crospi_core)
+add_library(crospi_core INTERFACE)
+target_link_libraries(crospi_core INTERFACE crospi_utils crospi_node_utils robot_interfacing_utils)
+install(TARGETS crospi_core EXPORT export_${PROJECT_NAME})
 
 # add_subdirectory(src/ros2_nodes/simple_crospi_node)
 add_subdirectory(src/ros2_nodes/crospi_node)
@@ -91,7 +92,7 @@ add_subdirectory(src/ros2_nodes/crospi_node)
 # add_subdirectory(src/ros2_nodes/test_publisher_node)
 # add_subdirectory(src/ros2_nodes/erwin_node)
 
-ament_export_dependencies(ament_cmake)
+ament_export_dependencies(ament_cmake ${crospi_core_exported_dependencies})
 ament_export_targets(export_${PROJECT_NAME} HAS_LIBRARY_TARGET)
 
 # Install the Python package

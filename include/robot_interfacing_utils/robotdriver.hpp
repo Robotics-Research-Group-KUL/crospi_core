@@ -27,7 +27,8 @@
 #include <jsoncpp/json/json.h>
 #include "crospi_utils/json_checker.hpp"
 
-#include <boost/lockfree/spsc_value.hpp>
+// Boost 1.89 spsc_value vendored as crospi_boost (include/crospi_boost), so no Boost 1.89 installation is needed
+#include <crospi_boost/lockfree/spsc_value.hpp>
 #include "robot_interfacing_utils/robot_data_structures.hpp"
 
 namespace etasl {
@@ -63,19 +64,19 @@ namespace etasl {
          *          to provide wait-free reads and writes between the control thread
          *          and the driver thread.
          */
-        typedef boost::lockfree::spsc_value< robotdrivers::DynamicJointDataField> triple_buffer_joint_type;
+        typedef crospi_boost::lockfree::spsc_value< robotdrivers::DynamicJointDataField> triple_buffer_joint_type;
         /**
          * @brief Lock-free triple buffer type for 3D vector fields (e.g., Cartesian position).
          */
-        typedef boost::lockfree::spsc_value< robotdrivers::Vector3Field > triple_buffer_vector3_type;
+        typedef crospi_boost::lockfree::spsc_value< robotdrivers::Vector3Field > triple_buffer_vector3_type;
         /**
          * @brief Lock-free triple buffer type for quaternion fields (e.g., orientation).
          */
-        typedef boost::lockfree::spsc_value< robotdrivers::QuaternionField > triple_buffer_quaternion_type;
+        typedef crospi_boost::lockfree::spsc_value< robotdrivers::QuaternionField > triple_buffer_quaternion_type;
         /**
          * @brief Lock-free triple buffer type for screw fields (e.g., wrench, twist).
          */
-        typedef boost::lockfree::spsc_value< robotdrivers::ScrewField > triple_buffer_screw_type;
+        typedef crospi_boost::lockfree::spsc_value< robotdrivers::ScrewField > triple_buffer_screw_type;
 
         /**
          * @brief Collection of triple-buffered feedback ports.

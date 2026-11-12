@@ -1,107 +1,40 @@
 message("Compiling misc/crospi_node_utils libraries ${CMAKE_CURRENT_SOURCE_DIR}")
 
-# find dependencies
-find_package(ament_cmake REQUIRED)
-find_package(ament_index_cpp REQUIRED)
-find_package(rclcpp REQUIRED)
-find_package(rclcpp_lifecycle REQUIRED)
-find_package(rclcpp_action REQUIRED)
-find_package(etasl REQUIRED)
-find_package(resource_retriever REQUIRED)
-find_package(crospi_interfaces REQUIRED)
-find_package(sensor_msgs REQUIRED)
-find_package(geometry_msgs REQUIRED)
-find_package(std_msgs REQUIRED)
-find_package(Lua51 REQUIRED)
-find_package(Eigen3 REQUIRED)
-# find_package(pugixml REQUIRED)
-find_package(jsoncpp REQUIRED)
-find_package(tf2 REQUIRED)
-find_package(tf2_geometry_msgs REQUIRED)
-find_package(tf2_ros REQUIRED)
-find_package(pluginlib REQUIRED)
-
-set(CMAKE_CXX_STANDARD 17)
-
-set( src_crospi_node_utils
+# Dependencies are found (and exported) in the top-level CMakeLists.txt.
+# PUBLIC: packages linking crospi_core::crospi_node_utils inherit these dependencies.
+add_library(crospi_node_utils SHARED
     io_handler_manager.cpp
     robot_driver_manager_lockfree.cpp
     multiple_drivers_manager.cpp
 )
 
-set(rosdependencies 
-    rclcpp
-    rclcpp_lifecycle
-    rclcpp_action
-    crospi_interfaces
-    resource_retriever
-    ament_index_cpp
-    std_msgs
-    sensor_msgs
-    geometry_msgs
-    tf2
-    tf2_geometry_msgs
-    tf2_ros
-    pluginlib
-)
-
-set(dependencies
-    fmt
-    Eigen3::Eigen
-    etasl::expressiongraph_context 
-    etasl::expressiongraph_solver_qpoases 
-    etasl::expressiongraph_context_lua    
-    jsoncpp
-    crospi_utils
-)
-
-set(ros_targets 
-    rclcpp::rclcpp
-    rclcpp_lifecycle::rclcpp_lifecycle
-    rclcpp_action::rclcpp_action
-    resource_retriever::resource_retriever
-    ament_index_cpp::ament_index_cpp
-    tf2::tf2
-    tf2_ros::tf2_ros
-    pluginlib::pluginlib
-    ${crospi_interfaces_TARGETS}
-    ${std_msgs_TARGETS}
-    ${sensor_msgs_TARGETS}
-    ${geometry_msgs_TARGETS}
-    ${tf2_geometry_msgs_TARGETS}
-)
-
-add_library(crospi_node_utils SHARED ${src_crospi_node_utils})
-
-target_include_directories(crospi_node_utils 
-  PUBLIC
+target_include_directories(crospi_node_utils PUBLIC
   $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/include>
   $<INSTALL_INTERFACE:include>
-  ${LUA_INCLUDE_DIR}
-  ${Boost_INCLUDE_DIRS})
+  ${LUA_INCLUDE_DIR})
 
-ament_export_libraries(
-  crospi_node_utils
+target_link_libraries(crospi_node_utils PUBLIC
+  crospi_utils
+  fmt::fmt
+  jsoncpp
+  Eigen3::Eigen
+  etasl::expressiongraph_context
+  etasl::expressiongraph_solver_qpoases
+  etasl::expressiongraph_context_lua
+  rclcpp::rclcpp
+  rclcpp_lifecycle::rclcpp_lifecycle
+  rclcpp_action::rclcpp_action
+  resource_retriever::resource_retriever
+  ament_index_cpp::ament_index_cpp
+  tf2::tf2
+  tf2_ros::tf2_ros
+  pluginlib::pluginlib
+  ${crospi_interfaces_TARGETS}
+  ${std_msgs_TARGETS}
+  ${sensor_msgs_TARGETS}
+  ${geometry_msgs_TARGETS}
+  ${tf2_geometry_msgs_TARGETS}
 )
-
-#The following is done because ROS2 deprecated ament_target_dependencies in favor of target_link_libraries, but the former is still required for older (legacy) ROS2 versions. 
-
-if(DEFINED ENV{ROS_DISTRO} AND (
-  "$ENV{ROS_DISTRO}" STREQUAL "foxy" OR
-  "$ENV{ROS_DISTRO}" STREQUAL "galactic" OR
-  "$ENV{ROS_DISTRO}" STREQUAL "humble" OR
-  "$ENV{ROS_DISTRO}" STREQUAL "iron" OR
-  "$ENV{ROS_DISTRO}" STREQUAL "jazzy"
-))
-      ament_target_dependencies(crospi_node_utils ${rosdependencies})
-      target_link_libraries(crospi_node_utils ${dependencies})
-      message(STATUS "Legacy ROS_DISTRO is $ENV{ROS_DISTRO}, using ament_target_dependencies")
-else()
-    target_link_libraries(crospi_node_utils  ${dependencies} ${ros_targets})
-    message(STATUS "Modern ROS_DISTRO detected ($ENV{ROS_DISTRO}), using target_link_libraries")
-endif()
-
-ament_export_dependencies(${dependencies} ${rosdependencies})
 
 install(
   TARGETS crospi_node_utils
