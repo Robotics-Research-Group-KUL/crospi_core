@@ -17,8 +17,7 @@
 //  GNU Lesser General Public License for more details.
 
 #include "crospi_utils/string_interpolate.hpp"
-#include "ament_index_cpp/get_package_prefix.hpp"
-#include "ament_index_cpp/get_package_share_directory.hpp"
+#include "crospi_utils/ament_index.hpp"
 #include "crospi_utils/etasl_error.hpp"
 #include <array>
 #include <cstdio>
@@ -263,7 +262,7 @@ std::string string_interpolate(const std::string& s)
             if (s[i] == ']') {
                 std::string package = s.substr(loc_opening, i - loc_opening);
                 try {
-                    result += ament_index_cpp::get_package_share_directory(package);
+                    result += etasl::get_package_share_directory(package);
                 } catch (ament_index_cpp::PackageNotFoundError& err) {
                     throw etasl::etasl_error(etasl::etasl_error::STRING_INTERPOLATION_ERROR, "Package \"" + package + "\" not found during string interpolation using \"${{{}}\"");
                 }

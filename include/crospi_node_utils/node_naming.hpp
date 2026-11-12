@@ -43,7 +43,11 @@ inline std::string node_scoped_topic(const rclcpp_lifecycle::LifecycleNode& node
         return topic;
     }
     const std::string separator = (!topic.empty() && topic[0] == '/') ? "" : "/";
-    return std::string(node.get_fully_qualified_name()) + separator + topic;
+    // Fully qualified node name, built from the namespace and name since LifecycleNode::get_fully_qualified_name()
+    // is not available in ROS 2 Humble
+    const std::string node_namespace = node.get_namespace();
+    const std::string fully_qualified_name = (node_namespace == "/" ? "" : node_namespace) + "/" + node.get_name();
+    return fully_qualified_name + separator + topic;
 }
 
 } // namespace etasl
