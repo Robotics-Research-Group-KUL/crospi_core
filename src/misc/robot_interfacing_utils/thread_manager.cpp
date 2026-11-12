@@ -16,8 +16,6 @@
 //  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 //  GNU Lesser General Public License for more details.
 
-// #include <std>
-
 #include <vector>
 #include <mutex>
 #include <chrono>
@@ -31,8 +29,6 @@
 #include <boost/chrono.hpp>
 #include <boost/shared_ptr.hpp>
 
-
-
 #include "robot_interfacing_utils/thread_manager.hpp"
 
 namespace t_manager {
@@ -45,19 +41,16 @@ void do_thread_loop(std::shared_ptr<thread_t> thread, volatile std::atomic<bool>
 
     std::chrono::steady_clock::time_point  start_time = std::chrono::steady_clock::now();
     std::chrono::steady_clock::time_point  end_time = std::chrono::steady_clock::now();
-    // auto duration_s = std::chrono::duration_cast<std::chrono::microseconds>(end_time - start_time);
-    // auto now = std::chrono::steady_clock::now();
     long long period_ns = std::chrono::duration_cast<std::chrono::nanoseconds>(end_time - start_time).count();
     long long sum_period = 0ll;
     long long max_period = 0ll;
     long long min_period = 0ll;
     long long num_samples = 0ll;
 
-
     // Comment the following lambda out to avoid measuring time:
-    
+
     thread->benchmark_hook = [&end_time, &start_time, &period_ns, &sum_period, &max_period, &min_period, &num_samples]() {
-    
+
         end_time = std::chrono::steady_clock::now();
         period_ns = std::chrono::duration_cast<std::chrono::nanoseconds>(end_time - start_time).count();
         start_time = std::chrono::steady_clock::now();
@@ -72,23 +65,16 @@ void do_thread_loop(std::shared_ptr<thread_t> thread, volatile std::atomic<bool>
         }
     };
 
-    // do_thread_loop_std_sleep_until(thread,  stopFlag);
-    // do_thread_loop_std_sleep_for(thread,  stopFlag);
-    // do_thread_loop_posix_usleep(thread,  stopFlag);
     do_thread_loop_posix_clock_nanosleep(thread,  stopFlag);
 
-
-
     if ( thread->finalize_hook != nullptr)   {thread->finalize_hook();}
-    // if(stopFlag.load(std::memory_order_relaxed))    {std::cout << "stopFlag=true" << std::endl;}
 
     std::cout << "------------ Periodicity statistics --------------" << std::endl;
-    // std::cout << "Sum periodicity: " << sum_period << " ns" << std::endl;
     std::cout << "Max periodicity: " << max_period << " ns" << std::endl;
     std::cout << "Min periodicity: " << min_period << " ns" << std::endl;
     std::cout << "Number of samples: " << num_samples << std::endl;
     std::cout << "Average periodicity: " << (num_samples > 0 ? static_cast<double>(sum_period) / num_samples : 0.0) << " ns" << std::endl;
-    
+
 }
 
 void do_thread_loop_std_sleep_until(std::shared_ptr<thread_t> thread, volatile std::atomic<bool>& stopFlag){
@@ -107,7 +93,7 @@ void do_thread_loop_std_sleep_until(std::shared_ptr<thread_t> thread, volatile s
         end_time_sleep = std::chrono::steady_clock::now() + periodicity; //adds periodicity
         if ( thread->benchmark_hook != nullptr)   {thread->benchmark_hook();}
    }
-   
+
 }
 
 void do_thread_loop_std_sleep_for(std::shared_ptr<thread_t> thread, volatile std::atomic<bool>& stopFlag){
@@ -150,13 +136,13 @@ void do_thread_loop_posix_usleep(std::shared_ptr<thread_t> thread, volatile std:
 }
 
 void do_thread_loop_posix_clock_nanosleep(std::shared_ptr<thread_t> thread, volatile std::atomic<bool>& stopFlag){
-        
+
     struct timespec next_wakeup_time_;
     std::chrono::nanoseconds periodicity = thread->periodicity;
     uint64_t        period_ns_ = periodicity.count();
     int err_int = 0;
     clock_gettime(CLOCK_MONOTONIC, &next_wakeup_time_);
-    
+
     while (!stopFlag.load(std::memory_order_relaxed)){
         thread->update_hook();
         clock_gettime(CLOCK_MONOTONIC, &next_wakeup_time_);//Remove to compensate for accumulated extra slept time, but we can get times between cyles 
@@ -170,9 +156,7 @@ void do_thread_loop_posix_clock_nanosleep(std::shared_ptr<thread_t> thread, vola
     }
 }
 
-
 bool sleep_clock_nanosleep(const struct timespec& next_wakeup_time, int& err_int){
-    
 
     while ((err_int = clock_nanosleep(CLOCK_MONOTONIC, TIMER_ABSTIME, &next_wakeup_time, nullptr)) == EINTR) {
         // Interrupted by a signal handler; sleep for the remaining time
@@ -196,7 +180,26 @@ bool sleep_clock_nanosleep(const struct timespec& next_wakeup_time, int& err_int
     return true;
 }
 
-
+std::string parse_scheduling(const std::string& policy_name, int priority, int& sched_policy) {
+    if (policy_name == "SCHED_OTHER") {
+        sched_policy = SCHED_OTHER; // the priority is ignored
+        return "";
+    }
+    if (policy_name == "SCHED_FIFO") {
+        sched_policy = SCHED_FIFO;
+    } else if (policy_name == "SCHED_RR") {
+        sched_policy = SCHED_RR;
+    } else {
+        return "Unknown scheduling policy '" + policy_name + "'. Valid policies are SCHED_OTHER, SCHED_FIFO and SCHED_RR.";
+    }
+    const int min_priority = std::max(1, sched_get_priority_min(sched_policy));
+    const int max_priority = std::min(MAX_RT_PRIORITY, sched_get_priority_max(sched_policy));
+    if (priority < min_priority || priority > max_priority) {
+        return "The priority of policy " + policy_name + " must be in [" + std::to_string(min_priority) + ", "
+            + std::to_string(max_priority) + "], but " + std::to_string(priority) + " was given.";
+    }
+    return "";
+}
 
 void setScheduling(std::thread &th, int sched_policy, int priority) {
     sched_param sch_params;
@@ -205,11 +208,12 @@ void setScheduling(std::thread &th, int sched_policy, int priority) {
 
     sch_params.sched_priority = priority;
 
-    if(pthread_setschedparam(th.native_handle(), sched_policy, &sch_params)) {
-        std::cerr << "Failed to set Thread scheduling : " << std::strerror(errno) << std::endl;
+    int err = pthread_setschedparam(th.native_handle(), sched_policy, &sch_params);
+    if(err) {
+        std::cerr << "Failed to set Thread scheduling : " << std::strerror(err) <<"\n A possible reason is that the process does not have the necessary privileges to set the scheduling policy, or that there is not a real-time kernel available." << std::endl;
+        
     }
     else{
-        std::cout << "########################################################### " << std::endl;
         std::cout << "The priority of the thread was changed succesfully to " << priority << std::endl;
     }
 }

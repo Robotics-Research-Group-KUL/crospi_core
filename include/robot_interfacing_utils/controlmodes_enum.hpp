@@ -18,7 +18,6 @@
 
 #pragma once
 
-
 namespace ControlMode {
 
     enum ControlMode

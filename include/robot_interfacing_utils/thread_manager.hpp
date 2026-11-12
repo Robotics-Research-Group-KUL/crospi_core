@@ -18,8 +18,6 @@
 
 #pragma once
 
-// #include <std>
-
 #include <vector>
 #include <mutex>
 #include <chrono>
@@ -28,8 +26,13 @@
 #include <atomic>
 #include <thread>
 #include <time.h>
+#include <sched.h>
+#include <string>
 
 namespace t_manager {
+
+/// Highest real-time priority that can be configured. 99 is left free for critical system threads (e.g. watchdogs).
+constexpr int MAX_RT_PRIORITY = 98;
 
 // Thread data structure
 typedef struct thread_s {
@@ -37,9 +40,22 @@ typedef struct thread_s {
     std::function<void()> update_hook;  // Callback function that updates the robot's control (i.e. send setpoints and get feedback) within a real-time control loop
     std::function<void()> finalize_hook;  // Callback function that stops the robot's control after the real-time control loop stops (i.e. make sure that the robot stops correctly)
     std::function<void()> benchmark_hook;  // Callback function that benchmarks the loop by measuring execution times
+    int sched_policy = SCHED_OTHER;  // Scheduling policy of the thread (SCHED_OTHER keeps the default Linux scheduler)
+    int sched_priority = 0;          // Scheduling priority of the thread (not used for SCHED_OTHER)
 }thread_t;
 
-
+/**
+ * @brief Converts a scheduling policy name and priority into a POSIX scheduling policy, validating the priority range.
+ *
+ * - "SCHED_OTHER": default Linux scheduler (no real-time kernel needed). The priority is ignored.
+ * - "SCHED_FIFO" / "SCHED_RR": real-time schedulers. The priority must be in [1, MAX_RT_PRIORITY].
+ *
+ * @param[in] policy_name name of the policy: "SCHED_OTHER", "SCHED_FIFO" or "SCHED_RR"
+ * @param[in] priority requested priority
+ * @param[out] sched_policy resulting POSIX policy (only valid if the returned string is empty)
+ * @return empty string if valid, otherwise a description of the error
+ */
+std::string parse_scheduling(const std::string& policy_name, int priority, int& sched_policy);
 
 /**
  * It executes a callback function stored in thread structure and sleep until the assigned periodicity is satisfied.
@@ -52,7 +68,6 @@ void do_thread_loop_std_sleep_until(std::shared_ptr<thread_t> thread, volatile s
 void do_thread_loop_std_sleep_for(std::shared_ptr<thread_t> thread, volatile std::atomic<bool>& stopFlag);
 void do_thread_loop_posix_usleep(std::shared_ptr<thread_t> thread, volatile std::atomic<bool>& stopFlag);
 void do_thread_loop_posix_clock_nanosleep(std::shared_ptr<thread_t> thread, volatile std::atomic<bool>& stopFlag);
-
 
 bool sleep_clock_nanosleep(const struct timespec& next_wakeup_time, int& err_int);
 void add_ns_to_timespec( const int64_t ns, struct timespec & ts);

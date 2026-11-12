@@ -16,7 +16,6 @@
 --  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 --  GNU Lesser General Public License for more details.
 
-
 local JSON = require("JSON")
 local jsonschema = require 'jsonschema'
 
@@ -36,7 +35,6 @@ M.robot = {}
 local external_param = { type="string", pattern="^\\$blackboard(/[a-zA-Z0-9_\\-]+)+$"}
 local application_defined_parameter = { type="string", const="$application_defined_parameter"}
 
-
 --- Table defining allowed types for enums.
 M.enum_types = {
     number="number",
@@ -51,8 +49,6 @@ M.array_types = {
     bool="bool",
     string="string",
 }
-
--- inspect = require("inspect")
 
 local task_req = {}
 task_req.parameters = {}
@@ -69,10 +65,6 @@ local required_parameters = {}
 --  - `required` (boolean): Indicates if the parameter is required. Set as true if not specified. Optional.
 -- @return param_schema table A table containing a partial JSON schema that later on will be completed
 local function param_generic(spec)
-
-    -- if not spec.description then
-    --     spec.description="The description was not defined. Please provide it when defining the input in the task specification lua file"
-    -- end
 
     local param_schema = {}
 
@@ -97,15 +89,14 @@ local function param_generic(spec)
         .. "\nSet as $application_defined_parameter to indicate that the parameter is defined by the application and not by the skill specification.",
         examples={"$blackboard/output_param/my_task/" .. spec.name, "$application_defined_parameter"},
     }
-    
+
     -- If default value is specified, it is added to the schema
     if spec.default ~= nil then
-        -- table.insert(param_schema[spec.name], "default")
         param_schema[spec.name].default = spec.default
     end
-    
+
     return param_schema
-    
+
 end
 
 --- Processes an input table with specified properties for generic parameters (i.e. all numerical parameters, i.e. number and integer, use this function).
@@ -152,11 +143,8 @@ local function param_numerical(spec, schema)
         error("The specified default value of the parameter " .. spec.name .. " is below the specified minimum value")
     end
 
-
-
     return param_schema, tab_fields
 end
-
 
 --- Validates the allowed specs, such that only certain table entries are allowed.
 --- It's meant to be used locally, i.e. it is not exposed to the user
@@ -182,7 +170,6 @@ local function validate_allowed_specs(allowed_specs, spec, input_type)
         end
     end
 
-    
 end
 
 --- Defines a scalar parameter.
@@ -204,7 +191,6 @@ local function param_scalar(spec)
     param_schema[spec.name].oneOf = {tab_fields, external_param, application_defined_parameter}
     return param_schema
 end
-
 
 --- Defines an integer parameter.
 --- @param spec (table) A table containing the specification of the parameter with specific keys and values:
@@ -276,7 +262,6 @@ local function param_string(spec)
     return param_schema
 end
 
-
 --- Defines a enum parameter.
 --- @param spec (table) A table containing the specification of the parameter with specific keys and values:
 --  - `name` (string): The name of the specified parameter. Required.
@@ -292,7 +277,7 @@ local function param_enum(spec)
 
     local param_schema = param_generic(spec) --pre-fills generic data necessary by all types
     -- task_req.parameter.enum({name="units", type=types.string, default="radians", description="Description of units", required=true, accepted_vals = {"degrees","radians"}}),
-    
+
     -- param_schema[spec.name].type = spec.type
 
     if not spec.type then
@@ -301,7 +286,6 @@ local function param_enum(spec)
         error("Incorrect specified type for enum parameter " .. spec.name .. ". The only valid types for enum parameters are: number, integer and string. The specified type was: " .. spec.type.. ".")
     end
 
-    
     if not spec.accepted_vals then
         error("The accepted_vals for enum parameter " .. spec.name .. " was not specified. The accepted_vals must be of the same type of enum specified")
     else
@@ -326,12 +310,11 @@ local function param_enum(spec)
     if not default_is_valid then
         error("The specified default value of the enum " .. spec.name .. " does not correspond to one of the specified accepted_vals")
     end
-    
+
     param_schema[spec.name].oneOf = {{ enum= spec.accepted_vals }, external_param, application_defined_parameter}
 
     return param_schema
 end
-
 
 --- Defines an array parameter.
 --- @param spec (table) A table containing the specification of the parameter with specific keys and values:
@@ -351,7 +334,7 @@ local function param_array(spec)
 
     local param_schema = param_generic(spec) --pre-fills generic data necessary by all types
     -- task_req.parameter.array({name="units", type=types.string, default="radians", description="Description of units", required=true, accepted_vals = {"degrees","radians"}}),
-    
+
     -- param_schema[spec.name].items = {}
     -- param_schema[spec.name].items.type = spec.type
 
@@ -360,7 +343,6 @@ local function param_array(spec)
     elseif spec.type ~= "number" and spec.type ~= "integer" and spec.type ~= "string" and spec.type ~= "boolean" then
         error("Incorrect specified type for array parameter " .. spec.name .. ". The only valid types for array parameters are: number, integer, string and boolean. The specified type was: " .. spec.type .. ".")
     end
-    
 
     if spec.minimum~=nil and (spec.type ~= "number" and spec.type ~= "integer") then
         error("No minimum value is allowed to be specified since the type of the array " .. spec.name .. " is not number or integer.")
@@ -378,7 +360,7 @@ local function param_array(spec)
             error("The minimum value specified for parameter " .. spec.name .. " should be a number.")
         end
     end
-    
+
     if spec.maximum~=nil then
         if type(spec.maximum) == "number" then
             tab_fields.items.maximum = spec.maximum
@@ -394,7 +376,7 @@ local function param_array(spec)
             error("The minItems value specified for parameter " .. spec.name .. " should be a positive integer number.")
         end
     end
-    
+
     if spec.maxItems~=nil then
         if type(spec.maxItems) == "number" and spec.maxItems>0 and spec.maxItems % 1 == 0 then
             tab_fields.maxItems = spec.maxItems
@@ -426,12 +408,10 @@ local function param_array(spec)
         end
     end
 
-
     param_schema[spec.name].oneOf = {tab_fields, external_param, application_defined_parameter}
 
     return param_schema
 end
-
 
 --- Generates a JSON Schema file based on the parameters defined.
 --- @param task_description (string) A string containing a description of the task specification.
@@ -446,7 +426,6 @@ local function parameters(task_description, param_tab)
     filename_lua = filename_lua:match("^.+/(.+)$") or filename_lua --Deletes path, if there is any
     local filename_json = filename_lua:gsub("%.lua$", "") ..".json" --removes the .lua extension and adds the .json for the generated schema
     local filename_no_ext = filename_json:gsub("%.json$", ""):gsub("%.etasl$", "")--removes extensions .etasl and .json
-    -- local unique_identifier = "is-" .. filename_no_ext
 
     local function load_json_string(json_string)
         local json_table,_,err = JSON:decode(json_string)
@@ -455,7 +434,7 @@ local function parameters(task_description, param_tab)
         end
 
         return json_table
-    
+
     end
 
     local function load_json_file(file_path)
@@ -481,8 +460,6 @@ local function parameters(task_description, param_tab)
     local function write_json_schema(task_description, param_tab)
 
         local task_library_json = {name="",version="",description="", authors={}} --During execution (and not generation of schemas) this is not relevant
-        -- local lib_directory_name = "" --During execution (and not generation of schemas) this is not relevant. This is not necessarily the same as lib_name
-
 
         if _GENERATE then            
             print("Generating schema because _GENERATE is defined")
@@ -493,11 +470,8 @@ local function parameters(task_description, param_tab)
             assert( _FILEPATH_TASK_LIBRARY_JSON )
             print( "_FILEPATH_TASK_LIBRARY_JSON = " .. _FILEPATH_TASK_LIBRARY_JSON )
             task_library_json  = load_json_file( _FILEPATH_TASK_LIBRARY_JSON )
-        else
-            print("Executing since _GENERATE is not defined")
         end
         local filepath_lua = _URI_TASK_LUA or ""
-
 
         local lib_name = task_library_json["name"]
         local lib_version = task_library_json["version"]
@@ -507,7 +481,7 @@ local function parameters(task_description, param_tab)
         if next(param_tab) == nil then --Checks if table is empty
             descript = "Parameters needed to the corresponding task specification in eTaSL. In this case no parameters were specified and hence the properties field is empty"
         end
-        
+
         local lib_identifier = "from-".. lib_name .."-version-" .. lib_version
         local task_identifier = "is-".. filename_no_ext
 
@@ -545,9 +519,6 @@ local function parameters(task_description, param_tab)
             additionalProperties= true, --needed to be true for using dependencies
         }
 
-
-        --local filepath_lua =  "$["..  application_name .. "]/task_specifications/libraries/" .. lib_directory_name .. "/task_specifications/" .. filename_lua
-        
         schema.dependencies[task_identifier].properties["file_path"] = {description="File path of the corresponding task specification", type="string", const=filepath_lua}
         schema.dependencies[task_identifier].properties["parameters"] = {type="object", description= "List of parameters needed to define an instance of the task specification",required=required_parameters,additionalProperties=false, properties={}}
 
@@ -568,7 +539,6 @@ local function parameters(task_description, param_tab)
         return schema
         -- Save the JSON Schema in a pretty format
     end
-    
 
     local parameter_schema = write_json_schema(task_description, param_tab)
 
@@ -581,10 +551,8 @@ local function parameters(task_description, param_tab)
         end
         local des_var = _TABLE_CONTAINING_ETASL_PARAMS[var_name]
         if des_var ~= nil then
-            -- print(var_name .. " value: " .. tostring(des_var))
             return des_var
         else --Due to the jsonschema validator, this case will never occur since the missing non-required parameters are automatically filled as the default value
-            -- print("variable ".. var_name .. " was nil")
             -- Search if the variable is required:
             local is_required = false
             for _, req_param in pairs(required_parameters) do
@@ -593,7 +561,7 @@ local function parameters(task_description, param_tab)
                     break
                 end
             end
-            
+
             if not is_required then
                 local default_val = nil
                 for k, _ in ipairs(param_tab) do
@@ -602,7 +570,6 @@ local function parameters(task_description, param_tab)
                         default_val = param_tab[k][key_name]["default"]
                     end
                 end
-                -- print(var_name .. " was set to default value: " .. tostring(default_val))
                 return default_val
             else
                 error("Parameter `" .. var_name .. "` was set as required but was not found in the JSON file.")
@@ -612,11 +579,7 @@ local function parameters(task_description, param_tab)
 
     local function load_json_table(json_table)
 
-        -- parameter_schema["$id"] = nil --Removes the id value, since the jsonschema library complains
         json_table["$schema"] = nil --Removes the id value, since the jsonschema library complains
-
-        -- inspect = require("inspect")
-        -- print(inspect(json_table))
 
         -- =================== The following block of code makes sure that there are no additional parameters in the json_table, apart from the ones defined in the SCHEMA
         -- =================== this is needed because the additionalProperties=true in the schema is needed to include the dependencies. However, defining properties that are not in the schema can lead to unexpected bugs for the user
@@ -625,7 +588,6 @@ local function parameters(task_description, param_tab)
             for k, _ in ipairs(param_tab) do
                 local key_name = next(param_tab[k])            
 
-                -- if key_name == key_param or unique_identifier == key_param or "file_path" == key_param then
                 if key_name == key_param then
                     is_valid = true
                     break
@@ -639,12 +601,7 @@ local function parameters(task_description, param_tab)
             elseif type(value) == "string" and string.sub(value, 1, 30) == "$application_defined_parameter" then
                 error("Parameter " .. key_param .. " cannot begin with $application_defined_parameter when executing the skill. This parameter was set in a json file by indicating that it should be defined at the application level, and has to be changed to a proper value before the task specification execution.")
             end
-            -- if value == "external" then
-            --     error("Parameter " .. key_param .. " cannot have a value of external when executing the skill. This parameter was probably set as external in the JSON file, and has to be changed to a proper value before the task specification execution.")
-            -- end
         end
-
-
 
         local myvalidator = jsonschema.generate_validator(parameter_schema["parameters"])
 
@@ -654,19 +611,14 @@ local function parameters(task_description, param_tab)
             error(error_msg)
         end
 
-        -- print(inspect(json_table))
-
         _TABLE_CONTAINING_ETASL_PARAMS ={}
         for key_param, val_param in pairs(json_table) do
             _TABLE_CONTAINING_ETASL_PARAMS[key_param] = val_param
-            -- print("Value of parameter `".. tostring(key_param) .. "` is: " .. tostring(val_param))
         end
-        
+
     end
 
-
     if _JSON_TASK_SPECIFICATION_PARAMETERS_STRING then
-        -- print(_JSON_TASK_SPECIFICATION_PARAMETERS_STRING)
         local json_table = load_json_string(_JSON_TASK_SPECIFICATION_PARAMETERS_STRING)
 
         load_json_table(json_table)
@@ -689,7 +641,7 @@ local function path_interpolate(path_formatted)
     local copy_path_formatted = path_formatted
 
     local package_name, rest_of_path = path_formatted:match("%$%[(.-)%]/(.*)")
-    
+
     if package_name then
         local package_dir = ament.get_package_share_directory(package_name)
         return package_dir .."/".. rest_of_path
@@ -701,8 +653,6 @@ end
 
 local function load_robot(required_frames)
 
-
-    
     local json_robot_tab = nil
     local err
     if _JSON_ROBOTSPECIFICATION_STRING~= nil then
@@ -721,15 +671,8 @@ local function load_robot(required_frames)
     local urdfreader
 
     if json_robot_tab ~= nil and json_robot_tab["is-inline_robotspecification"] then
-        
-        -- require("context")
-        -- require("geometric")
+
         urdfreader=require("urdfreader")
-
-
-        -- local f = io.open("/home/santiregui/ros2_ws/src/crospi_application_template/config_files/config_ur10_simulation.json", "rb")
-        -- local json_string = f:read("*all")
-        -- f:close()
 
         local urdf_file = path_interpolate(json_robot_tab["urdf_path"])
 
@@ -756,7 +699,6 @@ local function load_robot(required_frames)
                 error("The required frame `" .. frame_key .. "` was not defined within the robot specification.")
             end
         end
-
 
     elseif json_robot_tab ~= nil and json_robot_tab["is-lua_robotspecification"] then
 
@@ -829,7 +771,6 @@ local function load_robot(required_frames)
 
 end
 
-
 local function robot_model(required_frames)
 
     local robot = load_robot(required_frames)
@@ -837,11 +778,9 @@ local function robot_model(required_frames)
     if not robot.robot_joints or next(robot.robot_joints) == nil then
         error("There are no robot_joints defined in the robot specification.")
     end
-    
+
     return robot
 end
-
-
 
 --- adapt_to_units
 ---   adapts the units in the table 
@@ -860,9 +799,6 @@ local function adapt_to_units(tbl, unit)
     end
     return tbl
 end
-
-
-
 
 M.parameters = parameters
 M.adapt_to_units= adapt_to_units

@@ -16,7 +16,6 @@
 //  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 //  GNU Lesser General Public License for more details.
 
-
 #include "crospi_utils/featurevariableinitializer.hpp"
 #include "crospi_utils/etasl_error.hpp"
 #include <Eigen/Dense>
@@ -27,70 +26,6 @@
 using namespace Eigen;
 
 namespace etasl {
-
-// void variables_from_context(
-//     Context::Ptr ctx,
-//     const std::vector<std::string>& jnames,
-//     Eigen::VectorXd& jpos)
-// {
-//     assert(jnames.size() == jpos.size() /* size of list of names and joint vector is not the same */);
-//     for (size_t i = 0; i < jnames.size(); ++i) {
-//         VariableScalar* vs = ctx->getScalarStruct(jnames[i]);
-//         assert(vs != 0 /* non existing variable?*/);
-//         jpos[i] = vs->initial_value;
-//     }
-// }
-
-// void variables_to_context(
-//         Context::Ptr ctx,
-//         const std::vector<std::string>& jnames,
-//         const Eigen::VectorXd& jpos
-// ) {
-//     assert( jnames.size() == jpos.size() /* size of list of names and joint vector is not the same */);
-//     for (size_t i=0;i<jnames.size();++i) {
-//         VariableScalar* vs=ctx->getScalarStruct(jnames[i]);
-//         assert(vs!=0 /* non existing variable?*/);
-//         vs->initial_value = jpos[i];
-//     }
-// }
-
-// VariableRemapper::VariableRemapper(
-//         const std::vector<std::string>& src_names,
-//         const std::vector<std::string>& tgt_names
-// ):
-//     tgt_to_src(tgt_names.size())
-// {
-//     for (size_t i = 0;i < tgt_names.size();++i) {
-//         tgt_to_src[i] = -1;
-//         for (size_t j = 0;j < src_names.size();++j) {
-//             if (src_names[i] == tgt_names[i]) {
-//                 tgt_to_src[i] = j;
-//                 break;
-//             }
-//         }
-//         assert( tgt_to_src[i]!=-1 /* tgt_name does not exist in src */ );
-//     }
-// }
-
-// void
-// VariableRemapper::set(
-//         const Eigen::VectorXd& src,
-//         Eigen::VectorXd& tgt
-// ) {
-//     for (size_t i = 0; i< tgt_to_src.size();++i) {
-//         tgt[i] = src[tgt_to_src[i]];
-//     }
-// }
-
-// void
-// VariableRemapper::get(
-//         Eigen::VectorXd& src,
-//         const Eigen::VectorXd& tgt
-// ) {
-//         for (size_t i = 0;i< tgt_to_src.size();++i) {
-//             src[tgt_to_src[i]] = tgt[i];
-//         }
-// }
 
 class FeatureVariableInitializerImpl : public FeatureVariableInitializer {
 
@@ -138,8 +73,6 @@ public:
     virtual const Eigen::VectorXd& getFeatureState() const;
     virtual void setFeatureState(const Eigen::VectorXd& fpos);
     virtual void setRobotState(const Eigen::VectorXd& jpos);
-    //virtual int getError() const;
-    //virtual std::string errorMessage(int code);
     virtual void initialize_feature_variables();
     virtual ~FeatureVariableInitializerImpl() {};
 };
@@ -268,6 +201,5 @@ createFeatureVariableInitializer(solver::Ptr _slvr, Context::Ptr _ctx, const Jso
         convergence_criterion,
         weight_factor);
 }
-
 
 } // namespace etasl

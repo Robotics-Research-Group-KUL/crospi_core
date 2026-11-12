@@ -1,0 +1,61 @@
+//  Copyright (c) 2017 Dynatrace
+//
+//  Distributed under the Boost Software License, Version 1.0.
+//  See accompanying file LICENSE_1_0.txt or copy at
+//  http://www.boost.org/LICENSE_1_0.txt
+
+//  See http://www.boost.org for most recent version.
+
+//  Standard library setup for IBM z/OS XL C/C++ compiler.
+
+// Oldest library version currently supported is 2.1 (V2R1)
+#if __TARGET_LIB__ < 0x42010000
+#  error "Library version not supported or configured - please reconfigure"
+#endif
+
+#if __TARGET_LIB__ > 0x42010000
+#  if defined(CROSPI_BOOST_ASSERT_CONFIG)
+#     error "Unknown library version - please run the configure tests and report the results"
+#  endif
+#endif
+
+#define CROSPI_BOOST_STDLIB "IBM z/OS XL C/C++ standard library"
+
+#define CROSPI_BOOST_HAS_MACRO_USE_FACET
+
+#define CROSPI_BOOST_NO_CXX11_HDR_TYPE_TRAITS
+#define CROSPI_BOOST_NO_CXX11_HDR_INITIALIZER_LIST
+
+#define CROSPI_BOOST_NO_CXX11_ADDRESSOF
+#define CROSPI_BOOST_NO_CXX11_SMART_PTR
+#define CROSPI_BOOST_NO_CXX11_ATOMIC_SMART_PTR
+#define CROSPI_BOOST_NO_CXX11_NUMERIC_LIMITS
+#define CROSPI_BOOST_NO_CXX11_ALLOCATOR
+#define CROSPI_BOOST_NO_CXX11_POINTER_TRAITS
+#define CROSPI_BOOST_NO_CXX11_HDR_FUNCTIONAL
+#define CROSPI_BOOST_NO_CXX11_HDR_UNORDERED_SET
+#define CROSPI_BOOST_NO_CXX11_HDR_UNORDERED_MAP
+#define CROSPI_BOOST_NO_CXX11_HDR_TYPEINDEX
+#define CROSPI_BOOST_NO_CXX11_HDR_TUPLE
+#define CROSPI_BOOST_NO_CXX11_HDR_THREAD
+#define CROSPI_BOOST_NO_CXX11_HDR_SYSTEM_ERROR
+#define CROSPI_BOOST_NO_CXX11_HDR_REGEX
+#define CROSPI_BOOST_NO_CXX11_HDR_RATIO
+#define CROSPI_BOOST_NO_CXX11_HDR_RANDOM
+#define CROSPI_BOOST_NO_CXX11_HDR_MUTEX
+#define CROSPI_BOOST_NO_CXX11_HDR_FUTURE
+#define CROSPI_BOOST_NO_CXX11_HDR_FORWARD_LIST
+#define CROSPI_BOOST_NO_CXX11_HDR_CONDITION_VARIABLE
+#define CROSPI_BOOST_NO_CXX11_HDR_CODECVT
+#define CROSPI_BOOST_NO_CXX11_HDR_CHRONO
+#define CROSPI_BOOST_NO_CXX11_HDR_ATOMIC
+#define CROSPI_BOOST_NO_CXX11_HDR_ARRAY
+#define CROSPI_BOOST_NO_CXX11_HDR_EXCEPTION
+#define CROSPI_BOOST_NO_CXX11_STD_ALIGN
+
+#define CROSPI_BOOST_NO_CXX14_STD_EXCHANGE
+#define CROSPI_BOOST_NO_CXX14_HDR_SHARED_MUTEX
+
+#define CROSPI_BOOST_NO_CXX17_STD_INVOKE
+#define CROSPI_BOOST_NO_CXX17_STD_APPLY
+#define CROSPI_BOOST_NO_CXX17_ITERATOR_TRAITS

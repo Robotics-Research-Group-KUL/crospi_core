@@ -23,35 +23,16 @@
 
 #include <expressiongraph/context.hpp>
 #include <expressiongraph/solver.hpp>
-// #include <memory>
 #include <rclcpp/rclcpp.hpp>
 #include "rclcpp_lifecycle/lifecycle_node.hpp"
 #include <unordered_map>
 
-// #include "crospi_utils/flowstatus.hpp"
-
-// #include <tf2_ros/transform_listener.h>
-// #include <tf2_ros/buffer.h>
-// #include <geometry_msgs/msg/transform_stamped.hpp>
-// #include <geometry_msgs/msg/transform.hpp>
-// #include "geometry_msgs/msg/twist.hpp"
-
 #include <jsoncpp/json/json.h>
 #include "crospi_utils/json_checker.hpp"
+#include "crospi_node_utils/node_naming.hpp"
 #include <pluginlib/class_loader.hpp> //For plugins such as robot drivers
 
-
-// TODO: Remove these:
-// #include "crospi_utils/registry.hpp"
-// #include "crospi_utils/outputhandler.hpp"
-// #include "crospi_utils/outputhandlerfactory.hpp"
-// #include "crospi_node_utils/jointstateoutputhandlerfactory.hpp"
-// #include "crospi_node_utils/topicoutputhandlerfactory.hpp"
-// #include "crospi_utils/fileoutputhandlerfactory.hpp"
-// #include "crospi_node_utils/tfoutputhandlerfactory.hpp"
-
 namespace etasl {
-// using namespace KDL;
 
 class IOHandlerManager {
 public:
@@ -69,7 +50,6 @@ private:
 
     std::vector<bool> input_h_initialized;
     std::vector<bool> otput_h_initialized;
-
 
 public:
     IOHandlerManager(
@@ -133,7 +113,6 @@ public:
         const std::vector<std::string>& fnames,
         boost::shared_ptr<solver> slv);
 
-
     void deactivate_input_handlers(Context::Ptr ctx);
     void deactivate_output_handlers(Context::Ptr ctx);
 
@@ -143,8 +122,6 @@ public:
     void finalize_input_handlers();
     void finalize_output_handlers();
 
-
-    // ~IOHandlerManager();
 };
 
 } // namespace etasl

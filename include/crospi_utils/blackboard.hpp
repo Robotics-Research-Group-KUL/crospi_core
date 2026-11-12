@@ -19,8 +19,6 @@
 #pragma once
 
 #include "jsoncpp/json/json.h"
-// #include "rclcpp/rclcpp.hpp"
-// #include <expressiongraph/solver_registry.hpp>
 #include <stack>
 #include "crospi_utils/string_interpolate.hpp"
 
@@ -42,7 +40,6 @@ Json::Value loadJSONFile(const std::string& fname);
  */
 void saveJSONFILE(const Json::Value& data, const std::string& fn);
 
-
 /**
  * @brief adds elements of additional if they don't exists in original.  For arrays the items
  * are appended, For objects, the non existing objects are added and the existing objects
@@ -52,7 +49,6 @@ void saveJSONFILE(const Json::Value& data, const std::string& fn);
  * @return 
  */
 void addIfNotExists(Json::Value& original, const Json::Value& additional);
-
 
 /**
  * @brief get the node corresponding to the given path
@@ -171,7 +167,6 @@ public:
      */
     void load(const std::string& filename);
 
-
     /**
      * @brief load from a file and processes and validates it
      * @param filename json file to load
@@ -225,13 +220,6 @@ public:
      * @details similar to 'cd ..' in a file system
      */
     void changeLocalUp();
-
-    // /**
-    //  * @brief moves the local node to an absolute path
-    //  * @param path path
-    //  * @details similar to 'cd /a/b/c' in a file system
-    //  */
-    // void moveLocalPath(const std::string& path);
 
     /**
      * @brief get the node corresponding to the path

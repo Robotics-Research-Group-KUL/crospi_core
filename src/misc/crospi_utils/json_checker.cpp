@@ -29,7 +29,6 @@ namespace etasl {
 
     }
 
-
 double JsonChecker::asDouble(Json::Value const& json_param, const std::string& key_path){
     std::stringstream ss(key_path);
     std::string key;
@@ -156,18 +155,9 @@ bool JsonChecker::getPath(Json::Value & current, const std::string& key_path, st
     return true;
 }
 
-
 void JsonChecker::trigger_error(const std::string& keypath, const std::string& key, const std::string& type){
     std::string message = "The requested parameter `" + key +"` inside the given path `" + keypath + "` was not defined in the provided JSON configuration file OR is not of type `" + type + "`.";
-    // RCLCPP_INFO(node->get_logger(), message.c_str());
     error_callback(message);
 }
 
-
-
-
 } // namespace etasl
-
-
-
-

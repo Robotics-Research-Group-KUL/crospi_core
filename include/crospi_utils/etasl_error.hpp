@@ -22,7 +22,6 @@
 #include <string>
 #include <stdexcept>
 #include <fmt/format.h>
-// #include <source_location>
 
 namespace etasl {
 class etasl_error : public std::exception {

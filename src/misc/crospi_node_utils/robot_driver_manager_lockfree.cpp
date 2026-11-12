@@ -17,8 +17,6 @@
 //  GNU Lesser General Public License for more details.
 
 #include "crospi_node_utils/robot_driver_manager_lockfree.hpp"
-// #include "crospi_node_utils/robot_driver_manager.hpp"
-
 
 namespace etasl {
 
@@ -35,22 +33,10 @@ namespace etasl {
         , vector_inp_(KDL::Vector::Zero())
         , twist_inp_(KDL::Twist::Zero())
         , wrench_inp_(KDL::Wrench::Zero()){
-        // Constructor implementation
-        
-
-        // Json::Value robot_param = board->getPath("/robot", false);
-
-        // Json::Value param_iohandlers = parameters["iohandlers"];
-
-        
-
 
     }
 
-
-
     RobotDriverManagerLockFree::~RobotDriverManagerLockFree() {
-        // Destructor implementation
     }
 
     void RobotDriverManagerLockFree::construct_driver(int num_joints, std::shared_ptr<pluginlib::ClassLoader<etasl::RobotDriver>>  driver_loader){
@@ -61,32 +47,26 @@ namespace etasl {
 
         feedback_copy_ptr = std::make_shared<robotdrivers::FeedbackMsg>(num_joints);
 
-        
         std::string driver_name = "";
 
-
-        // robotdriver = etasl::Registry<etasl::RobotDriverFactory>::create(param["robotsimulator"],jsonchecker_);
         for (const auto& key : parameters_.getMemberNames()) {
           if (key.rfind("is-", 0) == 0) { // Check if key starts with "is-"
               driver_name = key.substr(3);
           }
         }
-        
+
         if(driver_name == ""){
           RCLCPP_ERROR(node_->get_logger(), "Could not find any is- keyword in a robotsimulator/robotdriver field of the json configuration file. It must specify the type, e.g. is-ur10_e_driver_etasl = true (for robotdrivers) or is-simple_kinematic_simulator = true (for robotsimulators)");
           auto transition = node_->shutdown(); //calls on_shutdown() hook.
           return;
         }
 
-        // std::cout << parameters_.toStyledString() << std::endl;
         if(!parameters_.isMember("robot_joints")){
           std::string message = "Parameter robot_joints is currently missing in the robotdriver/robotsimulator " + driver_name + " and therefore the robot driver cannot be constructed.";
           RCLCPP_ERROR(node_->get_logger(), message.c_str());
           auto transition = node_->shutdown(); //calls on_shutdown() hook.
           return;
         }
-    
-        std::cout << "hellooooooooooooooooo000000" << std::endl;
 
         try
         {
@@ -99,18 +79,14 @@ namespace etasl {
           auto transition = node_->shutdown(); //calls on_shutdown() hook.
           return;
         }
-        
+
         robotdriver_->construct(driver_name, parameters_,jsonchecker_);
-        
 
         robotdriver_->initialize();
     }
 
-
     bool RobotDriverManagerLockFree::initialize(Context::Ptr ctx){
-            
 
-      
             feedback_copy_ptr->joint.is_pos_available = robotdriver_->isJointPosAvailable();
             feedback_copy_ptr->joint.is_vel_available = robotdriver_->isJointVelAvailable();
             feedback_copy_ptr->joint.is_torque_available = robotdriver_->isJointTorqueAvailable();
@@ -124,20 +100,15 @@ namespace etasl {
             feedback_copy_ptr->base.is_quat_available = robotdriver_->isBaseQuatAvailable();
             feedback_copy_ptr->base.is_twist_available = robotdriver_->isBaseTwistAvailable();
 
-
-      
             if (!feedback_copy_ptr->joint.is_pos_available){
               std::string message = "The position feedback is not available in the used robot driver. This is required to run eTaSL.";
               RCLCPP_ERROR(node_->get_logger(), message.c_str());
               auto transition = node_->shutdown(); //calls on_shutdown() hook.
             }
-            
 
             robotdriver_->readFeedbackJointPosition(feedback_copy_ptr->joint.pos); //local copy of initial feedback-> not used anymore
-      
+
             // --------- Check if the requested feedback is available in the robot driver ---------------
-            // Json::Value param_robot = board->getPath("/robot", false);
-            // Json::Value param_robot = parameters_["robot"];
 
             feedback_report["joint_vel"] = jsonchecker_->is_member(parameters_, "name_expr_joint_vel") && feedback_copy_ptr->joint.is_vel_available;
             feedback_report["joint_torque"] = jsonchecker_->is_member(parameters_, "name_expr_joint_torque") && feedback_copy_ptr->joint.is_torque_available;
@@ -150,76 +121,52 @@ namespace etasl {
             feedback_report["base_quat"] = jsonchecker_->is_member(parameters_, "name_expr_base_quat") && feedback_copy_ptr->base.is_quat_available;
             feedback_report["base_twist"] = jsonchecker_->is_member(parameters_, "name_expr_base_twist") && feedback_copy_ptr->base.is_twist_available;
 
-      
-
             input_channels_feedback.joint_vel.clear();
             input_channels_feedback.joint_torque.clear();
             input_channels_feedback.joint_current.clear();
-      
+
             input_channels_feedback.joint_vel.resize(number_of_joints, nullptr);
             input_channels_feedback.joint_torque.resize(number_of_joints,nullptr);
             input_channels_feedback.joint_current.resize(number_of_joints,nullptr);
-
-
 
             //The following checks if the user is requesting feedback that is not available in the robot driver
             for (const auto& pair : feedback_report) {
                 std::string key = pair.first;
                 bool value = pair.second;
-        
+
                 if(jsonchecker_->is_member(parameters_, "name_expr_" + key)){
-        
-      
+
                   if(!value){
                     std::string message = "The requested " + key + " feedback is not available in the used robot driver. Delete the input value name_expr_"+ key +" from the setup.json file or fix the robot driver to report it.";
                     RCLCPP_ERROR(node_->get_logger(), message.c_str());
                     auto transition = node_->shutdown(); //calls on_shutdown() hook.
                     return false;
                   }
-        
-                //   Json::Value param_iohandlers = parameters_["iohandlers"];
-
-                //   for (const auto& input_h : param_iohandlers["inputhandlers"]){ //Check that the user is not requesting a topic with the same name as the expression variable for the driver
-                //     if(input_h["varname"].asString() == jsonchecker_->asString(param_robot, "robotdriver/name_expr_" + key)){
-                //       std::string message = "The name `" + input_h["varname"].asString() + "` cannot be used within the setup.json file for both the name_expr_"+ key + " of robotdriver field and an input handler.";
-                //       RCLCPP_ERROR(node_->get_logger(), message.c_str());
-                //       auto transition = node_->shutdown(); //calls on_shutdown() hook.
-                //       return false;
-                //     } 
-                //   }
 
                 }
             }
             return true;
     }
-                
 
     void RobotDriverManagerLockFree::update( robotdrivers::DynamicJointDataField& joint_positions, const Eigen::VectorXd& jvel_etasl){
 
-
-    
         assert(jvel_etasl_copy.data.size() == jvel_etasl.size());
 
-        // static std::vector<float> jvel_etasl_copy(jvel_etasl.size(), 0.0);
         for (unsigned int i=0; i<jvel_etasl.size(); ++i) {
           jvel_etasl_copy.data[i] = jvel_etasl[i];
         }
-        
+
         robotdriver_->writeSetpointJointVelocity(jvel_etasl_copy);
-    
+
         if (feedback_copy_ptr->joint.is_pos_available){
           robotdriver_->readFeedbackJointPosition(joint_positions); //directly, without unnecessary local copy 
-
-          // robotdriver_->readFeedbackJointPosition(feedback_copy_ptr->joint.pos);
-          // joint_positions = feedback_copy_ptr->joint.pos.data;
 
         }
         else{
           RCLCPP_ERROR(node_->get_logger(), "The position feedback is not available in the used robot driver. This is required to run eTaSL.");
           auto transition = node_->shutdown();
         }
-    
-    
+
         //Read joint velocities
         if (feedback_report["joint_vel"]){
           robotdriver_->readFeedbackJointVelocity(feedback_copy_ptr->joint.vel);
@@ -229,65 +176,56 @@ namespace etasl {
             }
           }
         }
-    
+
         //Read joint torques
         if (feedback_report["joint_torque"]){
           robotdriver_->readFeedbackJointTorque(feedback_copy_ptr->joint.torque);
         }
-    
+
         //Read joint currents
         if (feedback_report["joint_current"]){
           robotdriver_->readFeedbackJointCurrent(feedback_copy_ptr->joint.current);
         }
-    
+
         // -------- Cartesian feedback -----------------
-    
+
         //Read Cartesian position
         if (feedback_report["cartesian_pos"]){
           robotdriver_->readFeedbackCartesianPosition(feedback_copy_ptr->cartesian.pos);
         }
-    
+
         //Read Cartesian orientation in quaternion format
         if (feedback_report["cartesian_quat"]){
           robotdriver_->readFeedbackCartesianQuaternion(feedback_copy_ptr->cartesian.quat);
         }
-    
+
         //Read Cartesian twist
         if (feedback_report["cartesian_twist"]){
           robotdriver_->readFeedbackCartesianTwist(feedback_copy_ptr->cartesian.twist);
         }
-    
+
         //Read Cartesian wrench
         if (feedback_report["cartesian_wrench"]){
           robotdriver_->readFeedbackCartesianWrench(feedback_copy_ptr->cartesian.wrench);
         }
-    
+
         //Read base position
         if (feedback_report["base_pos"]){
           robotdriver_->readFeedbackBasePosition(feedback_copy_ptr->base.pos);
         }
-    
+
         //Read base orientation in quaternion format
         if (feedback_report["base_quat"]){
           robotdriver_->readFeedbackBaseQuaternion(feedback_copy_ptr->base.quat);
         }
-    
+
         //Read base twist
         if (feedback_report["base_twist"]){
           robotdriver_->readFeedbackBaseTwist(feedback_copy_ptr->base.twist);
         }
-    
-    
-        //TODO: Delete feedback_copy_ptr and instead write directly to input_channels_feedback pointers as below:
-        // Write in the input handler the joint velocities
-        // if (feedback_report["joint_vel"]){
-        //     for (unsigned int i=0; i<jvel_etasl.size(); ++i) { //Check that the input channel exists (i.e. was declared in the task specification)
-        //         if(input_channels_feedback.joint_vel[i]){      
-        //             input_channels_feedback.joint_vel[i]->setValue(feedback_copy_ptr->joint.vel.data[i]);
-        //         }
-        //     }
-        // }
-    
+
+        //TODO: Delete feedback_copy_ptr and instead write directly to input_channels_feedback pointers (as already done above for the joint velocities)
+
         //Write in the input handler the joint torques
         if (feedback_report["joint_torque"]){
             for (unsigned int i=0; i<jvel_etasl.size(); ++i) { //Check that the input channel exists (i.e. was declared in the task specification)
@@ -296,7 +234,7 @@ namespace etasl {
                 }
             }
         }
-    
+
         //Write in the input handler the joint currents
         if (feedback_report["joint_current"]){
             for (unsigned int i=0; i<jvel_etasl.size(); ++i) { //Check that the input channel exists (i.e. was declared in the task specification)
@@ -305,9 +243,9 @@ namespace etasl {
                 }
             }
         }
-    
+
         // -------- Cartesian feedback -----------------
-    
+
         //Write in the input handler the Cartesian position
         if (feedback_report["cartesian_pos"]){
             if(input_channels_feedback.cartesian_pos){
@@ -318,7 +256,7 @@ namespace etasl {
                 input_channels_feedback.cartesian_pos->setValue(vector_inp_);
             }
         }
-    
+
         //Write in the input handler the Cartesian orientation in quaternion format
         //TODO: Check the quaternion format in KDL and also how to transform it to rotation
         if (feedback_report["cartesian_quat"]){
@@ -326,7 +264,7 @@ namespace etasl {
                 input_channels_feedback.cartesian_quat->setValue(KDL::Rotation::Quaternion(feedback_copy_ptr->cartesian.quat.qw, feedback_copy_ptr->cartesian.quat.qx, feedback_copy_ptr->cartesian.quat.qy, feedback_copy_ptr->cartesian.quat.qz));
             }
         }
-    
+
         //Write in the input handler the Cartesian twist
         if (feedback_report["cartesian_twist"]){
             if(input_channels_feedback.cartesian_twist){
@@ -339,7 +277,7 @@ namespace etasl {
                 input_channels_feedback.cartesian_twist->setValue(twist_inp_);
             }
         }
-    
+
         //Write in the input handler the Cartesian wrench
         if (feedback_report["cartesian_wrench"]){
             if(input_channels_feedback.cartesian_wrench){
@@ -353,7 +291,7 @@ namespace etasl {
                 input_channels_feedback.cartesian_wrench->setValue(wrench_inp_);
             }
         }
-    
+
         //Write in the input handler the base position
         if (feedback_report["base_pos"]){
             if(input_channels_feedback.base_pos){
@@ -363,14 +301,14 @@ namespace etasl {
             input_channels_feedback.base_pos->setValue(vector_inp_);
             }
         }
-    
+
         //Write in the input handler the base orientation in quaternion format
         if (feedback_report["base_quat"]){
             if(input_channels_feedback.base_quat){
             input_channels_feedback.base_quat->setValue(KDL::Rotation::Quaternion(feedback_copy_ptr->base.quat.qw, feedback_copy_ptr->base.quat.qx, feedback_copy_ptr->base.quat.qy, feedback_copy_ptr->base.quat.qz));
             }
         }
-    
+
         //Write in the input handler the base twist
         if (feedback_report["base_twist"]){
             if(input_channels_feedback.base_twist){
@@ -384,17 +322,14 @@ namespace etasl {
             }
         }
 
-
     }
 
-
     void RobotDriverManagerLockFree::on_configure(Context::Ptr ctx){
-
 
         for (const auto& pair : feedback_report) {
             std::string key = pair.first;
             bool value = pair.second;
-      
+
             if(value){
               //Check types and get Input Channels accordingly. Joint values are vectors of pointers, and the rest are pointers. Careful!
               if (key == "joint_vel") {
@@ -434,7 +369,7 @@ namespace etasl {
                   input_channels_feedback.base_twist = ctx->getInputChannel<KDL::Twist>(jsonchecker_->asString(parameters_,  "name_expr_" + key));
               }
             }
-      
+
           }
 
     }
@@ -445,7 +380,6 @@ namespace etasl {
         robotdriver_->readFeedbackJointPosition(jpos_current_vec);
 
         while(!robotdriver_->readFeedbackJointPosition(jpos_current_vec)){ //ensures that there is something to be read (otherwise readFeedbackJointPosition returns false)
-          //sleep
           std::this_thread::sleep_for(std::chrono::milliseconds(1));
         }
 
@@ -456,11 +390,9 @@ namespace etasl {
 
     }
 
-
     void RobotDriverManagerLockFree::on_deactivate(){
 
     }
-
 
     void RobotDriverManagerLockFree::on_cleanup(){
 
@@ -473,21 +405,33 @@ namespace etasl {
           }
     }
 
-    std::shared_ptr<t_manager::thread_t> RobotDriverManagerLockFree::create_thread_str(std::atomic<bool> & stopFlag){
-            
+    std::shared_ptr<t_manager::thread_t> RobotDriverManagerLockFree::create_thread_str(std::atomic<bool> & stopFlag, const Json::Value& default_scheduling){
+
         double periodicity = jsonchecker_->asDouble(parameters_, "periodicity");
         thread_str_driver = std::make_shared<t_manager::thread_t>();
-    
-        
+
         thread_str_driver->periodicity = std::chrono::nanoseconds(static_cast<long long>(periodicity * 1E9)); //*1E9 to convert seconds to nanoseconds
         thread_str_driver->update_hook = std::bind(&etasl::RobotDriver::update, robotdriver_, std::ref(stopFlag));
         thread_str_driver->finalize_hook = std::bind(&etasl::RobotDriver::finalize, robotdriver_);
-        
-    
+
+        // The scheduling defined in the driver takes precedence over the global one
+        const Json::Value& scheduling = parameters_.isMember("thread_scheduling") ? parameters_["thread_scheduling"] : default_scheduling;
+        if (!scheduling.isNull()) {
+            std::string policy_name = jsonchecker_->asString(scheduling, "policy");
+            int priority = jsonchecker_->is_member(scheduling, "priority") ? jsonchecker_->asInt(scheduling, "priority") : 0;
+            int sched_policy = SCHED_OTHER;
+            std::string error = t_manager::parse_scheduling(policy_name, priority, sched_policy);
+            if (!error.empty()) {
+                RCLCPP_ERROR(node_->get_logger(), "Invalid thread_scheduling in the configuration file: %s", error.c_str());
+                rclcpp::shutdown();
+                exit(1);
+            }
+            thread_str_driver->sched_policy = sched_policy;
+            thread_str_driver->sched_priority = (sched_policy == SCHED_OTHER) ? 0 : priority; // the priority is ignored for SCHED_OTHER
+        }
+
         return thread_str_driver;
-    
+
       }
-
-
 
 } // namespace etasl

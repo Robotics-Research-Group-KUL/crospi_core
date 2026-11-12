@@ -122,6 +122,30 @@ void addIfNotExists(Json::Value& original, const Json::Value& additional)
     }
 }
 
+// checks the "minimum" and "maximum" keywords of a schema of type number or integer
+static void checkNumericRange(const Json::Value& schema, const Json::Value& data, const std::string& ctx)
+{
+    if (schema.isMember("minimum")) {
+        Json::Value minv = schema["minimum"];
+        if (!minv.isNumeric()) {
+            throw std::logic_error(fmt::format("{} : minimum property in schema should be numeric", ctx));
+        }
+        if (data.asDouble() < minv.asDouble()) {
+            throw std::logic_error(fmt::format("{} : number shuould be larger than minimum ({})", ctx, minv.asDouble()));
+        }
+    }
+
+    if (schema.isMember("maximum")) {
+        Json::Value maxv = schema["maximum"];
+        if (!maxv.isNumeric()) {
+            throw std::logic_error(fmt::format("{} : maximum property in schema should be numeric", ctx));
+        }
+        if (data.asDouble() > maxv.asDouble()) {
+            throw std::logic_error(fmt::format("{} : number shuould be smaller than maximum ({})", ctx, maxv.asDouble()));
+        }
+    }
+}
+
 BlackBoard::BlackBoard(int _path_components_used)
     : base(Json::objectValue)
 {
@@ -391,6 +415,20 @@ Json::Value BlackBoard::process_and_validate(Json::Value& schema,
     // expand $ref in data using the blackboard
     // if (data.isMember("$ref"))
 
+    // allOf: the data must be valid for all the schemas. Since process_and_validate also transforms the data (e.g. filling
+    // in default values), the schemas are applied one after the other, each one on the result of the previous one.
+    if (schema.isMember("allOf")) {
+        Json::Value allof = schema["allOf"];
+        if (!allof.isArray()) {
+            throw std::logic_error(fmt::format("{} : allOf key should point to an array of schemas", ctx));
+        }
+        Json::Value result = data;
+        for (auto subschema : allof) {
+            result = process_and_validate(subschema, result, ctx);
+        }
+        return result;
+    }
+
     if (schema.isMember("oneOf")) {
         Json::Value& oneof = schema["oneOf"];
         if (!oneof.isArray()) {
@@ -410,6 +448,28 @@ Json::Value BlackBoard::process_and_validate(Json::Value& schema,
             }
         }
         throw std::logic_error(fmt::format("{} : none of the schema's indicatd by oneOf match the data :\n", ctx) + ss.str());
+    }
+
+    if (schema.isMember("enum")) {
+        Json::Value enumv = schema["enum"];
+        if (!enumv.isArray()) {
+            throw std::logic_error(fmt::format("{} : enum property of schema should be an array", ctx));
+        }
+        bool found = false;
+        for (auto v : enumv) {
+            if (v == data) {
+                found = true;
+                break;
+            }
+        }
+        if (!found) {
+            Json::StreamWriterBuilder writer;
+            writer["indentation"] = "";
+            throw std::logic_error(fmt::format("{} : value {} should be one of {}", ctx, Json::writeString(writer, data), Json::writeString(writer, enumv)));
+        }
+        if (!schema.isMember("type")) {
+            return data;
+        }
     }
 
     Json::Value typev = schema["type"];
@@ -532,26 +592,22 @@ Json::Value BlackBoard::process_and_validate(Json::Value& schema,
                 throw std::logic_error(fmt::format("{} : number ({}) should be equal to constant value ({})", ctx, data.asDouble(), const_val.asDouble()));
             }
         }
-
-        if (schema.isMember("minimum")) {
-            Json::Value minv = schema["minimum"];
-            if (!minv.isNumeric()) {
-                throw std::logic_error(fmt::format("{} : minimum property in schema should be numeric", ctx));
+        checkNumericRange(schema, data, ctx);
+        retval = data;
+    } else if (type == "integer") {
+        if (!data.isInt()) {
+            throw std::logic_error(fmt::format("{} : should be an integer", ctx));
+        }
+        if (schema.isMember("const")) {
+            Json::Value const_val = schema["const"];
+            if (!const_val.isInt()) {
+                throw std::logic_error(fmt::format("{} : const property of schema should be an integer", ctx));
             }
-            if (data.asDouble() < minv.asDouble()) {
-                throw std::logic_error(fmt::format("{} : number shuould be larger than minimum ({})", ctx, minv.asDouble()));
+            if (data.asInt() != const_val.asInt()) {
+                throw std::logic_error(fmt::format("{} : integer ({}) should be equal to constant value ({})", ctx, data.asInt(), const_val.asInt()));
             }
         }
-
-        if (schema.isMember("maximum")) {
-            Json::Value maxv = schema["maximum"];
-            if (!maxv.isNumeric()) {
-                throw std::logic_error(fmt::format("{} : maximum property in schema should be numeric", ctx));
-            }
-            if (data.asDouble() > maxv.asDouble()) {
-                throw std::logic_error(fmt::format("{} : number shuould be smaller than maximum ({})", ctx, maxv.asDouble()));
-            }
-        }
+        checkNumericRange(schema, data, ctx);
         retval = data;
     } else if (type == "boolean") {
         if (!data.isBool()) {
